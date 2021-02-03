@@ -8,9 +8,9 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Server",
-            "program": "${workspaceFolder}/test-project/server.js",
-            "cwd": "${workspaceFolder}/test-project",
-            "preLaunchTask": "npm: install - test-project"
+            "program": "${workspaceFolder}/server.js",
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "npm: install"
         }
     ]
 }
