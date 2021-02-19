@@ -1,12 +1,11 @@
-
 import 'dotenv/config';
 import cors from 'cors';
 import express from 'express';
-//import multer from 'multer';
  
 const app = express();
-//var upload = multer();
-app.use(cors());
+app.use(cors()); // set cors support
+app.use(express.urlencoded({ extended: false })); // parse application/x-www-form-urlencoded
+app.use(express.json()); // parse application/json
 
 var daimler = {};
 daimler.Stockname = "Daimler Benz";
@@ -19,8 +18,6 @@ telekom.WKN = 555750;
 telekom.Symbol = "DTEA";
 
 //var str1 = 'Test';
-
-
 
 // Service "/" returns a Hello message
 app.get('/', (req, res) => {
@@ -54,8 +51,7 @@ app.get('/sample', (req, res) => {
 
 // Service "/createObject" creates an object
 app.post('/createObject', (req, res) => { 
-  app.use(express.urlencoded);
-  console.log(req);
+  console.log(req.body);
   res.json(req.body);
 });
  
