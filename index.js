@@ -7,15 +7,22 @@ app.use(cors()); // set cors support
 app.use(express.urlencoded({ extended: false })); // parse application/x-www-form-urlencoded
 app.use(express.json()); // parse application/json
 
-var daimler = {};
-daimler.Stockname = "Daimler Benz";
-daimler.WKN = 846900;
-daimler.Symbol = "DAI";
+var portfolio = [];
+var stock = {};
 
-var telekom = {};
-telekom.Stockname = "Deutsche Telekom";
-telekom.WKN = 555750;
-telekom.Symbol = "DTEA";
+stock.stockname = "Daimler Benz";
+stock.wkn = 846900;
+stock.symbol = "DAI";
+portfolio.push(stock);
+
+stock = new Object();
+
+stock.stockname = "Deutsche Telekom";
+stock.wkn = 555750;
+stock.symbol = "DTEA";
+portfolio.push(stock);
+
+
 
 //var str1 = 'Test';
 
@@ -24,15 +31,15 @@ app.get('/', (req, res) => {
   res.send('{"name": "Hello World!"}');
 });
 
-// Service "/Daimler" returns the Daimler stock
-app.get('/Daimler', (req, res) => {
-  res.send(daimler);
+// Service "/stocks" returns all stocks
+app.get('/stocks', (req, res) => {
+  res.send(portfolio);
 });
 
 // Service "/Telekom" returns the Telekom stock
-app.get('/Telekom', (req, res) => {
-  res.send(telekom);
-});
+//app.get('/Telekom', (req, res) => {
+//  res.send(telekom);
+//});
  
 // Service "/demo" returns a Hello message
 app.get('/demo', (req, res) => {
@@ -49,10 +56,24 @@ app.get('/sample', (req, res) => {
   res.status(401).send("Sorry, you aren't authorized!");
 });
 
+// Service "/stock" returns a stock
+app.get('/stock', (req, res) => {
+  stock = portfolio.find(element => {
+    return (element.stockname == req.body.stockname);
+  });
+  
+  res.send(stock);
+});
+
 // Service "/createObject" creates an object
 app.post('/createObject', (req, res) => { 
-  console.log(req.body);
-  res.json(req.body);
+  stock = new Object();
+  stock.stockname = req.body.stockname;
+  stock.wkn = req.body.wkn;
+  stock.symbol = req.body.symbol;
+  portfolio.push(stock);
+  
+  res.send(stock);
 });
  
 app.listen(process.env.PORT, () =>
