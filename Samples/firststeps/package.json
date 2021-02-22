@@ -1,15 +1,15 @@
 {
-  "name": "wieruch",
-  "version": "1.0.0",
-  "description": "",
+  "name": "firststeps",
+  "version": "0.0.10",
+  "description": "We are making first experiences with Javascript & Express",
   "main": "index.js",
   "scripts": {
     "start": "npx babel-node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Leon Hessel",
+  "license": "MIT",
   "devDependencies": {
     "@babel/core": "^7.12.16",
     "@babel/node": "^7.12.16",
