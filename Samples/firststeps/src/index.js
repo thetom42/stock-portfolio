@@ -31,14 +31,13 @@ app.get('/sample', (req, res) => {
 
 // Service "/getStock" returns a stock
 app.get('/getStock', (req, res) => {
-  
   let stock = getStock(req.body.stockname);
+
   if (stock == null) {
     res.status(404).send('Sorry, we cannot find the stock "' + req.body.stockname + '"!');
   } else {
     res.send(stock); 
   }
-
 });
 
 // Service "/createStock" creates an object
@@ -61,7 +60,6 @@ app.listen(process.env.PORT, () =>
 );
 
 function createStock(stockname, wkn, symbol){
-  
   let stock = {};
   
   stock.stockname = stockname;
@@ -69,26 +67,23 @@ function createStock(stockname, wkn, symbol){
   stock.symbol = symbol;
 
   return(stock);
-
 }
 
 function createPortfolio(){
-  
   let portfolio = {};
   let stock = createStock("Daimler Benz", 846900, "DAI");
   portfolio[stock.stockname] = stock; 
 
   stock = createStock("Deutsche Telekom", 555750, "DTEA");
   portfolio[stock.stockname] = stock;
-  return(portfolio);
 
+  return(portfolio);
 } 
 
 function getStock(stockname){
-  
   let realStockname = Object.keys(portfolio).find(element => {
     return (element.includes(stockname));
   });
-  return(portfolio[realStockname]);
 
+  return(portfolio[realStockname]);
 }
