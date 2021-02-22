@@ -19,16 +19,6 @@ app.get('/getStocks', (req, res) => {
   res.send(portfolio);
 });
  
-// Service "/error" returns status 404 and an error message
-app.get('/error', (req, res) => {
-  res.status(404).send('Sorry, we cannot find that!');
-});
-
-// Service "/sample" returns status 401
-app.get('/sample', (req, res) => {
-  res.status(401).send("Sorry, you aren't authorized!");
-});
-
 // Service "/getStock" returns a stock
 app.get('/getStock', (req, res) => {
   let stock = getStock(req.body.stockname);
@@ -43,9 +33,15 @@ app.get('/getStock', (req, res) => {
 // Service "/createStock" creates an object
 app.post('/createStock', (req, res) => { 
   let stock = createStock(req.body.stockname, req.body.wkn, req.body.symbol);
-  portfolio[stock.stockname] = stock;
-  
-  res.send("Stock object successfully created!");
+  let msg = "";
+  if (stock != null) {
+    portfolio[stock.stockname] = stock;
+    msg = "Stock object successfully created!";
+  } else {
+    msg = `Stock object could not be created for: stockname: "${req.body.stockname}",  wkn: "${req.body.wkn}", symbol: "${req.body.symbol}"`;
+    res.status(404);
+  }
+  res.send(msg);
 });
 
 // Service "/createPortfolio" creates an object
@@ -60,21 +56,24 @@ app.listen(process.env.PORT, () =>
 );
 
 function createStock(stockname, wkn, symbol){
-  let stock = {};
+  let stock = null;
   
-  stock.stockname = stockname;
-  stock.wkn = wkn;
-  stock.symbol = symbol;
+  if (!isNullOrEmpty(stockname) && !isNullOrEmpty(wkn) && !isNullOrEmpty(symbol)) {
+    stock = {};
+    stock.stockname = stockname;
+    stock.wkn = wkn;
+    stock.symbol = symbol;
+  }
 
   return(stock);
 }
 
 function createPortfolio(){
   let portfolio = {};
-  let stock = createStock("Daimler Benz", 846900, "DAI");
+  let stock = createStock("Daimler Benz", "846900", "DAI");
   portfolio[stock.stockname] = stock; 
 
-  stock = createStock("Deutsche Telekom", 555750, "DTEA");
+  stock = createStock("Deutsche Telekom", "555750", "DTEA");
   portfolio[stock.stockname] = stock;
 
   return(portfolio);
@@ -87,3 +86,9 @@ function getStock(stockname){
 
   return(portfolio[realStockname]);
 }
+
+function isNullOrEmpty(obj) {
+    return (obj == null || obj.length == 0 || obj.trim().length == 0);
+};
+
+
