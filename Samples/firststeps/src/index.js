@@ -68,6 +68,11 @@ app.listen(process.env.PORT, () =>
   console.log(`Example app listening on port ${process.env.PORT}!`),
 );
 
+process.on('SIGINT', () => {
+  console.log('Exit Server. Closing DB connection first.');
+  closeDB();
+});
+
 function createStock(stockname, wkn, symbol){
   let stock = null;
   
