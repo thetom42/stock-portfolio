@@ -1,0 +1,27 @@
+[
+    {  
+        "stockname": "BMW",
+        "wkn": "519003",
+        "symbol": "BMW"
+    },
+    {
+        "stockname": "Allianz",
+        "wkn":"840400",
+        "symbol": "ALV"
+    },
+    {
+        "stockname": "adidas",
+        "wkn":"A1EWWW",
+        "symbol": "ADS"
+    },
+    {
+        "stockname": "BASF",
+        "wkn":"BASF11",
+        "symbol": "BAS"
+    },
+    {
+        "stockname": "SAP",
+        "wkn": "716460",
+        "symbol": "SAP"
+    }
+]
