@@ -1,7 +1,16 @@
 import 'dotenv/config';
 import cors from 'cors';
 import express from 'express';
+const sqlite3 = require('sqlite3').verbose();
  
+// open the database
+let db = new sqlite3.Database('./db/portfolio.db', sqlite3.CREATE, (err) => {
+  if (err) {
+    console.error(err.message);
+  }
+  console.log('Connected to the portfolio database.');
+});
+
 const app = express();
 app.use(cors()); // set cors support
 app.use(express.urlencoded({ extended: false })); // parse application/x-www-form-urlencoded
@@ -91,4 +100,24 @@ function isNullOrEmpty(obj) {
   return (obj == null || obj.length == 0 || obj.trim().length == 0);
 };
 
+function storePortfolio(portfolio) {
+  db.serialize(() => {
+    db.each(`SELECT PlaylistId as id,
+                    Name as name
+            FROM playlists`, (err, row) => {
+      if (err) {
+        console.error(err.message);
+      }
+      console.log(row.id + "\t" + row.name);
+    });
+  });
+};
 
+function closeDB() {
+  db.close((err) => {
+    if (err) {
+      console.error(err.message);
+    }
+    console.log('Close the database connection.');
+  });
+}
