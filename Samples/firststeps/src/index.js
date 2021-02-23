@@ -7,7 +7,7 @@ app.use(cors()); // set cors support
 app.use(express.urlencoded({ extended: false })); // parse application/x-www-form-urlencoded
 app.use(express.json()); // parse application/json
 
-var portfolio = {};
+var portfolio = [];
 
 // Service "/" returns a Hello message
 app.get('/', (req, res) => {
@@ -34,20 +34,21 @@ app.get('/getStock', (req, res) => {
 app.post('/createStock', (req, res) => { 
   let stock = createStock(req.body.stockname, req.body.wkn, req.body.symbol);
   let msg = "";
+
   if (stock != null) {
-    portfolio[stock.stockname] = stock;
+    portfolio.push(stock);
     msg = "Stock object successfully created!";
   } else {
     msg = `Stock object could not be created for: stockname: "${req.body.stockname}",  wkn: "${req.body.wkn}", symbol: "${req.body.symbol}"`;
     res.status(404);
   }
+
   res.send(msg);
 });
 
 // Service "/createPortfolio" creates an object
 app.post('/createPortfolio', (req, res) => { 
   portfolio = createPortfolio();
-  
   res.send("Portfolio successfully created!");
 });
  
@@ -69,26 +70,25 @@ function createStock(stockname, wkn, symbol){
 }
 
 function createPortfolio(){
-  let portfolio = {};
+  let portfolio = [];
+
   let stock = createStock("Daimler Benz", "846900", "DAI");
-  portfolio[stock.stockname] = stock; 
+  portfolio.push(stock); 
 
   stock = createStock("Deutsche Telekom", "555750", "DTEA");
-  portfolio[stock.stockname] = stock;
+  portfolio.push(stock);
 
   return(portfolio);
 } 
 
-function getStock(stockname){
-  let realStockname = Object.keys(portfolio).find(element => {
-    return (element.includes(stockname));
-  });
-
-  return(portfolio[realStockname]);
+function getStock(searchstr) {
+  let stock = portfolio.find(stock => {
+    return(stock.stockname.includes(searchstr))});
+  return(stock);
 }
 
 function isNullOrEmpty(obj) {
-    return (obj == null || obj.length == 0 || obj.trim().length == 0);
+  return (obj == null || obj.length == 0 || obj.trim().length == 0);
 };
 
 
