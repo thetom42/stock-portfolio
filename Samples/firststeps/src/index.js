@@ -2,7 +2,14 @@ import 'dotenv/config';
 import cors from 'cors';
 import express from 'express';
 const sqlite3 = require('sqlite3').verbose();
- 
+
+var portfolio = [];
+
+const app = express();
+app.use(cors()); // set cors support
+app.use(express.urlencoded({ extended: false })); // parse application/x-www-form-urlencoded
+app.use(express.json()); // parse application/json
+
 // open the database
 let db = new sqlite3.Database('./db/portfolio.db', sqlite3.CREATE, (err) => {
   if (err) {
@@ -11,12 +18,7 @@ let db = new sqlite3.Database('./db/portfolio.db', sqlite3.CREATE, (err) => {
   console.log('Connected to the portfolio database.');
 });
 
-const app = express();
-app.use(cors()); // set cors support
-app.use(express.urlencoded({ extended: false })); // parse application/x-www-form-urlencoded
-app.use(express.json()); // parse application/json
-
-var portfolio = [];
+initDB(portfolio);
 
 // Service "/" returns a Hello message
 app.get('/', (req, res) => {
@@ -46,6 +48,7 @@ app.post('/createStock', (req, res) => {
 
   if (stock != null) {
     portfolio.push(stock);
+    storeStock(stock);
     msg = "Stock object successfully created!";
   } else {
     msg = `Stock object could not be created for: stockname: "${req.body.stockname}",  wkn: "${req.body.wkn}", symbol: "${req.body.symbol}"`;
@@ -80,13 +83,6 @@ function createStock(stockname, wkn, symbol){
 
 function createPortfolio(){
   let portfolio = [];
-
-  let stock = createStock("Daimler Benz", "846900", "DAI");
-  portfolio.push(stock); 
-
-  stock = createStock("Deutsche Telekom", "555750", "DTEA");
-  portfolio.push(stock);
-
   return(portfolio);
 } 
 
@@ -100,15 +96,37 @@ function isNullOrEmpty(obj) {
   return (obj == null || obj.length == 0 || obj.trim().length == 0);
 };
 
-function storePortfolio(portfolio) {
-  db.serialize(() => {
-    db.each(`SELECT PlaylistId as id,
-                    Name as name
-            FROM playlists`, (err, row) => {
+function storeStock(stock) {
+  db.run(`INSERT INTO portfolio(stockname, wkn, symbol) VALUES(?, ?, ?)`, [stock.stockname, stock.wkn, stock.symbol], (err) => {
       if (err) {
         console.error(err.message);
+      } else {
+        console.log('New stock saved to database.');
       }
-      console.log(row.id + "\t" + row.name);
+  });
+};
+
+function initDB(portfolio) {
+  db.run(`CREATE TABLE portfolio( 
+            stockname text,
+            wkn text,
+            symbol text)`, (err) => {
+    if (err) {
+      console.error(err.message);
+      readDB(portfolio);
+    } else {
+      console.log('Created table portfolio.');
+    }
+  });
+};
+
+function readDB(portfolio) {
+  db.all(`SELECT * FROM portfolio ORDER BY upper(stockname)`, [], (err, rows) => {
+    if (err) {
+      throw err;
+    }
+    rows.forEach((row) => {
+      portfolio.push(row);
     });
   });
 };
@@ -117,7 +135,8 @@ function closeDB() {
   db.close((err) => {
     if (err) {
       console.error(err.message);
+    } else {
+      console.log('Closed the database connection.');
     }
-    console.log('Close the database connection.');
   });
 }

@@ -1,5 +1,15 @@
 [
     {  
+        "stockname": "Daimler Benz",
+        "wkn": "846900",
+        "symbol": "DAI"
+    },
+    {  
+        "stockname": "Deutsche Telekom",
+        "wkn": "555750",
+        "symbol": "DTEA"
+    },
+    {  
         "stockname": "BMW",
         "wkn": "519003",
         "symbol": "BMW"
