@@ -18,7 +18,7 @@ let db = new sqlite3.Database('../../DB/portfolio.db', sqlite3.CREATE, (err) => 
   console.log('Connected to the portfolio database.');
 });
 
-initDB(portfolio);
+//initDB(portfolio);
 
 // Service "/" returns a Hello message
 app.get('/', (req, res) => {
