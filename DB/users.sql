@@ -2,16 +2,16 @@
 -- ***************************************************;
 
 
--- ************************************** "USER"
+-- ************************************** "USERS"
 
-CREATE TABLE "USER"
+CREATE TABLE USERS
 (
- USER_ID   text NOT NULL,
+ USERS_ID   text NOT NULL,
  NAME      text NOT NULL,
  SURNAME   text NOT NULL,
  EMAIL     text NOT NULL,
  NICKNAME  text NOT NULL,
  PASSWORD  text NOT NULL,
  JOIN_DATE date NOT NULL,
- CONSTRAINT PK_user PRIMARY KEY ( USER_ID )
+ CONSTRAINT PK_users PRIMARY KEY ( USERS_ID )
 );
