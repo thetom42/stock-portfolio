@@ -11,14 +11,14 @@ app.use(express.urlencoded({ extended: false })); // parse application/x-www-for
 app.use(express.json()); // parse application/json
 
 // open the database
-let db = new sqlite3.Database('../../DB/portfolio.db', sqlite3.CREATE, (err) => {
+let db = new sqlite3.Database('./db/firststeps.db', sqlite3.CREATE, (err) => {
   if (err) {
     console.error(err.message);
   }
   console.log('Connected to the portfolio database.');
 });
 
-//initDB(portfolio);
+initDB(portfolio);
 
 // Service "/" returns a Hello message
 app.get('/', (req, res) => {
