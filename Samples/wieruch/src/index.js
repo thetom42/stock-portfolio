@@ -57,7 +57,11 @@ app.get('/messages', (req, res) => {
 app.get('/messages/:messageId', (req, res) => {
   return res.send(messages[req.params.messageId]);
 });
-  
+
+app.get('/session', (req, res) => {
+  return res.send(users[req.me.id]);
+});
+
 app.post('/users', (req, res) => {
   return res.send('POST HTTP method on user resource');
 });
@@ -85,6 +89,16 @@ app.delete('/users/:userId', (req, res) => {
   return res.send(
     `DELETE HTTP method on user/${req.params.userId} resource`,
   );
+});
+
+app.delete('/messages/:messageId', (req, res) => {
+  const {
+    [req.params.messageId]: message,
+    ...otherMessages
+  } = messages;
+  messages = otherMessages;
+ 
+  return res.send(message);
 });
 
 app.listen(3000, () => {
