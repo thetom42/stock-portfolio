@@ -51,8 +51,7 @@ app.get('/users/:userId', (req, res) => {
 });
 
 app.get('/messages', (req, res) => {
-  //return res.send(Object.values(messages));
-  return res.send(messages);
+  return res.send(Object.values(messages));
 });
    
 app.get('/messages/:messageId', (req, res) => {
