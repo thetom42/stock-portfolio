@@ -1,6 +1,7 @@
 # Update the VARIANT arg in docker-compose.yml to pick a Node version: 10, 12, 14
-ARG VARIANT=12
-FROM mcr.microsoft.com/vscode/devcontainers/javascript-node:dev-${VARIANT}
+ARG VARIANT=14
+#FROM mcr.microsoft.com/vscode/devcontainers/javascript-node:dev-${VARIANT}
+FROM node:${VARIANT}-buster-slim
 
 # Update args in docker-compose.yaml to set the UID/GID of the "node" user.
 ARG USER_UID=1000
@@ -16,5 +17,5 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive && \
 # RUN su node -c "source /usr/local/share/nvm/nvm.sh && nvm install ${EXTRA_NODE_VERSION}"
 
 # [Optional] Uncomment if you want to install more global node modules
-RUN su node -c "npm install express cors dotenv uuid pg sequelize --save" && \
-    su node -c "npm install nodemon @babel/core @babel/node @babel/preset-env --save-dev"
+RUN npm install -g express cors dotenv uuid pg sequelize @nestjs/cli
+#    npm install nodemon @babel/core @babel/node @babel/preset-env --save-dev

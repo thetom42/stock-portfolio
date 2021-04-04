@@ -9,8 +9,8 @@
 		"test": " REGRESSION_TESTING=true npm start"
 	},
 	"dependencies": {
-		"express": "^4.16.1",
 		"bluebird": "^3.5.5",
+		"express": "^4.16.1",
 		"pg-promise": "^10.9.1"
 	}
 }
