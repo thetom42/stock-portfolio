@@ -1,2 +1,2 @@
-# Aktien-Depot
+# Stock Portfolio
 
