@@ -2,11 +2,18 @@
 
 ## Introduction
 
-This document details the design of the database layer for the Stock Portfolio Application. It incorporates the recommendations from the initial design proposal and addresses the additional considerations raised during the design review. The design prioritizes a clean architecture, testability, extensibility, and performance.
+This document details the design of the database layer for the Stock Portfolio Application. It incorporates the recommendations from the initial design proposal and addresses the additional considerations raised during the design review. The design prioritizes a clean architecture, testability, extensibility, and performance.  It leverages the Repository Pattern with Strategy/Adapter and the Plugin Pattern to achieve these goals.  The design also incorporates a robust error handling strategy, transaction management, data validation, and security measures to ensure data integrity and application reliability.  Finally, a comprehensive testing strategy is implemented to ensure the quality and reliability of the database layer.
 
 ## Overall Architecture
 
-The database layer will utilize the **Repository Pattern with Strategy/Adapter** as its primary architectural pattern. This pattern cleanly separates data access logic from the application's core business logic. The **Plugin Pattern** will be used to support multiple database providers (PostgreSQL and SQLite initially) and allow for easy addition of new providers in the future.
+The database layer will utilize the **Repository Pattern with Strategy/Adapter** as its primary architectural pattern. This pattern cleanly separates data access logic from the application's core business logic. The **Plugin Pattern** will be used to support multiple database providers (PostgreSQL and SQLite initially) and allow for easy addition of new providers in the future.  This approach ensures a clean separation of concerns, making the code more maintainable, testable, and extensible.
+
+## Technology Stack
+
+* **Language:** TypeScript
+* **ORM:** Prisma
+* **Database Providers:** PostgreSQL (primary), SQLite (secondary)
+* **Testing Framework:** Mocha
 
 ## Data Model
 
@@ -20,7 +27,9 @@ The application's data model consists of the following entities, based on the sc
 * **Holding:** `HOLDINGS_ID` (TEXT, PK), `PORTFOLIOS_ID` (TEXT, FK referencing Portfolio), `ISIN` (TEXT, FK referencing Stock), `QUANTITY` (INT), `START_DATE` (DATE), `END_DATE` (DATE)
 * **Transaction:** `TRANSACTIONS_ID` (TEXT, PK), `HOLDINGS_ID` (TEXT, FK referencing Holding), `BUY` (BOOLEAN), `TRANSACTION_TIME` (TIMESTAMP), `AMOUNT` (INT), `PRICE` (DECIMAL), `COMMISSION` (DECIMAL), `BROKER` (TEXT)
 
-For a visual representation of the relationships between these entities, see the ER diagram: ![ER Diagram](db/model.png)
+For a visual representation of the relationships between these entities, see the ER diagram:
+  
+![ER Diagram](model.png)
 
 
 **Example Data Representation (PostgreSQL):**
@@ -322,12 +331,6 @@ Security is paramount for any application handling sensitive financial data.  Th
 Implementing these security measures will not significantly change the overall project structure.  However, it will require careful configuration of the database server, the use of secure coding practices, and the integration of security tools and libraries.  Regular security audits and penetration testing will be incorporated into the development lifecycle.
 
 
-## Technology Stack
-
-* **Language:** TypeScript
-* **ORM:** Prisma
-* **Database Providers:** PostgreSQL (primary), SQLite (secondary)
-
 ## Migration Strategy
 
 Managing database schema changes effectively is crucial for maintaining a robust and reliable database.  This section details the migration strategy for the Stock Portfolio Application.
@@ -371,6 +374,31 @@ A comprehensive testing strategy is crucial for ensuring the quality, reliabilit
 
 A dedicated directory (e.g., `db/tests`) will be created to store the test files.  The testing process will be integrated into the CI/CD pipeline.  This structured approach ensures that the database layer is thoroughly tested and that potential issues are identified early in the development process.
 
+## Recommended Utility Scripts
+
+### 1. Migration Scripts
+- Schema version control
+- Up/down migrations
+- Seed data management
+- Migration history tracking
+
+### 2. Testing Utilities
+- Database mocking utilities
+- Test data generators
+- Integration test helpers
+- Performance testing tools
+
+### 3. Administration Scripts
+- Database initialization
+- Backup/restore utilities
+- Health check scripts
+- Data validation tools
+
+### 4. Development Tools
+- Schema visualization
+- Query logging/debugging
+- Performance monitoring
+- Database connection management
 
 ## File Structure Impact
 
