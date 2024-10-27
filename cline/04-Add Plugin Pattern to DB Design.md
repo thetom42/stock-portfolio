@@ -1,7 +1,7 @@
 **User:**
 
 <task>
-Let's discuss the design options in db/design-md a bit: Ragarding the Design Patterns we should use for the db layer, option 1 is the recommended one. Could option one also be regarded as a plugin patttern? Or would the plugin pattern be something totally different? If so, should we add the plugin pattern to the list of design patterns?
+Let's discuss the design options in db/design-md a bit: Regarding the Design Patterns we should use for the db layer, option 1 is the recommended one. Could option one also be regarded as a plugin patttern? Or would the plugin pattern be something totally different? If so, should we add the plugin pattern to the list of design patterns?
 </task>
 <environment_details>
 # VSCode Visible Files
