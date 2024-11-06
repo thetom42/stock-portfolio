@@ -58,7 +58,11 @@ router.use('/quotes', quoteRoutes);
 
 // Health check endpoint
 router.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: environment.NODE_ENV
+  });
 });
 
 // Mount API routes
@@ -66,8 +70,31 @@ app.use(environment.API_PREFIX, router);
 
 // Error handling middleware
 app.use(handleAuthError);
+
+// Global error handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
+  
+  // Handle specific error types
+  if (err.name === 'ValidationError') {
+    return res.status(400).json({
+      error: {
+        message: 'Validation Error',
+        details: err.details
+      }
+    });
+  }
+
+  if (err.name === 'UnauthorizedError') {
+    return res.status(401).json({
+      error: {
+        message: 'Unauthorized',
+        details: err.message
+      }
+    });
+  }
+
+  // Default error response
   res.status(err.status || 500).json({
     error: {
       message: err.message || 'Internal Server Error',
@@ -76,12 +103,31 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
+// Handle 404 errors
+app.use((req, res) => {
+  res.status(404).json({
+    error: {
+      message: 'Not Found',
+      details: `Cannot ${req.method} ${req.url}`
+    }
+  });
+});
+
 // Start server
 if (require.main === module) {
-  app.listen(environment.PORT, () => {
+  const server = app.listen(environment.PORT, () => {
     console.log(`Server running on port ${environment.PORT}`);
     console.log(`Environment: ${environment.NODE_ENV}`);
     console.log(`API prefix: ${environment.API_PREFIX}`);
+  });
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM signal received: closing HTTP server');
+    server.close(() => {
+      console.log('HTTP server closed');
+      process.exit(0);
+    });
   });
 }
 
