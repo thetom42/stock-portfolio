@@ -2,9 +2,17 @@
 
 > This project serves as a comprehensive example of how a complete full-stack application can be developed using AI tools, specifically "Cline". While the development followed an iterative approach, each architectural layer (database, BFF, etc.) was generated as a complete unit through AI assistance. The entire development process, including AI interactions and decision-making, is documented in the task logs located in the `cline` folder. These logs are organized into logical subfolders corresponding to different layers of the application (db-design, db-implementation, bff-design, bff-implementation, etc.), providing valuable insights into AI-assisted software development practices.
 
+> Initial information provided to the AI:
+>
+> - Overview Diagram (docs/overview.jpeg)
+> - Project information (docs/overview.md)
+> - The db model as seen in the DB section (db/model.png)
+> - SQL Code for db creation (db/sql/all.sql)
+
+
 ## General Information
 
-"Stock Portfolio" is a study project aimed at developing the skills required by a modern "full-stack developer" to create enterprise applications as a member of an agile Scrum team. The project develops a web and mobile application for managing stock portfolios, using a multi-layer architecture with frontend, middleware (backend-for-frontend), and database backend.
+Initial purpose of the "Stock Portfolio" was a study project aimed at developing the skills required by a modern "full-stack developer" to create enterprise applications as a member of an agile Scrum team. The project develops a web and mobile application for managing stock portfolios, using a multi-layer architecture with frontend, middleware (backend-for-frontend), and database backend.
 
 ![Overview Diagram](docs/overview.jpeg)
 
