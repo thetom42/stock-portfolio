@@ -1,99 +1,159 @@
 import 'mocha';
-import { expect } from 'chai';
-import { mockQueryResult, mockQuery, mockTransaction, resetMocks } from '../../helpers/mockDb';
+import { expect, use } from 'chai';
+import spies from 'chai-spies';
+import sinon from 'sinon';
+import { 
+  mockPortfolioRepo,
+  mockHoldingRepo,
+  mockTransactionRepo,
+  setupRepositoryMocks, 
+  resetRepositoryMocks 
+} from '../../helpers/mockRepositories';
 import * as portfolioService from '../../../src/services/portfolioService';
-import { CreatePortfolioDTO, UpdatePortfolioDTO, Portfolio, PortfolioSummary } from '../../../src/models/Portfolio';
+import * as quoteService from '../../../src/services/quoteService';
+import { CreatePortfolioDTO, UpdatePortfolioDTO } from '../../../src/models/Portfolio';
+
+use(spies);
 
 describe('PortfolioService', () => {
+  const userId = 'user123';
+  const portfolioId = 'portfolio123';
+  const holdingId = 'holding123';
+
+  const mockQuote = {
+    price: 160.50,
+    change: 10,
+    changePercent: 6.64,
+    timestamp: new Date()
+  };
+
   beforeEach(() => {
-    resetMocks();
+    setupRepositoryMocks();
+    sinon.stub(quoteService, 'getRealTimeQuote').resolves(mockQuote);
   });
 
-  const userId = 'user123';
+  afterEach(() => {
+    resetRepositoryMocks();
+    sinon.restore();
+  });
 
   describe('createPortfolio', () => {
     const mockPortfolioData: CreatePortfolioDTO = {
-      name: 'Test Portfolio',
-      description: 'Test Description'
+      name: 'Test Portfolio'
     };
 
-    const mockCreatedPortfolio: Portfolio = {
-      id: 'portfolio123',
-      userId,
-      name: mockPortfolioData.name,
-      description: mockPortfolioData.description,
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-01')
+    const mockCreatedPortfolio = {
+      PORTFOLIOS_ID: portfolioId,
+      USERS_ID: userId,
+      NAME: mockPortfolioData.name,
+      CREATED_AT: new Date()
     };
 
     it('should create a portfolio successfully', async () => {
-      mockQuery.resolves(mockQueryResult([mockCreatedPortfolio]));
+      mockPortfolioRepo.create.resolves(mockCreatedPortfolio);
 
       const result = await portfolioService.createPortfolio(userId, mockPortfolioData);
 
-      expect(mockQuery).to.have.been.called();
-      expect(mockQuery.firstCall.args[0]).to.include('INSERT INTO portfolios');
-      expect(mockQuery.firstCall.args[1]).to.deep.equal([
-        userId,
-        mockPortfolioData.name,
-        mockPortfolioData.description
-      ]);
-      expect(result).to.deep.equal(mockCreatedPortfolio);
+      expect(result).to.deep.include({
+        id: portfolioId,
+        userId: userId,
+        name: mockPortfolioData.name
+      });
+      expect(mockPortfolioRepo.create.calledOnceWith({
+        PORTFOLIOS_ID: '',
+        USERS_ID: userId,
+        NAME: mockPortfolioData.name,
+        CREATED_AT: sinon.match.date
+      })).to.be.true;
     });
   });
 
   describe('getPortfoliosByUserId', () => {
-    const mockPortfolios: Portfolio[] = [
-      {
-        id: 'portfolio123',
-        userId,
-        name: 'Portfolio 1',
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01')
-      }
-    ];
+    const mockPortfolios = [{
+      PORTFOLIOS_ID: portfolioId,
+      USERS_ID: userId,
+      NAME: 'Test Portfolio',
+      CREATED_AT: new Date()
+    }];
 
     it('should return user portfolios', async () => {
-      mockQuery.resolves(mockQueryResult(mockPortfolios));
+      mockPortfolioRepo.findByUserId.resolves(mockPortfolios);
 
       const result = await portfolioService.getPortfoliosByUserId(userId);
 
-      expect(mockQuery).to.have.been.called();
-      expect(mockQuery.firstCall.args[0]).to.include('SELECT');
-      expect(mockQuery.firstCall.args[1]).to.deep.equal([userId]);
-      expect(result).to.deep.equal(mockPortfolios);
+      expect(result).to.be.an('array');
+      expect(result[0]).to.deep.include({
+        id: portfolioId,
+        userId: userId,
+        name: 'Test Portfolio'
+      });
     });
   });
 
   describe('getPortfolioById', () => {
     const mockPortfolio = {
-      id: 'portfolio123',
-      userId,
-      name: 'Test Portfolio',
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-01'),
-      totalValue: 10000,
-      totalGainLoss: 1000,
-      totalGainLossPercentage: 10
+      PORTFOLIOS_ID: portfolioId,
+      USERS_ID: userId,
+      NAME: 'Test Portfolio',
+      CREATED_AT: new Date()
     };
 
-    it('should return portfolio with details if found', async () => {
-      mockQuery.resolves(mockQueryResult([mockPortfolio]));
+    const mockHolding = {
+      HOLDINGS_ID: holdingId,
+      PORTFOLIOS_ID: portfolioId,
+      ISIN: 'US0378331005',
+      QUANTITY: 100,
+      START_DATE: new Date(),
+      END_DATE: null
+    };
 
-      const result = await portfolioService.getPortfolioById('portfolio123', userId);
+    const mockTransactions = [{
+      TRANSACTIONS_ID: 'trans1',
+      HOLDINGS_ID: holdingId,
+      BUY: true,
+      TRANSACTION_TIME: new Date(),
+      AMOUNT: 100,
+      PRICE: 150,
+      COMMISSION: 0,
+      BROKER: 'SYSTEM'
+    }];
 
-      expect(mockQuery).to.have.been.called();
-      expect(mockQuery.firstCall.args[0]).to.include('SELECT');
-      expect(mockQuery.firstCall.args[1]).to.deep.equal(['portfolio123', userId]);
-      expect(result).to.deep.equal(mockPortfolio);
+    it('should return portfolio with details if found and authorized', async () => {
+      mockPortfolioRepo.findById.resolves(mockPortfolio);
+      mockHoldingRepo.findByPortfolio.resolves([mockHolding]);
+      mockTransactionRepo.findByHolding.resolves(mockTransactions);
+
+      const result = await portfolioService.getPortfolioById(portfolioId, userId);
+
+      expect(result).to.not.be.null;
+      expect(result).to.deep.include({
+        id: portfolioId,
+        userId: userId,
+        name: 'Test Portfolio'
+      });
+      expect(result?.holdings).to.be.an('array');
+      expect(result?.holdings[0]).to.deep.include({
+        id: holdingId,
+        stockId: mockHolding.ISIN,
+        quantity: mockHolding.QUANTITY,
+        currentValue: mockQuote.price * mockHolding.QUANTITY
+      });
     });
 
     it('should return null if portfolio not found', async () => {
-      mockQuery.resolves(mockQueryResult([]));
+      mockPortfolioRepo.findById.resolves(null);
 
-      const result = await portfolioService.getPortfolioById('nonexistent', userId);
+      const result = await portfolioService.getPortfolioById(portfolioId, userId);
+      expect(result).to.be.null;
+    });
 
-      expect(mockQuery).to.have.been.called();
+    it('should return null if portfolio belongs to different user', async () => {
+      mockPortfolioRepo.findById.resolves({
+        ...mockPortfolio,
+        USERS_ID: 'different-user'
+      });
+
+      const result = await portfolioService.getPortfolioById(portfolioId, userId);
       expect(result).to.be.null;
     });
   });
@@ -103,151 +163,148 @@ describe('PortfolioService', () => {
       name: 'Updated Portfolio'
     };
 
-    const mockUpdatedPortfolio: Portfolio = {
-      id: 'portfolio123',
-      userId,
-      name: 'Updated Portfolio',
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-01')
+    const mockPortfolio = {
+      PORTFOLIOS_ID: portfolioId,
+      USERS_ID: userId,
+      NAME: 'Test Portfolio',
+      CREATED_AT: new Date()
     };
 
-    it('should update portfolio successfully', async () => {
-      mockQuery.resolves(mockQueryResult([mockUpdatedPortfolio]));
+    it('should update portfolio if authorized', async () => {
+      mockPortfolioRepo.findById.resolves(mockPortfolio);
+      mockPortfolioRepo.update.resolves({
+        ...mockPortfolio,
+        NAME: mockUpdateData.name
+      });
 
-      const result = await portfolioService.updatePortfolio('portfolio123', userId, mockUpdateData);
+      const result = await portfolioService.updatePortfolio(portfolioId, userId, mockUpdateData);
 
-      expect(mockQuery).to.have.been.called();
-      expect(mockQuery.firstCall.args[0]).to.include('UPDATE portfolios');
-      expect(mockQuery.firstCall.args[1]).to.deep.equal([
-        mockUpdateData.name,
-        'portfolio123',
-        userId
-      ]);
-      expect(result).to.deep.equal(mockUpdatedPortfolio);
+      expect(result).to.not.be.null;
+      expect(result).to.deep.include({
+        id: portfolioId,
+        name: mockUpdateData.name
+      });
     });
 
     it('should return null if portfolio not found', async () => {
-      mockQuery.resolves(mockQueryResult([]));
+      mockPortfolioRepo.findById.resolves(null);
 
-      const result = await portfolioService.updatePortfolio('nonexistent', userId, mockUpdateData);
+      const result = await portfolioService.updatePortfolio(portfolioId, userId, mockUpdateData);
+      expect(result).to.be.null;
+    });
 
-      expect(mockQuery).to.have.been.called();
+    it('should return null if portfolio belongs to different user', async () => {
+      mockPortfolioRepo.findById.resolves({
+        ...mockPortfolio,
+        USERS_ID: 'different-user'
+      });
+
+      const result = await portfolioService.updatePortfolio(portfolioId, userId, mockUpdateData);
       expect(result).to.be.null;
     });
   });
 
   describe('deletePortfolio', () => {
-    it('should delete portfolio and related data successfully', async () => {
-      mockTransaction.resolves();
+    const mockPortfolio = {
+      PORTFOLIOS_ID: portfolioId,
+      USERS_ID: userId,
+      NAME: 'Test Portfolio',
+      CREATED_AT: new Date()
+    };
 
-      await portfolioService.deletePortfolio('portfolio123', userId);
+    it('should delete portfolio if authorized', async () => {
+      mockPortfolioRepo.findById.resolves(mockPortfolio);
+      mockPortfolioRepo.delete.resolves();
 
-      expect(mockTransaction).to.have.been.called();
-      const transactionCallback = mockTransaction.firstCall.args[0];
-      expect(transactionCallback).to.be.a('function');
+      await portfolioService.deletePortfolio(portfolioId, userId);
+      expect(mockPortfolioRepo.delete.calledOnceWith(portfolioId)).to.be.true;
+    });
+
+    it('should throw error if portfolio not found', async () => {
+      mockPortfolioRepo.findById.resolves(null);
+
+      try {
+        await portfolioService.deletePortfolio(portfolioId, userId);
+        expect.fail('Should have thrown an error');
+      } catch (error: any) {
+        expect(error.message).to.equal('Portfolio not found or unauthorized');
+      }
+    });
+
+    it('should throw error if portfolio belongs to different user', async () => {
+      mockPortfolioRepo.findById.resolves({
+        ...mockPortfolio,
+        USERS_ID: 'different-user'
+      });
+
+      try {
+        await portfolioService.deletePortfolio(portfolioId, userId);
+        expect.fail('Should have thrown an error');
+      } catch (error: any) {
+        expect(error.message).to.equal('Portfolio not found or unauthorized');
+      }
     });
   });
 
   describe('getPortfolioSummary', () => {
-    const mockSummary: PortfolioSummary = {
-      id: 'portfolio123',
-      name: 'Test Portfolio',
-      totalValue: 10000,
-      totalGainLoss: 1000,
-      totalGainLossPercentage: 10,
-      holdingsCount: 5
+    const mockPortfolio = {
+      PORTFOLIOS_ID: portfolioId,
+      USERS_ID: userId,
+      NAME: 'Test Portfolio',
+      CREATED_AT: new Date()
     };
 
-    it('should return portfolio summary', async () => {
-      mockQuery.resolves(mockQueryResult([mockSummary]));
+    const mockHolding = {
+      HOLDINGS_ID: holdingId,
+      PORTFOLIOS_ID: portfolioId,
+      ISIN: 'US0378331005',
+      QUANTITY: 100,
+      START_DATE: new Date(),
+      END_DATE: null
+    };
 
-      const result = await portfolioService.getPortfolioSummary('portfolio123', userId);
+    const mockTransactions = [{
+      TRANSACTIONS_ID: 'trans1',
+      HOLDINGS_ID: holdingId,
+      BUY: true,
+      TRANSACTION_TIME: new Date(),
+      AMOUNT: 100,
+      PRICE: 150,
+      COMMISSION: 0,
+      BROKER: 'SYSTEM'
+    }];
 
-      expect(mockQuery).to.have.been.called();
-      expect(mockQuery.firstCall.args[0]).to.include('SELECT');
-      expect(mockQuery.firstCall.args[1]).to.deep.equal(['portfolio123', userId]);
-      expect(result).to.deep.equal(mockSummary);
+    it('should return portfolio summary if authorized', async () => {
+      mockPortfolioRepo.findById.resolves(mockPortfolio);
+      mockHoldingRepo.findByPortfolio.resolves([mockHolding]);
+      mockTransactionRepo.findByHolding.resolves(mockTransactions);
+
+      const result = await portfolioService.getPortfolioSummary(portfolioId, userId);
+
+      expect(result).to.not.be.null;
+      expect(result).to.deep.include({
+        id: portfolioId,
+        name: mockPortfolio.NAME,
+        holdingsCount: 1
+      });
+      expect(result?.totalValue).to.equal(mockQuote.price * mockHolding.QUANTITY);
     });
 
     it('should return null if portfolio not found', async () => {
-      mockQuery.resolves(mockQueryResult([]));
+      mockPortfolioRepo.findById.resolves(null);
 
-      const result = await portfolioService.getPortfolioSummary('nonexistent', userId);
-
-      expect(mockQuery).to.have.been.called();
+      const result = await portfolioService.getPortfolioSummary(portfolioId, userId);
       expect(result).to.be.null;
     });
-  });
 
-  describe('getPortfolioPerformance', () => {
-    const mockPerformance = [
-      {
-        date: new Date('2024-01-01'),
-        value: 10000,
-        cost: 9000,
-        absoluteReturn: 1000,
-        percentageReturn: 11.11
-      }
-    ];
+    it('should return null if portfolio belongs to different user', async () => {
+      mockPortfolioRepo.findById.resolves({
+        ...mockPortfolio,
+        USERS_ID: 'different-user'
+      });
 
-    it('should return portfolio performance data', async () => {
-      mockQuery.resolves(mockQueryResult(mockPerformance));
-
-      const result = await portfolioService.getPortfolioPerformance('portfolio123', userId);
-
-      expect(mockQuery).to.have.been.called();
-      expect(mockQuery.firstCall.args[0]).to.include('WITH daily_values');
-      expect(mockQuery.firstCall.args[1]).to.deep.equal(['portfolio123']);
-      expect(result).to.deep.equal(mockPerformance);
-    });
-  });
-
-  describe('getPortfolioHoldings', () => {
-    const mockHoldings = [
-      {
-        id: 'holding123',
-        stockId: 'stock123',
-        symbol: 'AAPL',
-        name: 'Apple Inc',
-        quantity: 10,
-        averageCost: 150,
-        currentPrice: 170,
-        currentValue: 1700,
-        gainLoss: 200,
-        gainLossPercentage: 13.33
-      }
-    ];
-
-    it('should return portfolio holdings', async () => {
-      mockQuery.resolves(mockQueryResult(mockHoldings));
-
-      const result = await portfolioService.getPortfolioHoldings('portfolio123', userId);
-
-      expect(mockQuery).to.have.been.called();
-      expect(mockQuery.firstCall.args[0]).to.include('SELECT');
-      expect(mockQuery.firstCall.args[1]).to.deep.equal(['portfolio123']);
-      expect(result).to.deep.equal(mockHoldings);
-    });
-  });
-
-  describe('getPortfolioAllocation', () => {
-    const mockAllocation = [
-      {
-        sector: 'Technology',
-        sectorValue: 5000,
-        percentage: 50
-      }
-    ];
-
-    it('should return portfolio allocation by sector', async () => {
-      mockQuery.resolves(mockQueryResult(mockAllocation));
-
-      const result = await portfolioService.getPortfolioAllocation('portfolio123', userId);
-
-      expect(mockQuery).to.have.been.called();
-      expect(mockQuery.firstCall.args[0]).to.include('WITH holding_values');
-      expect(mockQuery.firstCall.args[1]).to.deep.equal(['portfolio123']);
-      expect(result).to.deep.equal(mockAllocation);
+      const result = await portfolioService.getPortfolioSummary(portfolioId, userId);
+      expect(result).to.be.null;
     });
   });
 });

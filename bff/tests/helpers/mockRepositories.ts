@@ -31,11 +31,39 @@ export const mockTransactionRepo = {
   calculateHoldingCostBasis: sinon.stub()
 };
 
+export const mockQuoteRepo = {
+  create: sinon.stub(),
+  findLatestByStock: sinon.stub(),
+  findByStockAndTimeRange: sinon.stub()
+};
+
+export const mockStockRepo = {
+  findByISIN: sinon.stub(),
+  findBySymbol: sinon.stub(),
+  findByWKN: sinon.stub(),
+  findAll: sinon.stub(),
+  findByCategory: sinon.stub(),
+  create: sinon.stub(),
+  update: sinon.stub(),
+  delete: sinon.stub()
+};
+
+export const mockUserRepo = {
+  create: sinon.stub(),
+  findById: sinon.stub(),
+  findByEmail: sinon.stub(),
+  update: sinon.stub(),
+  delete: sinon.stub()
+};
+
 // Type assertion to match repository interfaces
 export const setupRepositoryMocks = () => {
   sinon.stub(database, 'getHoldingRepository').returns(mockHoldingRepo as any);
   sinon.stub(database, 'getPortfolioRepository').returns(mockPortfolioRepo as any);
   sinon.stub(database, 'getTransactionRepository').returns(mockTransactionRepo as any);
+  sinon.stub(database, 'getQuoteRepository').returns(mockQuoteRepo as any);
+  sinon.stub(database, 'getStockRepository').returns(mockStockRepo as any);
+  sinon.stub(database, 'getUserRepository').returns(mockUserRepo as any);
 };
 
 export const resetRepositoryMocks = () => {
@@ -53,6 +81,24 @@ export const resetRepositoryMocks = () => {
   });
 
   Object.values(mockTransactionRepo).forEach(stub => {
+    if (typeof stub === 'function' && 'reset' in stub) {
+      (stub as sinon.SinonStub).reset();
+    }
+  });
+
+  Object.values(mockQuoteRepo).forEach(stub => {
+    if (typeof stub === 'function' && 'reset' in stub) {
+      (stub as sinon.SinonStub).reset();
+    }
+  });
+
+  Object.values(mockStockRepo).forEach(stub => {
+    if (typeof stub === 'function' && 'reset' in stub) {
+      (stub as sinon.SinonStub).reset();
+    }
+  });
+
+  Object.values(mockUserRepo).forEach(stub => {
     if (typeof stub === 'function' && 'reset' in stub) {
       (stub as sinon.SinonStub).reset();
     }

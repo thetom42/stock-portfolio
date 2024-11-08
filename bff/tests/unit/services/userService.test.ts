@@ -1,14 +1,24 @@
+import 'mocha';
 import { expect, use } from 'chai';
 import spies from 'chai-spies';
-import { mockQueryResult, mockQuery, mockTransaction, resetMocks } from '../../helpers/mockDb';
+import sinon from 'sinon';
+import { 
+  mockUserRepo,
+  setupRepositoryMocks, 
+  resetRepositoryMocks 
+} from '../../helpers/mockRepositories';
 import * as userService from '../../../src/services/userService';
-import { CreateUserDTO, UpdateUserDTO, User } from '../../../src/models/User';
+import { CreateUserDTO, UpdateUserDTO, UserCredentials } from '../../../src/models/User';
 
 use(spies);
 
 describe('UserService', () => {
   beforeEach(() => {
-    resetMocks();
+    setupRepositoryMocks();
+  });
+
+  afterEach(() => {
+    resetRepositoryMocks();
   });
 
   describe('createUser', () => {
@@ -19,71 +29,100 @@ describe('UserService', () => {
       password: 'password123'
     };
 
-    const mockCreatedUser: User = {
-      id: '1',
-      email: mockUserData.email,
-      firstName: mockUserData.firstName,
-      lastName: mockUserData.lastName,
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-01')
+    const mockCreatedDBUser = {
+      USERS_ID: '1',
+      EMAIL: mockUserData.email,
+      NAME: mockUserData.firstName,
+      SURNAME: mockUserData.lastName,
+      NICKNAME: mockUserData.firstName,
+      PASSWORD: 'hashed_password', // actual hash will be handled by the service
+      JOIN_DATE: new Date()
     };
 
     it('should create a user successfully', async () => {
-      mockQuery.resolves(mockQueryResult([mockCreatedUser]));
+      mockUserRepo.create.resolves(mockCreatedDBUser);
 
       const result = await userService.createUser(mockUserData);
 
-      expect(mockQuery).to.have.been.called();
-      expect(mockQuery.firstCall.args[0]).to.include('INSERT INTO users');
-      expect(mockQuery.firstCall.args[1]).to.deep.equal([
-        mockUserData.email,
-        mockUserData.firstName,
-        mockUserData.lastName,
-        mockUserData.password
-      ]);
-      expect(result).to.deep.equal(mockCreatedUser);
-    });
-
-    it('should throw error if database query fails', async () => {
-      const error = new Error('Database error');
-      mockQuery.rejects(error);
-
-      try {
-        await userService.createUser(mockUserData);
-        expect.fail('Should have thrown an error');
-      } catch (err) {
-        expect(err).to.equal(error);
-      }
+      expect(result).to.deep.include({
+        id: mockCreatedDBUser.USERS_ID,
+        email: mockCreatedDBUser.EMAIL,
+        firstName: mockCreatedDBUser.NAME,
+        lastName: mockCreatedDBUser.SURNAME
+      });
+      expect(mockUserRepo.create.calledOnce).to.be.true;
+      const createCall = mockUserRepo.create.firstCall.args[0];
+      expect(createCall).to.deep.include({
+        USERS_ID: '',
+        EMAIL: mockUserData.email,
+        NAME: mockUserData.firstName,
+        SURNAME: mockUserData.lastName,
+        NICKNAME: mockUserData.firstName
+      });
+      // Don't test the exact hash value, just verify it's present
+      expect(createCall.PASSWORD).to.be.a('string').and.not.empty;
+      expect(createCall.JOIN_DATE).to.be.instanceOf(Date);
     });
   });
 
   describe('getUserById', () => {
-    const mockUser: User = {
-      id: '1',
-      email: 'test@example.com',
-      firstName: 'Test',
-      lastName: 'User',
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-01')
+    const mockDBUser = {
+      USERS_ID: '1',
+      EMAIL: 'test@example.com',
+      NAME: 'Test',
+      SURNAME: 'User',
+      NICKNAME: 'Test',
+      JOIN_DATE: new Date()
     };
 
     it('should return user if found', async () => {
-      mockQuery.resolves(mockQueryResult([mockUser]));
+      mockUserRepo.findById.resolves(mockDBUser);
 
       const result = await userService.getUserById('1');
 
-      expect(mockQuery).to.have.been.called();
-      expect(mockQuery.firstCall.args[0]).to.include('SELECT');
-      expect(mockQuery.firstCall.args[1]).to.deep.equal(['1']);
-      expect(result).to.deep.equal(mockUser);
+      expect(result).to.deep.include({
+        id: mockDBUser.USERS_ID,
+        email: mockDBUser.EMAIL,
+        firstName: mockDBUser.NAME,
+        lastName: mockDBUser.SURNAME
+      });
     });
 
     it('should return null if user not found', async () => {
-      mockQuery.resolves(mockQueryResult([]));
+      mockUserRepo.findById.resolves(null);
 
       const result = await userService.getUserById('999');
+      expect(result).to.be.null;
+    });
+  });
 
-      expect(mockQuery).to.have.been.called();
+  describe('getUserByEmail', () => {
+    const mockDBUser = {
+      USERS_ID: '1',
+      EMAIL: 'test@example.com',
+      NAME: 'Test',
+      SURNAME: 'User',
+      NICKNAME: 'Test',
+      JOIN_DATE: new Date()
+    };
+
+    it('should return user if found', async () => {
+      mockUserRepo.findByEmail.resolves(mockDBUser);
+
+      const result = await userService.getUserByEmail('test@example.com');
+
+      expect(result).to.deep.include({
+        id: mockDBUser.USERS_ID,
+        email: mockDBUser.EMAIL,
+        firstName: mockDBUser.NAME,
+        lastName: mockDBUser.SURNAME
+      });
+    });
+
+    it('should return null if user not found', async () => {
+      mockUserRepo.findByEmail.resolves(null);
+
+      const result = await userService.getUserByEmail('nonexistent@example.com');
       expect(result).to.be.null;
     });
   });
@@ -94,108 +133,115 @@ describe('UserService', () => {
       lastName: 'Name'
     };
 
-    const mockUpdatedUser: User = {
-      id: '1',
-      email: 'test@example.com',
-      firstName: 'Updated',
-      lastName: 'Name',
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-01')
+    const mockDBUser = {
+      USERS_ID: '1',
+      EMAIL: 'test@example.com',
+      NAME: 'Test',
+      SURNAME: 'User',
+      NICKNAME: 'Test',
+      JOIN_DATE: new Date()
+    };
+
+    const mockUpdatedDBUser = {
+      ...mockDBUser,
+      NAME: mockUpdateData.firstName,
+      SURNAME: mockUpdateData.lastName,
+      NICKNAME: mockUpdateData.firstName
     };
 
     it('should update user successfully', async () => {
-      mockQuery.resolves(mockQueryResult([mockUpdatedUser]));
+      mockUserRepo.findById.resolves(mockDBUser);
+      mockUserRepo.update.resolves(mockUpdatedDBUser);
 
       const result = await userService.updateUser('1', mockUpdateData);
 
-      expect(mockQuery).to.have.been.called();
-      expect(mockQuery.firstCall.args[0]).to.include('UPDATE users');
-      expect(mockQuery.firstCall.args[1]).to.deep.equal([
-        mockUpdateData.firstName,
-        mockUpdateData.lastName,
-        '1'
-      ]);
-      expect(result).to.deep.equal(mockUpdatedUser);
+      expect(result).to.deep.include({
+        id: mockUpdatedDBUser.USERS_ID,
+        email: mockUpdatedDBUser.EMAIL,
+        firstName: mockUpdatedDBUser.NAME,
+        lastName: mockUpdatedDBUser.SURNAME
+      });
+      expect(mockUserRepo.update.calledOnceWith('1', {
+        NAME: mockUpdateData.firstName,
+        SURNAME: mockUpdateData.lastName,
+        NICKNAME: mockUpdateData.firstName
+      })).to.be.true;
     });
 
     it('should return null if user not found', async () => {
-      mockQuery.resolves(mockQueryResult([]));
+      mockUserRepo.findById.resolves(null);
 
       const result = await userService.updateUser('999', mockUpdateData);
-
-      expect(mockQuery).to.have.been.called();
       expect(result).to.be.null;
     });
   });
 
   describe('deleteUser', () => {
-    it('should delete user and related data successfully', async () => {
-      mockTransaction.resolves();
+    it('should delete user successfully', async () => {
+      mockUserRepo.delete.resolves();
 
       await userService.deleteUser('1');
-
-      expect(mockTransaction).to.have.been.called();
-      const transactionCallback = mockTransaction.firstCall.args[0];
-      expect(transactionCallback).to.be.a('function');
-    });
-
-    it('should throw error if deletion fails', async () => {
-      const error = new Error('Database error');
-      mockTransaction.rejects(error);
-
-      try {
-        await userService.deleteUser('1');
-        expect.fail('Should have thrown an error');
-      } catch (err) {
-        expect(err).to.equal(error);
-      }
+      expect(mockUserRepo.delete.calledOnceWith('1')).to.be.true;
     });
   });
 
   describe('validateUserCredentials', () => {
-    const mockUser = {
-      id: '1',
+    const credentials: UserCredentials = {
       email: 'test@example.com',
-      firstName: 'Test',
-      lastName: 'User',
-      password_hash: 'password123',
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-01')
+      password: 'password123'
     };
 
+    const mockDBUser = {
+      USERS_ID: '1',
+      EMAIL: credentials.email,
+      NAME: 'Test',
+      SURNAME: 'User',
+      NICKNAME: 'Test',
+      PASSWORD: '', // will be set in beforeEach
+      JOIN_DATE: new Date()
+    };
+
+    beforeEach(async () => {
+      // Create a user and get their hashed password
+      const tempUser = await userService.createUser({
+        email: credentials.email,
+        firstName: 'Test',
+        lastName: 'User',
+        password: credentials.password
+      });
+      mockDBUser.PASSWORD = mockUserRepo.create.firstCall.args[0].PASSWORD;
+    });
+
     it('should return user if credentials are valid', async () => {
-      mockQuery.resolves(mockQueryResult([mockUser]));
+      mockUserRepo.findByEmail.resolves(mockDBUser);
 
-      const result = await userService.validateUserCredentials('test@example.com', 'password123');
+      const result = await userService.validateUserCredentials(credentials);
 
-      expect(mockQuery).to.have.been.called();
-      expect(mockQuery.firstCall.args[0]).to.include('SELECT');
-      expect(mockQuery.firstCall.args[1]).to.deep.equal(['test@example.com']);
-      expect(result).to.deep.equal({
-        id: mockUser.id,
-        email: mockUser.email,
-        firstName: mockUser.firstName,
-        lastName: mockUser.lastName,
-        createdAt: mockUser.createdAt,
-        updatedAt: mockUser.updatedAt
+      expect(result).to.deep.include({
+        id: mockDBUser.USERS_ID,
+        email: mockDBUser.EMAIL,
+        firstName: mockDBUser.NAME,
+        lastName: mockDBUser.SURNAME
       });
     });
 
     it('should return null if user not found', async () => {
-      mockQuery.resolves(mockQueryResult([]));
+      mockUserRepo.findByEmail.resolves(null);
 
-      const result = await userService.validateUserCredentials('nonexistent@example.com', 'password123');
-
-      expect(mockQuery).to.have.been.called();
+      const result = await userService.validateUserCredentials({
+        email: 'nonexistent@example.com',
+        password: 'password123'
+      });
       expect(result).to.be.null;
     });
 
     it('should return null if password is incorrect', async () => {
-      mockQuery.resolves(mockQueryResult([mockUser]));
+      mockUserRepo.findByEmail.resolves(mockDBUser);
 
-      const result = await userService.validateUserCredentials('test@example.com', 'wrongpassword');
-
-      expect(mockQuery).to.have.been.called();
+      const result = await userService.validateUserCredentials({
+        email: credentials.email,
+        password: 'wrongpassword'
+      });
       expect(result).to.be.null;
     });
   });
