@@ -1,114 +1,107 @@
-import { QueryResult } from 'pg';
-import { User, CreateUserDTO, UpdateUserDTO } from '../models/User';
-import { query, transaction } from '../config/database';
+import { User, CreateUserDTO, UpdateUserDTO, UserCredentials } from '../models/User';
+import { getUserRepository } from '../utils/database';
+import { createHash } from 'crypto';
+
+// Helper function to map DB User to BFF User
+const mapDBUserToBFF = (dbUser: any): User => ({
+  id: dbUser.USERS_ID,
+  email: dbUser.EMAIL,
+  firstName: dbUser.NAME,
+  lastName: dbUser.SURNAME,
+  createdAt: dbUser.JOIN_DATE,
+  updatedAt: dbUser.JOIN_DATE // DB doesn't have updated_at, using JOIN_DATE
+});
+
+// Helper function to hash password
+const hashPassword = (password: string): string => {
+  return createHash('sha256').update(password).digest('hex');
+};
 
 export const createUser = async (userData: CreateUserDTO): Promise<User> => {
-  const result = await query<User>(
-    `INSERT INTO users (email, first_name, last_name, password_hash)
-     VALUES ($1, $2, $3, $4)
-     RETURNING id, email, first_name, last_name, created_at, updated_at`,
-    [userData.email, userData.firstName, userData.lastName, userData.password] // Note: In real implementation, password should be hashed
-  );
+  const userRepo = getUserRepository();
 
-  return result.rows[0];
+  // Hash password
+  const hashedPassword = hashPassword(userData.password);
+
+  const dbUser = await userRepo.create({
+    USERS_ID: '', // Will be generated
+    EMAIL: userData.email,
+    NAME: userData.firstName,
+    SURNAME: userData.lastName,
+    NICKNAME: userData.firstName, // Using firstName as nickname
+    PASSWORD: hashedPassword,
+    JOIN_DATE: new Date()
+  });
+
+  return mapDBUserToBFF(dbUser);
 };
 
 export const getUserById = async (userId: string): Promise<User | null> => {
-  const result = await query<User>(
-    `SELECT id, email, first_name, last_name, created_at, updated_at
-     FROM users
-     WHERE id = $1`,
-    [userId]
-  );
+  const userRepo = getUserRepository();
+  const user = await userRepo.findById(userId);
+  
+  if (!user) {
+    return null;
+  }
 
-  return result.rows[0] || null;
+  return mapDBUserToBFF(user);
 };
 
 export const getUserByEmail = async (email: string): Promise<User | null> => {
-  const result = await query<User>(
-    `SELECT id, email, first_name, last_name, created_at, updated_at
-     FROM users
-     WHERE email = $1`,
-    [email]
-  );
+  const userRepo = getUserRepository();
+  const user = await userRepo.findByEmail(email);
+  
+  if (!user) {
+    return null;
+  }
 
-  return result.rows[0] || null;
+  return mapDBUserToBFF(user);
 };
 
 export const updateUser = async (
   userId: string,
   updateData: UpdateUserDTO
 ): Promise<User | null> => {
-  // Build dynamic update query based on provided fields
-  const updates: string[] = [];
-  const values: any[] = [];
-  let paramCount = 1;
-
-  if (updateData.email !== undefined) {
-    updates.push(`email = $${paramCount}`);
-    values.push(updateData.email);
-    paramCount++;
+  const userRepo = getUserRepository();
+  
+  // First check if user exists
+  const existingUser = await userRepo.findById(userId);
+  if (!existingUser) {
+    return null;
   }
 
-  if (updateData.firstName !== undefined) {
-    updates.push(`first_name = $${paramCount}`);
-    values.push(updateData.firstName);
-    paramCount++;
-  }
+  // Build update data
+  const updateFields: any = {
+    ...(updateData.email && { EMAIL: updateData.email }),
+    ...(updateData.firstName && { NAME: updateData.firstName }),
+    ...(updateData.lastName && { SURNAME: updateData.lastName }),
+    ...(updateData.firstName && { NICKNAME: updateData.firstName }) // Update nickname if firstName changes
+  };
 
-  if (updateData.lastName !== undefined) {
-    updates.push(`last_name = $${paramCount}`);
-    values.push(updateData.lastName);
-    paramCount++;
-  }
-
-  if (updates.length === 0) {
-    return getUserById(userId);
-  }
-
-  values.push(userId);
-  const result = await query<User>(
-    `UPDATE users
-     SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP
-     WHERE id = $${paramCount}
-     RETURNING id, email, first_name, last_name, created_at, updated_at`,
-    values
-  );
-
-  return result.rows[0] || null;
+  const updatedUser = await userRepo.update(userId, updateFields);
+  return mapDBUserToBFF(updatedUser);
 };
 
 export const deleteUser = async (userId: string): Promise<void> => {
-  await transaction(async (client) => {
-    // Delete all user-related data
-    await client.query('DELETE FROM transactions WHERE holding_id IN (SELECT id FROM holdings WHERE portfolio_id IN (SELECT id FROM portfolios WHERE user_id = $1))', [userId]);
-    await client.query('DELETE FROM holdings WHERE portfolio_id IN (SELECT id FROM portfolios WHERE user_id = $1)', [userId]);
-    await client.query('DELETE FROM portfolios WHERE user_id = $1', [userId]);
-    await client.query('DELETE FROM users WHERE id = $1', [userId]);
-  });
+  const userRepo = getUserRepository();
+  await userRepo.delete(userId);
 };
 
 export const validateUserCredentials = async (
-  email: string,
-  password: string
+  credentials: UserCredentials
 ): Promise<User | null> => {
-  const result = await query<User & { password_hash: string }>(
-    `SELECT id, email, first_name, last_name, password_hash, created_at, updated_at
-     FROM users
-     WHERE email = $1`,
-    [email]
-  );
+  const userRepo = getUserRepository();
+  const user = await userRepo.findByEmail(credentials.email);
 
-  const user = result.rows[0];
   if (!user) {
     return null;
   }
 
-  // Note: In real implementation, should use proper password comparison
-  if (password !== user.password_hash) {
+  // Verify password
+  const hashedPassword = hashPassword(credentials.password);
+  if (hashedPassword !== user.PASSWORD) {
     return null;
   }
 
-  const { password_hash, ...userWithoutPassword } = user;
-  return userWithoutPassword;
+  return mapDBUserToBFF(user);
 };

@@ -28,6 +28,13 @@ interface QuoteOptions {
   range: string;
 }
 
+interface YahooFinanceSearchResult {
+  symbol: string;
+  name: string;
+  exchange: string;
+  type: string;
+}
+
 class YahooFinanceService {
   private readonly apiKey: string;
   private readonly apiHost: string;
@@ -111,7 +118,7 @@ class YahooFinanceService {
     }));
   }
 
-  async searchStocks(query: string) {
+  async searchStocks(query: string): Promise<YahooFinanceSearchResult[]> {
     const data = await this.makeRequest('/stock/v1/search', {
       q: query
     });
@@ -135,4 +142,4 @@ export function getYahooFinanceService(): YahooFinanceService {
   return yahooFinanceService;
 }
 
-export type { YahooFinanceQuote, HistoricalQuote, QuoteOptions };
+export type { YahooFinanceQuote, HistoricalQuote, QuoteOptions, YahooFinanceSearchResult };

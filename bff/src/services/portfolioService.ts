@@ -1,61 +1,108 @@
-import { QueryResult } from 'pg';
-import { Portfolio, CreatePortfolioDTO, UpdatePortfolioDTO, PortfolioSummary, PortfolioDetails } from '../models/Portfolio';
-import { query, transaction } from '../config/database';
+import { Portfolio, CreatePortfolioDTO, UpdatePortfolioDTO, PortfolioSummary, PortfolioDetails, PortfolioHolding } from '../models/Portfolio';
+import { getPortfolioRepository, getHoldingRepository, getStockRepository, getTransactionRepository } from '../utils/database';
+import * as quoteService from './quoteService';
+
+// Helper function to map DB Portfolio to BFF Portfolio
+const mapDBPortfolioToBFF = (dbPortfolio: any): Portfolio => ({
+  id: dbPortfolio.PORTFOLIOS_ID,
+  userId: dbPortfolio.USERS_ID,
+  name: dbPortfolio.NAME,
+  createdAt: dbPortfolio.CREATED_AT,
+  updatedAt: dbPortfolio.CREATED_AT // DB doesn't have updated_at, using created_at
+});
+
+// Helper function to calculate average cost from transactions
+const calculateAverageCost = async (holdingId: string): Promise<number> => {
+  const transactionRepo = getTransactionRepository();
+  const transactions = await transactionRepo.findByHolding(holdingId);
+  
+  let totalCost = 0;
+  let totalQuantity = 0;
+  
+  for (const t of transactions) {
+    if (t.BUY) {
+      totalCost += Number(t.PRICE) * t.AMOUNT;
+      totalQuantity += t.AMOUNT;
+    }
+  }
+
+  return totalQuantity > 0 ? totalCost / totalQuantity : 0;
+};
 
 export const createPortfolio = async (
   userId: string,
   portfolioData: CreatePortfolioDTO
 ): Promise<Portfolio> => {
-  const result = await query<Portfolio>(
-    `INSERT INTO portfolios (user_id, name, description)
-     VALUES ($1, $2, $3)
-     RETURNING id, user_id, name, description, created_at, updated_at`,
-    [userId, portfolioData.name, portfolioData.description]
-  );
+  const portfolioRepo = getPortfolioRepository();
+  
+  const dbPortfolio = await portfolioRepo.create({
+    PORTFOLIOS_ID: '', // Will be generated
+    USERS_ID: userId,
+    NAME: portfolioData.name,
+    CREATED_AT: new Date()
+  });
 
-  return result.rows[0];
+  return mapDBPortfolioToBFF(dbPortfolio);
 };
 
 export const getPortfoliosByUserId = async (userId: string): Promise<Portfolio[]> => {
-  const result = await query<Portfolio>(
-    `SELECT id, user_id, name, description, created_at, updated_at
-     FROM portfolios
-     WHERE user_id = $1
-     ORDER BY created_at DESC`,
-    [userId]
-  );
-
-  return result.rows;
+  const portfolioRepo = getPortfolioRepository();
+  const portfolios = await portfolioRepo.findByUserId(userId);
+  return portfolios.map(mapDBPortfolioToBFF);
 };
 
 export const getPortfolioById = async (
   portfolioId: string,
   userId: string
 ): Promise<PortfolioDetails | null> => {
-  const result = await query<PortfolioDetails>(
-    `SELECT p.id, p.user_id, p.name, p.description, p.created_at, p.updated_at,
-            COALESCE(SUM(h.quantity * q.price), 0) as total_value,
-            COALESCE(SUM(h.quantity * (q.price - h.average_cost)), 0) as total_gain_loss,
-            CASE 
-              WHEN SUM(h.quantity * h.average_cost) > 0 
-              THEN (SUM(h.quantity * (q.price - h.average_cost)) / SUM(h.quantity * h.average_cost)) * 100
-              ELSE 0
-            END as total_gain_loss_percentage
-     FROM portfolios p
-     LEFT JOIN holdings h ON h.portfolio_id = p.id
-     LEFT JOIN LATERAL (
-       SELECT price 
-       FROM quotes 
-       WHERE stock_id = h.stock_id 
-       ORDER BY timestamp DESC 
-       LIMIT 1
-     ) q ON true
-     WHERE p.id = $1 AND p.user_id = $2
-     GROUP BY p.id, p.user_id, p.name, p.description, p.created_at, p.updated_at`,
-    [portfolioId, userId]
-  );
+  const portfolioRepo = getPortfolioRepository();
+  const portfolio = await portfolioRepo.findById(portfolioId);
 
-  return result.rows[0] || null;
+  if (!portfolio || portfolio.USERS_ID !== userId) {
+    return null;
+  }
+
+  // Get holdings for this portfolio
+  const holdingRepo = getHoldingRepository();
+  const holdings = await holdingRepo.findByPortfolio(portfolioId);
+
+  // Calculate portfolio values
+  let totalValue = 0;
+  let totalCost = 0;
+  const portfolioHoldings: PortfolioHolding[] = [];
+
+  for (const holding of holdings) {
+    const quote = await quoteService.getRealTimeQuote(holding.ISIN);
+    const averageCost = await calculateAverageCost(holding.HOLDINGS_ID);
+    const currentValue = quote.price * holding.QUANTITY;
+    const costBasis = holding.QUANTITY * averageCost;
+    const gainLoss = currentValue - costBasis;
+    const gainLossPercentage = costBasis > 0 ? (gainLoss / costBasis) * 100 : 0;
+
+    totalValue += currentValue;
+    totalCost += costBasis;
+
+    portfolioHoldings.push({
+      id: holding.HOLDINGS_ID,
+      stockId: holding.ISIN,
+      quantity: holding.QUANTITY,
+      averageCost,
+      currentValue,
+      gainLoss,
+      gainLossPercentage
+    });
+  }
+
+  const totalGainLoss = totalValue - totalCost;
+  const totalGainLossPercentage = totalCost > 0 ? (totalGainLoss / totalCost) * 100 : 0;
+
+  return {
+    ...mapDBPortfolioToBFF(portfolio),
+    totalValue,
+    totalGainLoss,
+    totalGainLossPercentage,
+    holdings: portfolioHoldings
+  };
 };
 
 export const updatePortfolio = async (
@@ -63,242 +110,71 @@ export const updatePortfolio = async (
   userId: string,
   updateData: UpdatePortfolioDTO
 ): Promise<Portfolio | null> => {
-  const updates: string[] = [];
-  const values: any[] = [];
-  let paramCount = 1;
-
-  if (updateData.name !== undefined) {
-    updates.push(`name = $${paramCount}`);
-    values.push(updateData.name);
-    paramCount++;
+  const portfolioRepo = getPortfolioRepository();
+  
+  // Verify ownership
+  const portfolio = await portfolioRepo.findById(portfolioId);
+  if (!portfolio || portfolio.USERS_ID !== userId) {
+    return null;
   }
 
-  if (updateData.description !== undefined) {
-    updates.push(`description = $${paramCount}`);
-    values.push(updateData.description);
-    paramCount++;
-  }
+  const updatedPortfolio = await portfolioRepo.update(portfolioId, {
+    NAME: updateData.name || portfolio.NAME
+  });
 
-  if (updates.length === 0) {
-    return getPortfolioById(portfolioId, userId);
-  }
-
-  values.push(portfolioId, userId);
-  const result = await query<Portfolio>(
-    `UPDATE portfolios
-     SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP
-     WHERE id = $${paramCount} AND user_id = $${paramCount + 1}
-     RETURNING id, user_id, name, description, created_at, updated_at`,
-    values
-  );
-
-  return result.rows[0] || null;
+  return mapDBPortfolioToBFF(updatedPortfolio);
 };
 
 export const deletePortfolio = async (
   portfolioId: string,
   userId: string
 ): Promise<void> => {
-  await transaction(async (client) => {
-    // Delete all related data
-    await client.query(
-      'DELETE FROM transactions WHERE holding_id IN (SELECT id FROM holdings WHERE portfolio_id = $1)',
-      [portfolioId]
-    );
-    await client.query('DELETE FROM holdings WHERE portfolio_id = $1', [portfolioId]);
-    await client.query('DELETE FROM portfolios WHERE id = $1 AND user_id = $2', [
-      portfolioId,
-      userId,
-    ]);
-  });
+  const portfolioRepo = getPortfolioRepository();
+  
+  // Verify ownership
+  const portfolio = await portfolioRepo.findById(portfolioId);
+  if (!portfolio || portfolio.USERS_ID !== userId) {
+    throw new Error('Portfolio not found or unauthorized');
+  }
+
+  await portfolioRepo.delete(portfolioId);
 };
 
 export const getPortfolioSummary = async (
   portfolioId: string,
   userId: string
 ): Promise<PortfolioSummary | null> => {
-  const result = await query<PortfolioSummary>(
-    `SELECT 
-       p.id,
-       p.name,
-       COALESCE(SUM(h.quantity * q.price), 0) as total_value,
-       COALESCE(SUM(h.quantity * (q.price - h.average_cost)), 0) as total_gain_loss,
-       CASE 
-         WHEN SUM(h.quantity * h.average_cost) > 0 
-         THEN (SUM(h.quantity * (q.price - h.average_cost)) / SUM(h.quantity * h.average_cost)) * 100
-         ELSE 0
-       END as total_gain_loss_percentage,
-       COUNT(DISTINCT h.id) as holdings_count
-     FROM portfolios p
-     LEFT JOIN holdings h ON h.portfolio_id = p.id
-     LEFT JOIN LATERAL (
-       SELECT price 
-       FROM quotes 
-       WHERE stock_id = h.stock_id 
-       ORDER BY timestamp DESC 
-       LIMIT 1
-     ) q ON true
-     WHERE p.id = $1 AND p.user_id = $2
-     GROUP BY p.id, p.name`,
-    [portfolioId, userId]
-  );
+  const portfolioRepo = getPortfolioRepository();
+  const portfolio = await portfolioRepo.findById(portfolioId);
 
-  return result.rows[0] || null;
-};
+  if (!portfolio || portfolio.USERS_ID !== userId) {
+    return null;
+  }
 
-export const getPortfolioPerformance = async (
-  portfolioId: string,
-  userId: string
-) => {
-  const result = await query(
-    `WITH daily_values AS (
-       SELECT 
-         DATE_TRUNC('day', q.timestamp) as date,
-         SUM(h.quantity * q.price) as value,
-         SUM(h.quantity * h.average_cost) as cost
-       FROM holdings h
-       JOIN quotes q ON q.stock_id = h.stock_id
-       WHERE h.portfolio_id = $1
-       GROUP BY DATE_TRUNC('day', q.timestamp)
-       ORDER BY DATE_TRUNC('day', q.timestamp)
-     )
-     SELECT 
-       date,
-       value,
-       cost,
-       value - cost as absolute_return,
-       CASE 
-         WHEN cost > 0 THEN ((value - cost) / cost) * 100
-         ELSE 0
-       END as percentage_return
-     FROM daily_values`,
-    [portfolioId]
-  );
+  // Get holdings for this portfolio
+  const holdingRepo = getHoldingRepository();
+  const holdings = await holdingRepo.findByPortfolio(portfolioId);
 
-  return result.rows;
-};
+  // Calculate summary values
+  let totalValue = 0;
+  let totalCost = 0;
 
-export const getPortfolioHoldings = async (
-  portfolioId: string,
-  userId: string
-) => {
-  const result = await query(
-    `SELECT 
-       h.id,
-       h.stock_id,
-       s.symbol,
-       s.name,
-       h.quantity,
-       h.average_cost,
-       q.price as current_price,
-       h.quantity * q.price as current_value,
-       (h.quantity * q.price) - (h.quantity * h.average_cost) as gain_loss,
-       CASE 
-         WHEN h.quantity * h.average_cost > 0 
-         THEN ((h.quantity * q.price) - (h.quantity * h.average_cost)) / (h.quantity * h.average_cost) * 100
-         ELSE 0
-       END as gain_loss_percentage
-     FROM holdings h
-     JOIN stocks s ON s.id = h.stock_id
-     LEFT JOIN LATERAL (
-       SELECT price 
-       FROM quotes 
-       WHERE stock_id = h.stock_id 
-       ORDER BY timestamp DESC 
-       LIMIT 1
-     ) q ON true
-     WHERE h.portfolio_id = $1
-     ORDER BY current_value DESC`,
-    [portfolioId]
-  );
+  for (const holding of holdings) {
+    const quote = await quoteService.getRealTimeQuote(holding.ISIN);
+    const averageCost = await calculateAverageCost(holding.HOLDINGS_ID);
+    totalValue += quote.price * holding.QUANTITY;
+    totalCost += holding.QUANTITY * averageCost;
+  }
 
-  return result.rows;
-};
+  const totalGainLoss = totalValue - totalCost;
+  const totalGainLossPercentage = totalCost > 0 ? (totalGainLoss / totalCost) * 100 : 0;
 
-export const getPortfolioAllocation = async (
-  portfolioId: string,
-  userId: string
-) => {
-  const result = await query(
-    `WITH holding_values AS (
-       SELECT 
-         s.sector,
-         SUM(h.quantity * q.price) as sector_value
-       FROM holdings h
-       JOIN stocks s ON s.id = h.stock_id
-       LEFT JOIN LATERAL (
-         SELECT price 
-         FROM quotes 
-         WHERE stock_id = h.stock_id 
-         ORDER BY timestamp DESC 
-         LIMIT 1
-       ) q ON true
-       WHERE h.portfolio_id = $1
-       GROUP BY s.sector
-     )
-     SELECT 
-       sector,
-       sector_value,
-       (sector_value / SUM(sector_value) OVER ()) * 100 as percentage
-     FROM holding_values
-     ORDER BY sector_value DESC`,
-    [portfolioId]
-  );
-
-  return result.rows;
-};
-
-export const getPortfolioReturns = async (
-  portfolioId: string,
-  userId: string
-) => {
-  const result = await query(
-    `WITH portfolio_returns AS (
-       SELECT 
-         'Total' as period,
-         SUM(h.quantity * (q.price - h.average_cost)) as absolute_return,
-         CASE 
-           WHEN SUM(h.quantity * h.average_cost) > 0 
-           THEN (SUM(h.quantity * (q.price - h.average_cost)) / SUM(h.quantity * h.average_cost)) * 100
-           ELSE 0
-         END as percentage_return
-       FROM holdings h
-       LEFT JOIN LATERAL (
-         SELECT price 
-         FROM quotes 
-         WHERE stock_id = h.stock_id 
-         ORDER BY timestamp DESC 
-         LIMIT 1
-       ) q ON true
-       WHERE h.portfolio_id = $1
-     )
-     SELECT * FROM portfolio_returns`,
-    [portfolioId]
-  );
-
-  return result.rows[0];
-};
-
-export const getPortfolioHistory = async (
-  portfolioId: string,
-  userId: string
-) => {
-  const result = await query(
-    `SELECT 
-       DATE_TRUNC('day', t.timestamp) as date,
-       t.type,
-       s.symbol,
-       s.name,
-       t.quantity,
-       t.price,
-       t.quantity * t.price as total_value
-     FROM transactions t
-     JOIN holdings h ON h.id = t.holding_id
-     JOIN stocks s ON s.id = h.stock_id
-     WHERE h.portfolio_id = $1
-     ORDER BY t.timestamp DESC`,
-    [portfolioId]
-  );
-
-  return result.rows;
+  return {
+    id: portfolio.PORTFOLIOS_ID,
+    name: portfolio.NAME,
+    totalValue,
+    totalGainLoss,
+    totalGainLossPercentage,
+    holdingsCount: holdings.length
+  };
 };

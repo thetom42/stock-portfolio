@@ -1,5 +1,18 @@
 import { Holding, CreateHoldingDTO, UpdateHoldingDTO, HoldingDetails, Transaction, HoldingPerformance, HoldingValue, HoldingHistory } from '../models/Holding';
-import { getHoldingRepository, getPortfolioRepository, getTransactionRepository } from '../utils/database';
+import { getHoldingRepository, getPortfolioRepository, getTransactionRepository, getStockRepository } from '../utils/database';
+import * as quoteService from './quoteService';
+
+// Helper function to map DB Transaction to BFF Transaction
+const mapDBTransactionToBFF = (dbTransaction: any): Transaction => ({
+  TRANSACTIONS_ID: dbTransaction.TRANSACTIONS_ID,
+  HOLDINGS_ID: dbTransaction.HOLDINGS_ID,
+  BUY: dbTransaction.BUY,
+  TRANSACTION_TIME: dbTransaction.TRANSACTION_TIME,
+  AMOUNT: dbTransaction.AMOUNT,
+  PRICE: Number(dbTransaction.PRICE),
+  COMMISSION: Number(dbTransaction.COMMISSION),
+  BROKER: dbTransaction.BROKER
+});
 
 export const createHolding = async (
   userId: string,
@@ -59,19 +72,39 @@ export const getHoldingById = async (
     return null;
   }
 
-  // Get stock details and latest quote
-  // Note: In a real implementation, we would fetch this from StockRepository and QuoteRepository
+  // Get stock details
+  const stockRepo = getStockRepository();
+  const stock = await stockRepo.findByISIN(holding.ISIN);
+  if (!stock) {
+    throw new Error('Stock not found');
+  }
+
+  // Get latest quote
+  const quote = await quoteService.getRealTimeQuote(holding.ISIN);
+  const currentPrice = quote.price;
+  const totalValue = currentPrice * holding.QUANTITY;
+
+  // Calculate gain/loss
+  const transactionRepo = getTransactionRepository();
+  const transactions = await transactionRepo.findByHolding(holdingId);
+  const costBasis = transactions.reduce((sum, t) => {
+    return t.BUY ? sum + (t.AMOUNT * Number(t.PRICE)) : sum - (t.AMOUNT * Number(t.PRICE));
+  }, 0);
+
+  const gainLoss = totalValue - costBasis;
+  const gainLossPercentage = (gainLoss / costBasis) * 100;
+
   const holdingDetails: HoldingDetails = {
     ...holding,
     stock: {
-      symbol: 'PLACEHOLDER',
-      name: 'PLACEHOLDER',
-      currency: 'USD'
+      symbol: stock.SYMBOL,
+      name: stock.NAME,
+      currency: 'USD' // Default since quote doesn't provide currency
     },
-    currentPrice: 0,
-    totalValue: 0,
-    gainLoss: 0,
-    gainLossPercentage: 0
+    currentPrice,
+    totalValue,
+    gainLoss,
+    gainLossPercentage
   };
 
   return holdingDetails;
@@ -120,19 +153,26 @@ export const getHoldingPerformance = async (
 
   // Get all transactions for this holding
   const transactionRepo = getTransactionRepository();
-  const transactions = await transactionRepo.findByHolding(holdingId);
+  const dbTransactions = await transactionRepo.findByHolding(holdingId);
+  const transactions = dbTransactions.map(mapDBTransactionToBFF);
 
   // Calculate performance metrics
   const totalInvested = transactions.reduce((sum, t) => {
-    return t.BUY ? sum + (t.AMOUNT * Number(t.PRICE)) : sum - (t.AMOUNT * Number(t.PRICE));
+    return t.BUY ? sum + (t.AMOUNT * t.PRICE) : sum - (t.AMOUNT * t.PRICE);
   }, 0);
+
+  // Get current value using latest quote
+  const quote = await quoteService.getRealTimeQuote(holding.ISIN);
+  const currentValue = quote.price * holding.QUANTITY;
+  const totalReturn = currentValue - totalInvested;
+  const totalReturnPercentage = (totalReturn / totalInvested) * 100;
 
   return {
     totalInvested,
-    currentValue: 0, // Would be calculated using latest quote
-    totalReturn: 0,
-    totalReturnPercentage: 0,
-    transactions: transactions as Transaction[]
+    currentValue,
+    totalReturn,
+    totalReturnPercentage,
+    transactions
   };
 };
 
@@ -147,8 +187,8 @@ export const getHoldingTransactions = async (
   }
 
   const transactionRepo = getTransactionRepository();
-  const transactions = await transactionRepo.findByHolding(holdingId);
-  return transactions as Transaction[];
+  const dbTransactions = await transactionRepo.findByHolding(holdingId);
+  return dbTransactions.map(mapDBTransactionToBFF);
 };
 
 export const getHoldingValue = async (
@@ -163,18 +203,24 @@ export const getHoldingValue = async (
 
   // Get latest transaction for cost basis
   const transactionRepo = getTransactionRepository();
-  const transactions = await transactionRepo.findByHolding(holdingId);
+  const dbTransactions = await transactionRepo.findByHolding(holdingId);
+  const transactions = dbTransactions.map(mapDBTransactionToBFF);
   
   const costBasis = transactions.reduce((sum, t) => {
-    return t.BUY ? sum + (t.AMOUNT * Number(t.PRICE)) : sum - (t.AMOUNT * Number(t.PRICE));
+    return t.BUY ? sum + (t.AMOUNT * t.PRICE) : sum - (t.AMOUNT * t.PRICE);
   }, 0);
+
+  // Get current value using latest quote
+  const quote = await quoteService.getRealTimeQuote(holding.ISIN);
+  const currentValue = quote.price * holding.QUANTITY;
+  const unrealizedGainLoss = currentValue - costBasis;
 
   return {
     quantity: holding.QUANTITY,
     costBasis,
     averageCost: costBasis / holding.QUANTITY,
-    currentValue: 0, // Would be calculated using latest quote
-    unrealizedGainLoss: 0 // Would be calculated using latest quote
+    currentValue,
+    unrealizedGainLoss
   };
 };
 
@@ -189,15 +235,16 @@ export const getHoldingHistory = async (
   }
 
   const transactionRepo = getTransactionRepository();
-  const transactions = await transactionRepo.findByHolding(holdingId);
+  const dbTransactions = await transactionRepo.findByHolding(holdingId);
+  const transactions = dbTransactions.map(mapDBTransactionToBFF);
 
   return transactions.map(t => ({
     date: t.TRANSACTION_TIME,
     buy: t.BUY,
     amount: t.AMOUNT,
-    price: Number(t.PRICE),
-    value: t.AMOUNT * Number(t.PRICE),
-    commission: Number(t.COMMISSION),
+    price: t.PRICE,
+    value: t.AMOUNT * t.PRICE,
+    commission: t.COMMISSION,
     broker: t.BROKER
   }));
 };
