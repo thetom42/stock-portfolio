@@ -12,6 +12,8 @@ import portfolioRoutes from './routes/portfolioRoutes';
 import holdingRoutes from './routes/holdingRoutes';
 import transactionRoutes from './routes/transactionRoutes';
 import quoteRoutes from './routes/quoteRoutes';
+import categoryRoutes from './routes/categoryRoutes';
+import stockRoutes from './routes/stockRoutes';
 
 // Validate environment variables
 validateEnvironment();
@@ -55,6 +57,8 @@ router.use('/portfolios', portfolioRoutes);
 router.use('/holdings', holdingRoutes);
 router.use('/transactions', transactionRoutes);
 router.use('/quotes', quoteRoutes);
+router.use('/categories', categoryRoutes);
+router.use('/stocks', stockRoutes);
 
 // Health check endpoint
 router.get('/health', (req, res) => {

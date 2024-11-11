@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { body, param, validationResult } from 'express-validator';
+import { body, param, query, validationResult } from 'express-validator';
 
 // Helper function to handle validation errors
 export const handleValidationErrors = (req: Request, res: Response, next: NextFunction) => {
@@ -118,10 +118,103 @@ export const validateTransactionCreation = [
   handleValidationErrors
 ];
 
+// Category validation rules
+export const validateCategoryCreation = [
+  body('NAME')
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Category name is required'),
+  handleValidationErrors
+];
+
+export const validateCategoryUpdate = [
+  body('NAME')
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Category name is required'),
+  handleValidationErrors
+];
+
+// Stock validation rules
+export const validateStockCreation = [
+  body('isin')
+    .trim()
+    .isLength({ min: 12, max: 12 })
+    .matches(/^[A-Z]{2}[A-Z0-9]{9}\d$/)
+    .withMessage('Invalid ISIN format'),
+  body('name')
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Stock name is required'),
+  body('wkn')
+    .trim()
+    .isLength({ min: 6, max: 6 })
+    .matches(/^[A-Z0-9]{6}$/)
+    .withMessage('Invalid WKN format'),
+  body('symbol')
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Stock symbol is required'),
+  body('categoryId')
+    .isUUID()
+    .withMessage('Invalid category ID'),
+  handleValidationErrors
+];
+
+export const validateStockUpdate = [
+  body('name')
+    .optional()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Stock name cannot be empty'),
+  body('wkn')
+    .optional()
+    .trim()
+    .isLength({ min: 6, max: 6 })
+    .matches(/^[A-Z0-9]{6}$/)
+    .withMessage('Invalid WKN format'),
+  body('symbol')
+    .optional()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Stock symbol cannot be empty'),
+  body('categoryId')
+    .optional()
+    .isUUID()
+    .withMessage('Invalid category ID'),
+  handleValidationErrors
+];
+
+export const validateStockSearch = [
+  query('query')
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Search query is required'),
+  handleValidationErrors
+];
+
 // Parameter validation
 export const validateUUID = (paramName: string) => [
   param(paramName)
     .isUUID()
     .withMessage(`Invalid ${paramName} format`),
+  handleValidationErrors
+];
+
+export const validateISIN = (paramName: string) => [
+  param(paramName)
+    .trim()
+    .isLength({ min: 12, max: 12 })
+    .matches(/^[A-Z]{2}[A-Z0-9]{9}\d$/)
+    .withMessage(`Invalid ISIN format`),
+  handleValidationErrors
+];
+
+export const validateWKN = (paramName: string) => [
+  param(paramName)
+    .trim()
+    .isLength({ min: 6, max: 6 })
+    .matches(/^[A-Z0-9]{6}$/)
+    .withMessage(`Invalid WKN format`),
   handleValidationErrors
 ];

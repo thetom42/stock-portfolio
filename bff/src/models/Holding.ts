@@ -1,4 +1,6 @@
-// Base interfaces matching DB models
+import { Transaction } from './Transaction';
+
+// Base interface matching DB model
 export interface Holding {
     HOLDINGS_ID: string;
     PORTFOLIOS_ID: string;
@@ -8,31 +10,12 @@ export interface Holding {
     END_DATE: Date | null;
 }
 
-export interface Transaction {
-    TRANSACTIONS_ID: string;
-    HOLDINGS_ID: string;
-    BUY: boolean;
-    TRANSACTION_TIME: Date;
-    AMOUNT: number;
-    PRICE: number;
-    COMMISSION: number;
-    BROKER: string;
-}
-
 // DTOs for API requests
 export interface CreateHoldingDTO {
     PORTFOLIOS_ID: string;
     ISIN: string;
     QUANTITY: number;
     PRICE: number;
-}
-
-export interface CreateTransactionDTO {
-    AMOUNT: number;
-    PRICE: number;
-    BUY: boolean;
-    COMMISSION?: number;
-    BROKER?: string;
 }
 
 export interface UpdateHoldingDTO {

@@ -8,26 +8,45 @@ const router = Router();
 // All transaction routes require authentication
 router.use(protect());
 
-// Transaction routes
-router.post('/:holdingId', 
+// Create transaction for a holding
+router.post('/holding/:holdingId', 
     validateUUID('holdingId'),
     validateTransactionCreation,
     transactionController.createTransaction
 );
 
-router.get('/:id',
-    validateUUID('id'),
-    transactionController.getTransaction
-);
-
+// Get transactions by holding with optional filters
+// Query params:
+// - startDate: ISO date string
+// - endDate: ISO date string
+// - type: 'BUY' | 'SELL'
+// - sort: 'date' | 'amount' | 'price'
+// - order: 'asc' | 'desc'
+// - page: number
+// - limit: number
 router.get('/holding/:holdingId',
     validateUUID('holdingId'),
     transactionController.getTransactionsByHolding
 );
 
+// Get transactions by portfolio with optional filters
+// Query params:
+// - startDate: ISO date string
+// - endDate: ISO date string
+// - type: 'BUY' | 'SELL'
+// - sort: 'date' | 'amount' | 'price'
+// - order: 'asc' | 'desc'
+// - page: number
+// - limit: number
 router.get('/portfolio/:portfolioId',
     validateUUID('portfolioId'),
     transactionController.getTransactionsByPortfolio
+);
+
+// Get single transaction by ID
+router.get('/:id',
+    validateUUID('id'),
+    transactionController.getTransaction
 );
 
 export default router;

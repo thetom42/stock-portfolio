@@ -5,6 +5,7 @@ import { StockRepository } from '../../../db/repositories/StockRepository';
 import { UserRepository } from '../../../db/repositories/UserRepository';
 import { QuoteRepository } from '../../../db/repositories/QuoteRepository';
 import { TransactionRepository } from '../../../db/repositories/TransactionRepository';
+import { CategoryRepository } from '../../../db/repositories/CategoryRepository';
 
 let prisma: PrismaClient | null = null;
 
@@ -23,7 +24,7 @@ export async function disconnectDatabase(): Promise<void> {
 }
 
 // Repository type mapping
-type RepositoryName = 'holding' | 'portfolio' | 'stock' | 'user' | 'quote' | 'transaction';
+type RepositoryName = 'holding' | 'portfolio' | 'stock' | 'user' | 'quote' | 'transaction' | 'category';
 
 interface Repositories {
   holding?: HoldingRepository;
@@ -32,6 +33,7 @@ interface Repositories {
   user?: UserRepository;
   quote?: QuoteRepository;
   transaction?: TransactionRepository;
+  category?: CategoryRepository;
   [key: string]: any;
 }
 
@@ -59,6 +61,7 @@ export const getStockRepository = () => getRepository('stock') as StockRepositor
 export const getUserRepository = () => getRepository('user') as UserRepository;
 export const getQuoteRepository = () => getRepository('quote') as QuoteRepository;
 export const getTransactionRepository = () => getRepository('transaction') as TransactionRepository;
+export const getCategoryRepository = () => getRepository('category') as CategoryRepository;
 
 // Export repository types for use in services
 export type {
@@ -67,5 +70,6 @@ export type {
   StockRepository,
   UserRepository,
   QuoteRepository,
-  TransactionRepository
+  TransactionRepository,
+  CategoryRepository
 };
