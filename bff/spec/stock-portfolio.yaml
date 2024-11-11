@@ -1,0 +1,2043 @@
+openapi: 3.0.0
+info:
+  title: Stock Portfolio BFF API
+  version: 1.0.0
+  description: Backend-for-frontend API for the Stock Portfolio application
+
+servers:
+  - url: /api/v1
+    description: Base API path
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+        - firstName
+        - lastName
+        - createdAt
+        - updatedAt
+
+    CreateUserDTO:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        password:
+          type: string
+          format: password
+          minLength: 8
+      required:
+        - email
+        - firstName
+        - lastName
+        - password
+
+    UpdateUserDTO:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+
+    Portfolio:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        totalValue:
+          type: number
+          format: double
+        totalGainLoss:
+          type: number
+          format: double
+        totalGainLossPercentage:
+          type: number
+          format: double
+      required:
+        - id
+        - userId
+        - name
+        - createdAt
+        - updatedAt
+
+    CreatePortfolioDTO:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+      required:
+        - name
+
+    UpdatePortfolioDTO:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    PortfolioSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        totalValue:
+          type: number
+          format: double
+        totalGainLoss:
+          type: number
+          format: double
+        totalGainLossPercentage:
+          type: number
+          format: double
+        holdingsCount:
+          type: integer
+      required:
+        - id
+        - name
+        - totalValue
+        - totalGainLoss
+        - totalGainLossPercentage
+        - holdingsCount
+
+    PortfolioHolding:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        stockId:
+          type: string
+          format: uuid
+        quantity:
+          type: number
+        averageCost:
+          type: number
+          format: double
+        currentValue:
+          type: number
+          format: double
+        gainLoss:
+          type: number
+          format: double
+        gainLossPercentage:
+          type: number
+          format: double
+      required:
+        - id
+        - stockId
+        - quantity
+        - averageCost
+        - currentValue
+        - gainLoss
+        - gainLossPercentage
+
+    Stock:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        symbol:
+          type: string
+        isin:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        sector:
+          type: string
+        industry:
+          type: string
+        currency:
+          type: string
+        exchange:
+          type: string
+        country:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - symbol
+        - isin
+        - name
+        - currency
+        - exchange
+        - country
+        - createdAt
+        - updatedAt
+
+    StockSearchResult:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        symbol:
+          type: string
+        name:
+          type: string
+        exchange:
+          type: string
+        currency:
+          type: string
+      required:
+        - id
+        - symbol
+        - name
+        - exchange
+        - currency
+
+    StockDetails:
+      allOf:
+        - $ref: '#/components/schemas/Stock'
+        - type: object
+          properties:
+            currentPrice:
+              type: number
+              format: double
+            priceChange:
+              type: number
+              format: double
+            priceChangePercentage:
+              type: number
+              format: double
+            marketCap:
+              type: number
+              format: double
+            volume:
+              type: number
+              format: int64
+            peRatio:
+              type: number
+              format: double
+            dividendYield:
+              type: number
+              format: double
+            yearHigh:
+              type: number
+              format: double
+            yearLow:
+              type: number
+              format: double
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    Transaction:
+      type: object
+      properties:
+        TRANSACTIONS_ID:
+          type: string
+          format: uuid
+        HOLDINGS_ID:
+          type: string
+          format: uuid
+        BUY:
+          type: boolean
+        TRANSACTION_TIME:
+          type: string
+          format: date-time
+        AMOUNT:
+          type: number
+          format: double
+        PRICE:
+          type: number
+          format: double
+        COMMISSION:
+          type: number
+          format: double
+        BROKER:
+          type: string
+      required:
+        - TRANSACTIONS_ID
+        - HOLDINGS_ID
+        - BUY
+        - TRANSACTION_TIME
+        - AMOUNT
+        - PRICE
+
+    CreateTransactionDTO:
+      type: object
+      properties:
+        AMOUNT:
+          type: number
+          format: double
+        PRICE:
+          type: number
+          format: double
+        BUY:
+          type: boolean
+        COMMISSION:
+          type: number
+          format: double
+        BROKER:
+          type: string
+      required:
+        - AMOUNT
+        - PRICE
+        - BUY
+
+    PaginatedTransactions:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - transactions
+        - total
+        - page
+        - limit
+        - totalPages
+
+    Holding:
+      type: object
+      properties:
+        HOLDINGS_ID:
+          type: string
+          format: uuid
+        PORTFOLIOS_ID:
+          type: string
+          format: uuid
+        ISIN:
+          type: string
+        QUANTITY:
+          type: number
+          format: double
+        START_DATE:
+          type: string
+          format: date-time
+        END_DATE:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - HOLDINGS_ID
+        - PORTFOLIOS_ID
+        - ISIN
+        - QUANTITY
+        - START_DATE
+
+    CreateHoldingDTO:
+      type: object
+      properties:
+        PORTFOLIOS_ID:
+          type: string
+          format: uuid
+        ISIN:
+          type: string
+        QUANTITY:
+          type: number
+          format: double
+        PRICE:
+          type: number
+          format: double
+      required:
+        - PORTFOLIOS_ID
+        - ISIN
+        - QUANTITY
+        - PRICE
+
+    UpdateHoldingDTO:
+      type: object
+      properties:
+        QUANTITY:
+          type: number
+          format: double
+
+    HoldingDetails:
+      allOf:
+        - $ref: '#/components/schemas/Holding'
+        - type: object
+          properties:
+            stock:
+              type: object
+              properties:
+                symbol:
+                  type: string
+                name:
+                  type: string
+                currency:
+                  type: string
+              required:
+                - symbol
+                - name
+                - currency
+            currentPrice:
+              type: number
+              format: double
+            totalValue:
+              type: number
+              format: double
+            gainLoss:
+              type: number
+              format: double
+            gainLossPercentage:
+              type: number
+              format: double
+          required:
+            - stock
+            - currentPrice
+            - totalValue
+            - gainLoss
+            - gainLossPercentage
+
+    HoldingPerformance:
+      type: object
+      properties:
+        totalInvested:
+          type: number
+          format: double
+        currentValue:
+          type: number
+          format: double
+        totalReturn:
+          type: number
+          format: double
+        totalReturnPercentage:
+          type: number
+          format: double
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+      required:
+        - totalInvested
+        - currentValue
+        - totalReturn
+        - totalReturnPercentage
+        - transactions
+
+    HoldingValue:
+      type: object
+      properties:
+        quantity:
+          type: number
+          format: double
+        costBasis:
+          type: number
+          format: double
+        averageCost:
+          type: number
+          format: double
+        currentValue:
+          type: number
+          format: double
+        unrealizedGainLoss:
+          type: number
+          format: double
+      required:
+        - quantity
+        - costBasis
+        - averageCost
+        - currentValue
+        - unrealizedGainLoss
+
+    HoldingHistory:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date-time
+        buy:
+          type: boolean
+        amount:
+          type: number
+          format: double
+        price:
+          type: number
+          format: double
+        value:
+          type: number
+          format: double
+        commission:
+          type: number
+          format: double
+        broker:
+          type: string
+      required:
+        - date
+        - buy
+        - amount
+        - price
+        - value
+
+    Category:
+      type: object
+      properties:
+        CATEGORIES_ID:
+          type: string
+          format: uuid
+        NAME:
+          type: string
+      required:
+        - CATEGORIES_ID
+        - NAME
+
+    CreateCategoryDTO:
+      type: object
+      properties:
+        NAME:
+          type: string
+      required:
+        - NAME
+
+    UpdateCategoryDTO:
+      type: object
+      properties:
+        NAME:
+          type: string
+
+    Quote:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        stockId:
+          type: string
+          format: uuid
+        price:
+          type: number
+          format: double
+        currency:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        volume:
+          type: integer
+        open:
+          type: number
+          format: double
+        high:
+          type: number
+          format: double
+        low:
+          type: number
+          format: double
+        close:
+          type: number
+          format: double
+        adjustedClose:
+          type: number
+          format: double
+      required:
+        - id
+        - stockId
+        - price
+        - currency
+        - timestamp
+
+    HistoricalQuote:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date-time
+        open:
+          type: number
+          format: double
+        high:
+          type: number
+          format: double
+        low:
+          type: number
+          format: double
+        close:
+          type: number
+          format: double
+        adjustedClose:
+          type: number
+          format: double
+        volume:
+          type: integer
+      required:
+        - date
+        - open
+        - high
+        - low
+        - close
+        - adjustedClose
+        - volume
+
+    RealTimeQuote:
+      type: object
+      properties:
+        price:
+          type: number
+          format: double
+        change:
+          type: number
+          format: double
+        changePercent:
+          type: number
+          format: double
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - price
+        - change
+        - changePercent
+        - timestamp
+
+    QuoteHistory:
+      type: object
+      properties:
+        symbol:
+          type: string
+        interval:
+          type: string
+          enum: [1d, 1wk, 1mo, 3mo]
+        quotes:
+          type: array
+          items:
+            $ref: '#/components/schemas/HistoricalQuote'
+      required:
+        - symbol
+        - interval
+        - quotes
+
+paths:
+  /users:
+    post:
+      summary: Create a new user
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserDTO'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: User ID
+
+    get:
+      summary: Get user by ID
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: Update user
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserDTO'
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Delete user
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: User deleted successfully
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/profile/me:
+    get:
+      summary: Get own user profile
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Own profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: Update own profile
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserDTO'
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /portfolios:
+    post:
+      summary: Create a new portfolio
+      tags:
+        - Portfolios
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePortfolioDTO'
+      responses:
+        '201':
+          description: Portfolio created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Portfolio'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      summary: Get user's portfolios
+      tags:
+        - Portfolios
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of user's portfolios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Portfolio'
+
+  /portfolios/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Portfolio ID
+
+    get:
+      summary: Get portfolio by ID
+      tags:
+        - Portfolios
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Portfolio found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Portfolio'
+        '404':
+          description: Portfolio not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: Update portfolio
+      tags:
+        - Portfolios
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePortfolioDTO'
+      responses:
+        '200':
+          description: Portfolio updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Portfolio'
+        '404':
+          description: Portfolio not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Delete portfolio
+      tags:
+        - Portfolios
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Portfolio deleted successfully
+        '404':
+          description: Portfolio not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /portfolios/{id}/summary:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Portfolio ID
+    get:
+      summary: Get portfolio summary
+      tags:
+        - Portfolios
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Portfolio summary retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioSummary'
+        '404':
+          description: Portfolio not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /portfolios/{id}/holdings:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Portfolio ID
+    get:
+      summary: Get portfolio holdings
+      tags:
+        - Portfolios
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Portfolio holdings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PortfolioHolding'
+        '404':
+          description: Portfolio not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /portfolios/{id}/performance:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Portfolio ID
+    get:
+      summary: Get portfolio performance metrics
+      tags:
+        - Portfolios
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Portfolio performance retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  performance:
+                    type: object
+                    additionalProperties: true
+        '404':
+          description: Portfolio not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /portfolios/{id}/allocation:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Portfolio ID
+    get:
+      summary: Get portfolio allocation breakdown
+      tags:
+        - Portfolios
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Portfolio allocation retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  allocation:
+                    type: object
+                    additionalProperties: true
+        '404':
+          description: Portfolio not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /portfolios/{id}/returns:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Portfolio ID
+    get:
+      summary: Get portfolio returns analysis
+      tags:
+        - Portfolios
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Portfolio returns retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  returns:
+                    type: object
+                    additionalProperties: true
+        '404':
+          description: Portfolio not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /portfolios/{id}/history:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Portfolio ID
+    get:
+      summary: Get portfolio value history
+      tags:
+        - Portfolios
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Portfolio history retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  history:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date-time
+                        value:
+                          type: number
+                          format: double
+        '404':
+          description: Portfolio not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /stocks/search:
+    get:
+      summary: Search stocks
+      tags:
+        - Stocks
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query string
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StockSearchResult'
+
+  /stocks:
+    get:
+      summary: Get all stocks
+      tags:
+        - Stocks
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of all stocks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Stock'
+
+    post:
+      summary: Create new stock
+      tags:
+        - Stocks
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Stock'
+      responses:
+        '201':
+          description: Stock created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stock'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /stocks/category/{categoryId}:
+    parameters:
+      - name: categoryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get stocks by category
+      tags:
+        - Stocks
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of stocks in category
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Stock'
+
+  /stocks/isin/{isin}:
+    parameters:
+      - name: isin
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get stock by ISIN
+      tags:
+        - Stocks
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Stock found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stock'
+        '404':
+          description: Stock not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /stocks/symbol/{symbol}:
+    parameters:
+      - name: symbol
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get stock by symbol
+      tags:
+        - Stocks
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Stock found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stock'
+        '404':
+          description: Stock not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /stocks/wkn/{wkn}:
+    parameters:
+      - name: wkn
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get stock by WKN
+      tags:
+        - Stocks
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Stock found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stock'
+        '404':
+          description: Stock not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /stocks/details/{isin}:
+    parameters:
+      - name: isin
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get detailed stock information
+      tags:
+        - Stocks
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Stock details found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockDetails'
+        '404':
+          description: Stock not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /stocks/{isin}:
+    parameters:
+      - name: isin
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      summary: Update stock
+      tags:
+        - Stocks
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Stock'
+      responses:
+        '200':
+          description: Stock updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stock'
+        '404':
+          description: Stock not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Delete stock
+      tags:
+        - Stocks
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Stock deleted successfully
+        '404':
+          description: Stock not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /transactions/holding/{holdingId}:
+    parameters:
+      - name: holdingId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Holding ID
+      - name: startDate
+        in: query
+        schema:
+          type: string
+          format: date-time
+        description: Filter transactions from this date
+      - name: endDate
+        in: query
+        schema:
+          type: string
+          format: date-time
+        description: Filter transactions until this date
+      - name: type
+        in: query
+        schema:
+          type: string
+          enum: [BUY, SELL]
+        description: Filter by transaction type
+      - name: sort
+        in: query
+        schema:
+          type: string
+          enum: [date, amount, price]
+        description: Sort field
+      - name: order
+        in: query
+        schema:
+          type: string
+          enum: [asc, desc]
+        description: Sort order
+      - name: page
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+        description: Page number for pagination
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+        description: Number of items per page
+    
+    post:
+      summary: Create transaction for a holding
+      tags:
+        - Transactions
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransactionDTO'
+      responses:
+        '201':
+          description: Transaction created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Holding not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      summary: Get transactions by holding
+      tags:
+        - Transactions
+      security:
+        - bearerAuth: []
+      parameters:
+        $ref: '#/components/parameters/TransactionQueryParams'
+      responses:
+        '200':
+          description: List of transactions for the holding
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTransactions'
+        '404':
+          description: Holding not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /transactions/portfolio/{portfolioId}:
+    parameters:
+      - name: portfolioId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Portfolio ID
+    get:
+      summary: Get transactions by portfolio
+      tags:
+        - Transactions
+      security:
+        - bearerAuth: []
+      parameters:
+        $ref: '#/components/parameters/TransactionQueryParams'
+      responses:
+        '200':
+          description: List of transactions for the portfolio
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTransactions'
+        '404':
+          description: Portfolio not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /transactions/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Transaction ID
+    get:
+      summary: Get transaction by ID
+      tags:
+        - Transactions
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Transaction found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /holdings:
+    post:
+      summary: Create a new holding
+      tags:
+        - Holdings
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHoldingDTO'
+      responses:
+        '201':
+          description: Holding created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HoldingDetails'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /holdings/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Holding ID
+
+    get:
+      summary: Get holding by ID
+      tags:
+        - Holdings
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Holding found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HoldingDetails'
+        '404':
+          description: Holding not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: Update holding
+      tags:
+        - Holdings
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHoldingDTO'
+      responses:
+        '200':
+          description: Holding updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HoldingDetails'
+        '404':
+          description: Holding not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Delete holding
+      tags:
+        - Holdings
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Holding deleted successfully
+        '404':
+          description: Holding not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /holdings/{id}/performance:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Holding ID
+    get:
+      summary: Get holding performance metrics
+      tags:
+        - Holdings
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Holding performance retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HoldingPerformance'
+        '404':
+          description: Holding not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /holdings/{id}/value:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Holding ID
+    get:
+      summary: Get holding value details
+      tags:
+        - Holdings
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Holding value retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HoldingValue'
+        '404':
+          description: Holding not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /holdings/{id}/history:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Holding ID
+    get:
+      summary: Get holding transaction history
+      tags:
+        - Holdings
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Holding history retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HoldingHistory'
+        '404':
+          description: Holding not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /holdings/{id}/transactions:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Holding ID
+    get:
+      summary: Get holding transactions
+      tags:
+        - Holdings
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Holding transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+        '404':
+          description: Holding not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /categories:
+    post:
+      summary: Create a new category
+      tags:
+        - Categories
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCategoryDTO'
+      responses:
+        '201':
+          description: Category created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      summary: Get all categories
+      tags:
+        - Categories
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of all categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+
+  /categories/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Category ID
+
+    get:
+      summary: Get category by ID
+      tags:
+        - Categories
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Category found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '404':
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: Update category
+      tags:
+        - Categories
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCategoryDTO'
+      responses:
+        '200':
+          description: Category updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '404':
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Delete category
+      tags:
+        - Categories
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Category deleted successfully
+        '404':
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /quotes/stock/{isin}/latest:
+    parameters:
+      - name: isin
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Stock ISIN
+    get:
+      summary: Get latest quote for a stock
+      tags:
+        - Quotes
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Latest quote retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RealTimeQuote'
+        '404':
+          description: Stock not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /quotes/stock/{isin}/history:
+    parameters:
+      - name: isin
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Stock ISIN
+      - name: interval
+        in: query
+        schema:
+          type: string
+          enum: [1d, 1wk, 1mo, 3mo]
+        description: Time interval between quotes
+      - name: range
+        in: query
+        schema:
+          type: string
+          enum: [1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, max]
+        description: Historical data range
+    get:
+      summary: Get historical quotes for a stock
+      tags:
+        - Quotes
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Historical quotes retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteHistory'
+        '404':
+          description: Stock not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /quotes/stock/{isin}/intraday:
+    parameters:
+      - name: isin
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Stock ISIN
+    get:
+      summary: Get intraday quotes for a stock
+      tags:
+        - Quotes
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Intraday quotes retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Quote'
+        '404':
+          description: Stock not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /quotes/portfolio/{portfolioId}/quotes:
+    parameters:
+      - name: portfolioId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Portfolio ID
+    get:
+      summary: Get quotes for all stocks in a portfolio
+      tags:
+        - Quotes
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Portfolio quotes retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/RealTimeQuote'
+        '404':
+          description: Portfolio not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /quotes/holding/{holdingId}/quotes:
+    parameters:
+      - name: holdingId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Holding ID
+    get:
+      summary: Get quotes for a specific holding
+      tags:
+        - Quotes
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Holding quotes retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Quote'
+        '404':
+          description: Holding not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
