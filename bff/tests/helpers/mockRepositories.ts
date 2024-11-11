@@ -56,6 +56,15 @@ export const mockUserRepo = {
   delete: sinon.stub()
 };
 
+export const mockCategoryRepo = {
+  create: sinon.stub(),
+  findById: sinon.stub(),
+  findByName: sinon.stub(),
+  findAll: sinon.stub(),
+  update: sinon.stub(),
+  delete: sinon.stub()
+};
+
 // Type assertion to match repository interfaces
 export const setupRepositoryMocks = () => {
   sinon.stub(database, 'getHoldingRepository').returns(mockHoldingRepo as any);
@@ -64,6 +73,7 @@ export const setupRepositoryMocks = () => {
   sinon.stub(database, 'getQuoteRepository').returns(mockQuoteRepo as any);
   sinon.stub(database, 'getStockRepository').returns(mockStockRepo as any);
   sinon.stub(database, 'getUserRepository').returns(mockUserRepo as any);
+  sinon.stub(database, 'getCategoryRepository').returns(mockCategoryRepo as any);
 };
 
 export const resetRepositoryMocks = () => {
@@ -99,6 +109,12 @@ export const resetRepositoryMocks = () => {
   });
 
   Object.values(mockUserRepo).forEach(stub => {
+    if (typeof stub === 'function' && 'reset' in stub) {
+      (stub as sinon.SinonStub).reset();
+    }
+  });
+
+  Object.values(mockCategoryRepo).forEach(stub => {
     if (typeof stub === 'function' && 'reset' in stub) {
       (stub as sinon.SinonStub).reset();
     }

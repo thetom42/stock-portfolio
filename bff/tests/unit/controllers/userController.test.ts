@@ -1,6 +1,7 @@
 import { expect, use } from 'chai';
 import spies from 'chai-spies';
 import { Request, Response } from 'express';
+import { describe, it, beforeEach, afterEach } from 'mocha';
 import * as userService from '../../../src/services/userService';
 import * as userController from '../../../src/controllers/userController';
 import { User, CreateUserDTO, UpdateUserDTO } from '../../../src/models/User';
@@ -211,6 +212,73 @@ describe('UserController', () => {
 
       expect(res.status).to.have.been.called.with(401);
       expect(res.json).to.have.been.called.with({ message: 'Unauthorized' });
+    });
+
+    it('should return 404 if user not found', async () => {
+      req = {
+        user: { id: '999' }
+      } as any;
+
+      chai.spy.on(userService, 'getUserById', () => Promise.resolve(null));
+
+      await userController.getOwnProfile(req as Request, res as any, next);
+
+      expect(res.status).to.have.been.called.with(404);
+      expect(res.json).to.have.been.called.with({ message: 'User not found' });
+    });
+  });
+
+  describe('updateOwnProfile', () => {
+    const mockUpdateData: UpdateUserDTO = {
+      firstName: 'Updated',
+      lastName: 'Name'
+    };
+
+    const mockUpdatedUser: User = {
+      id: '1',
+      email: 'test@example.com',
+      firstName: 'Updated',
+      lastName: 'Name',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    it('should update own profile if authenticated', async () => {
+      req = {
+        user: { id: '1' },
+        body: mockUpdateData
+      } as any;
+
+      chai.spy.on(userService, 'updateUser', () => Promise.resolve(mockUpdatedUser));
+
+      await userController.updateOwnProfile(req as any, res as any, next);
+
+      expect(res.json).to.have.been.called.with(mockUpdatedUser);
+    });
+
+    it('should return 401 if not authenticated', async () => {
+      req = {
+        body: mockUpdateData
+      } as any;
+
+      await userController.updateOwnProfile(req as any, res as any, next);
+
+      expect(res.status).to.have.been.called.with(401);
+      expect(res.json).to.have.been.called.with({ message: 'Unauthorized' });
+    });
+
+    it('should return 404 if user not found', async () => {
+      req = {
+        user: { id: '999' },
+        body: mockUpdateData
+      } as any;
+
+      chai.spy.on(userService, 'updateUser', () => Promise.resolve(null));
+
+      await userController.updateOwnProfile(req as any, res as any, next);
+
+      expect(res.status).to.have.been.called.with(404);
+      expect(res.json).to.have.been.called.with({ message: 'User not found' });
     });
   });
 });

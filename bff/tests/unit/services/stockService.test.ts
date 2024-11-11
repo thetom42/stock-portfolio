@@ -1,6 +1,5 @@
 import 'mocha';
-import { expect, use } from 'chai';
-import spies from 'chai-spies';
+import { expect } from 'chai';
 import sinon from 'sinon';
 import { 
   mockStockRepo,
@@ -9,8 +8,7 @@ import {
 } from '../../helpers/mockRepositories';
 import * as stockService from '../../../src/services/stockService';
 import * as yahooFinanceService from '../../../src/services/yahooFinanceService';
-
-use(spies);
+import { YahooFinanceQuote, YahooFinanceSearchResult } from '../../../src/services/yahooFinanceService';
 
 describe('StockService', () => {
   const mockStock = {
@@ -21,24 +19,30 @@ describe('StockService', () => {
     CATEGORIES_ID: 'tech-category'
   };
 
-  const mockYahooQuote = {
+  const mockYahooQuote: YahooFinanceQuote = {
     price: 150.50,
     currency: 'USD',
-    timestamp: new Date().toISOString(),
     exchange: 'NASDAQ',
+    timestamp: 1625097600000,
+    volume: 1000000,
     open: 149.50,
-    volume: 1000000
+    high: 152.00,
+    low: 148.50,
+    close: 150.50
+  };
+
+  const mockSearchResult: YahooFinanceSearchResult = {
+    symbol: 'AAPL',
+    name: 'Apple Inc.',
+    exchange: 'NASDAQ',
+    type: 'EQUITY'
   };
 
   beforeEach(() => {
     setupRepositoryMocks();
     sinon.stub(yahooFinanceService, 'getYahooFinanceService').returns({
       getRealTimeQuote: sinon.stub().resolves(mockYahooQuote),
-      searchStocks: sinon.stub().resolves([{
-        symbol: 'AAPL',
-        name: 'Apple Inc.',
-        exchange: 'NASDAQ'
-      }])
+      searchStocks: sinon.stub().resolves([mockSearchResult])
     } as any);
   });
 
@@ -59,6 +63,7 @@ describe('StockService', () => {
         symbol: mockStock.SYMBOL,
         name: mockStock.NAME
       });
+      sinon.assert.calledWith(mockStockRepo.findByISIN, mockStock.ISIN);
     });
 
     it('should return null when stock not found', async () => {
@@ -66,6 +71,7 @@ describe('StockService', () => {
 
       const result = await stockService.getStockByISIN('invalid-isin');
       expect(result).to.be.null;
+      sinon.assert.calledWith(mockStockRepo.findByISIN, 'invalid-isin');
     });
   });
 
@@ -81,6 +87,7 @@ describe('StockService', () => {
         symbol: mockStock.SYMBOL,
         name: mockStock.NAME
       });
+      sinon.assert.calledWith(mockStockRepo.findBySymbol, mockStock.SYMBOL);
     });
 
     it('should return null when stock not found', async () => {
@@ -88,6 +95,7 @@ describe('StockService', () => {
 
       const result = await stockService.getStockBySymbol('invalid-symbol');
       expect(result).to.be.null;
+      sinon.assert.calledWith(mockStockRepo.findBySymbol, 'invalid-symbol');
     });
   });
 
@@ -103,6 +111,7 @@ describe('StockService', () => {
         symbol: mockStock.SYMBOL,
         name: mockStock.NAME
       });
+      sinon.assert.calledWith(mockStockRepo.findByWKN, mockStock.WKN);
     });
 
     it('should return null when stock not found', async () => {
@@ -110,6 +119,7 @@ describe('StockService', () => {
 
       const result = await stockService.getStockByWKN('invalid-wkn');
       expect(result).to.be.null;
+      sinon.assert.calledWith(mockStockRepo.findByWKN, 'invalid-wkn');
     });
   });
 
@@ -125,6 +135,7 @@ describe('StockService', () => {
         symbol: mockStock.SYMBOL,
         name: mockStock.NAME
       });
+      sinon.assert.called(mockStockRepo.findAll);
     });
 
     it('should return empty array when no stocks exist', async () => {
@@ -132,6 +143,7 @@ describe('StockService', () => {
 
       const result = await stockService.getAllStocks();
       expect(result).to.be.an('array').that.is.empty;
+      sinon.assert.called(mockStockRepo.findAll);
     });
   });
 
@@ -147,6 +159,7 @@ describe('StockService', () => {
         symbol: mockStock.SYMBOL,
         name: mockStock.NAME
       });
+      sinon.assert.calledWith(mockStockRepo.findByCategory, 'tech-category');
     });
 
     it('should return empty array when no stocks in category', async () => {
@@ -154,6 +167,7 @@ describe('StockService', () => {
 
       const result = await stockService.getStocksByCategory('empty-category');
       expect(result).to.be.an('array').that.is.empty;
+      sinon.assert.calledWith(mockStockRepo.findByCategory, 'empty-category');
     });
   });
 
@@ -163,10 +177,20 @@ describe('StockService', () => {
 
       expect(result).to.be.an('array');
       expect(result[0]).to.deep.include({
-        symbol: 'AAPL',
-        name: 'Apple Inc.',
-        exchange: 'NASDAQ'
+        symbol: mockSearchResult.symbol,
+        name: mockSearchResult.name,
+        exchange: mockSearchResult.exchange
       });
+      const yahooService = yahooFinanceService.getYahooFinanceService() as any;
+      sinon.assert.calledWith(yahooService.searchStocks, 'AAPL');
+    });
+
+    it('should handle Yahoo Finance API errors', async () => {
+      const yahooService = yahooFinanceService.getYahooFinanceService() as any;
+      yahooService.searchStocks.rejects(new Error('API Error'));
+
+      const result = await stockService.searchStocks('AAPL');
+      expect(result).to.be.an('array').that.is.empty;
     });
   });
 
@@ -181,10 +205,13 @@ describe('StockService', () => {
         id: mockStock.ISIN,
         symbol: mockStock.SYMBOL,
         name: mockStock.NAME,
-        currentPrice: mockYahooQuote.price
+        currentPrice: mockYahooQuote.price,
+        currency: mockYahooQuote.currency,
+        exchange: mockYahooQuote.exchange
       });
       expect(result).to.have.property('priceChange');
       expect(result).to.have.property('priceChangePercentage');
+      sinon.assert.calledWith(mockStockRepo.findByISIN, mockStock.ISIN);
     });
 
     it('should return null when stock not found', async () => {
@@ -192,6 +219,7 @@ describe('StockService', () => {
 
       const result = await stockService.getStockDetails('invalid-isin');
       expect(result).to.be.null;
+      sinon.assert.calledWith(mockStockRepo.findByISIN, 'invalid-isin');
     });
 
     it('should return basic stock info when Yahoo Finance fails', async () => {
@@ -207,6 +235,7 @@ describe('StockService', () => {
         symbol: mockStock.SYMBOL,
         name: mockStock.NAME
       });
+      sinon.assert.calledWith(mockStockRepo.findByISIN, mockStock.ISIN);
     });
   });
 
@@ -228,13 +257,13 @@ describe('StockService', () => {
         symbol: mockStock.SYMBOL,
         name: mockStock.NAME
       });
-      expect(mockStockRepo.create.calledOnceWith({
+      sinon.assert.calledWith(mockStockRepo.create, {
         ISIN: createData.isin,
         CATEGORIES_ID: 'tech-category',
         NAME: createData.name,
         WKN: createData.wkn,
         SYMBOL: createData.symbol
-      })).to.be.true;
+      });
     });
   });
 
@@ -255,6 +284,10 @@ describe('StockService', () => {
         id: mockStock.ISIN,
         name: updateData.name
       });
+      sinon.assert.calledWith(mockStockRepo.update, mockStock.ISIN, {
+        NAME: updateData.name,
+        CATEGORIES_ID: updateData.categoryId
+      });
     });
 
     it('should return null when stock not found', async () => {
@@ -262,6 +295,10 @@ describe('StockService', () => {
 
       const result = await stockService.updateStock('invalid-isin', updateData);
       expect(result).to.be.null;
+      sinon.assert.calledWith(mockStockRepo.update, 'invalid-isin', {
+        NAME: updateData.name,
+        CATEGORIES_ID: updateData.categoryId
+      });
     });
   });
 
@@ -270,7 +307,7 @@ describe('StockService', () => {
       mockStockRepo.delete.resolves();
 
       await stockService.deleteStock(mockStock.ISIN);
-      expect(mockStockRepo.delete.calledOnceWith(mockStock.ISIN)).to.be.true;
+      sinon.assert.calledWith(mockStockRepo.delete, mockStock.ISIN);
     });
   });
 });

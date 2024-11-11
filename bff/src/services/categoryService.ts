@@ -1,4 +1,4 @@
-import { Category } from '../../../db/models/Category';
+import { Category, CreateCategoryDTO, UpdateCategoryDTO } from '../models/Category';
 import { getCategoryRepository } from '../utils/database';
 
 // Helper function to map DB Category to BFF Category
@@ -7,7 +7,7 @@ const mapDBCategoryToBFF = (dbCategory: any): Category => ({
     NAME: dbCategory.NAME
 });
 
-export const createCategory = async (categoryData: Category): Promise<Category> => {
+export const createCategory = async (categoryData: CreateCategoryDTO): Promise<Category> => {
     const categoryRepo = getCategoryRepository();
     const existingCategory = await categoryRepo.findByName(categoryData.NAME);
     
@@ -42,7 +42,7 @@ export const getAllCategories = async (): Promise<Category[]> => {
 
 export const updateCategory = async (
     id: string,
-    updateData: Partial<Category>
+    updateData: UpdateCategoryDTO
 ): Promise<Category> => {
     const categoryRepo = getCategoryRepository();
     

@@ -4,7 +4,7 @@ import spies from 'chai-spies';
 import sinon from 'sinon';
 import { Request, Response } from 'express';
 import * as transactionController from '../../../src/controllers/transactionController';
-import { CreateTransactionDTO, Transaction } from '../../../src/models/Holding';
+import { Transaction, CreateTransactionDTO, TransactionQueryParams, PaginatedTransactions } from '../../../src/models/Transaction';
 import { mockHoldingRepo, mockPortfolioRepo, mockTransactionRepo, setupRepositoryMocks, resetRepositoryMocks } from '../../helpers/mockRepositories';
 
 use(spies);
@@ -54,7 +54,7 @@ describe('TransactionController', () => {
       ISIN: 'US0378331005'
     };
 
-    const mockTransaction = {
+    const mockTransaction: Transaction = {
       TRANSACTIONS_ID: 'trans123',
       HOLDINGS_ID: holdingId,
       BUY: mockTransactionData.BUY,
@@ -136,11 +136,38 @@ describe('TransactionController', () => {
       expect(res.status).to.have.been.called.with(404);
       expect(res.json).to.have.been.called.with({ message: 'Holding not found' });
     });
+
+    it('should return 403 if user does not own the holding', async () => {
+      req = {
+        user: { id: userId },
+        params: { holdingId },
+        body: mockTransactionData
+      } as any;
+
+      mockHoldingRepo.findById.resolves(mockHolding);
+      mockPortfolioRepo.findById.resolves({ USERS_ID: 'different-user' });
+
+      await transactionController.createTransaction(req as any, res as any, next);
+
+      expect(res.status).to.have.been.called.with(403);
+      expect(res.json).to.have.been.called.with({ message: 'Unauthorized' });
+    });
+
+    it('should call next with error if user is not authenticated', async () => {
+      req = {
+        params: { holdingId },
+        body: mockTransactionData
+      } as any;
+
+      await transactionController.createTransaction(req as any, res as any, next);
+
+      expect(next).to.have.been.called();
+    });
   });
 
   describe('getTransaction', () => {
     const transactionId = 'trans123';
-    const mockTransaction = {
+    const mockTransaction: Transaction = {
       TRANSACTIONS_ID: transactionId,
       HOLDINGS_ID: holdingId,
       BUY: true,
@@ -179,41 +206,104 @@ describe('TransactionController', () => {
       expect(res.status).to.have.been.called.with(404);
       expect(res.json).to.have.been.called.with({ message: 'Transaction not found' });
     });
+
+    it('should return 403 if user does not own the holding', async () => {
+      req = {
+        user: { id: userId },
+        params: { id: transactionId }
+      } as any;
+
+      mockTransactionRepo.findById.resolves(mockTransaction);
+      mockHoldingRepo.findById.resolves({ PORTFOLIOS_ID: portfolioId });
+      mockPortfolioRepo.findById.resolves({ USERS_ID: 'different-user' });
+
+      await transactionController.getTransaction(req as any, res as any, next);
+
+      expect(res.status).to.have.been.called.with(403);
+      expect(res.json).to.have.been.called.with({ message: 'Unauthorized' });
+    });
+
+    it('should call next with error if user is not authenticated', async () => {
+      req = {
+        params: { id: transactionId }
+      } as any;
+
+      await transactionController.getTransaction(req as any, res as any, next);
+
+      expect(next).to.have.been.called();
+    });
   });
 
   describe('getTransactionsByHolding', () => {
-    const mockTransactions = [
-      {
-        TRANSACTIONS_ID: 'trans1',
-        HOLDINGS_ID: holdingId,
-        BUY: true,
-        TRANSACTION_TIME: new Date(),
-        AMOUNT: 100,
-        PRICE: 150.50,
-        COMMISSION: 7.99,
-        BROKER: 'TEST_BROKER'
-      }
-    ];
+    const mockPaginatedTransactions: PaginatedTransactions = {
+      transactions: [
+        {
+          TRANSACTIONS_ID: 'trans1',
+          HOLDINGS_ID: holdingId,
+          BUY: true,
+          TRANSACTION_TIME: new Date(),
+          AMOUNT: 100,
+          PRICE: 150.50,
+          COMMISSION: 7.99,
+          BROKER: 'TEST_BROKER'
+        }
+      ],
+      total: 1,
+      page: 1,
+      limit: 10,
+      totalPages: 1
+    };
 
-    it('should return transactions for holding', async () => {
+    it('should return transactions for holding with default params', async () => {
       req = {
         user: { id: userId },
-        params: { holdingId }
+        params: { holdingId },
+        query: {}
       } as any;
 
       mockHoldingRepo.findById.resolves({ PORTFOLIOS_ID: portfolioId });
       mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
-      mockTransactionRepo.findByHolding.resolves(mockTransactions);
+      mockTransactionRepo.findByHolding.resolves(mockPaginatedTransactions);
 
       await transactionController.getTransactionsByHolding(req as any, res as any, next);
 
-      expect(res.json).to.have.been.called.with(mockTransactions);
+      expect(res.json).to.have.been.called.with(mockPaginatedTransactions);
+    });
+
+    it('should handle query parameters correctly', async () => {
+      const queryParams: TransactionQueryParams = {
+        startDate: '2023-01-01',
+        endDate: '2023-12-31',
+        type: 'BUY',
+        sort: 'date',
+        order: 'desc',
+        page: 1,
+        limit: 20
+      };
+
+      req = {
+        user: { id: userId },
+        params: { holdingId },
+        query: queryParams
+      } as any;
+
+      mockHoldingRepo.findById.resolves({ PORTFOLIOS_ID: portfolioId });
+      mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
+      mockTransactionRepo.findByHolding.resolves(mockPaginatedTransactions);
+
+      await transactionController.getTransactionsByHolding(req as any, res as any, next);
+
+      expect(mockTransactionRepo.findByHolding).to.have.been.called.with(
+        holdingId,
+        sinon.match(queryParams)
+      );
     });
 
     it('should return 404 if holding not found', async () => {
       req = {
         user: { id: userId },
-        params: { holdingId }
+        params: { holdingId },
+        query: {}
       } as any;
 
       mockHoldingRepo.findById.resolves(null);
@@ -223,6 +313,33 @@ describe('TransactionController', () => {
       expect(res.status).to.have.been.called.with(404);
       expect(res.json).to.have.been.called.with({ message: 'Holding not found' });
     });
+
+    it('should return 403 if user does not own the holding', async () => {
+      req = {
+        user: { id: userId },
+        params: { holdingId },
+        query: {}
+      } as any;
+
+      mockHoldingRepo.findById.resolves({ PORTFOLIOS_ID: portfolioId });
+      mockPortfolioRepo.findById.resolves({ USERS_ID: 'different-user' });
+
+      await transactionController.getTransactionsByHolding(req as any, res as any, next);
+
+      expect(res.status).to.have.been.called.with(403);
+      expect(res.json).to.have.been.called.with({ message: 'Unauthorized' });
+    });
+
+    it('should call next with error if user is not authenticated', async () => {
+      req = {
+        params: { holdingId },
+        query: {}
+      } as any;
+
+      await transactionController.getTransactionsByHolding(req as any, res as any, next);
+
+      expect(next).to.have.been.called();
+    });
   });
 
   describe('getTransactionsByPortfolio', () => {
@@ -231,28 +348,63 @@ describe('TransactionController', () => {
       { HOLDINGS_ID: 'holding2', PORTFOLIOS_ID: portfolioId }
     ];
 
-    const mockTransactions = [
-      {
-        TRANSACTIONS_ID: 'trans1',
-        HOLDINGS_ID: 'holding1',
-        BUY: true,
-        TRANSACTION_TIME: new Date(),
-        AMOUNT: 100,
-        PRICE: 150.50,
-        COMMISSION: 7.99,
-        BROKER: 'TEST_BROKER'
-      }
-    ];
+    const mockPaginatedTransactions: PaginatedTransactions = {
+      transactions: [
+        {
+          TRANSACTIONS_ID: 'trans1',
+          HOLDINGS_ID: 'holding1',
+          BUY: true,
+          TRANSACTION_TIME: new Date(),
+          AMOUNT: 100,
+          PRICE: 150.50,
+          COMMISSION: 7.99,
+          BROKER: 'TEST_BROKER'
+        }
+      ],
+      total: 1,
+      page: 1,
+      limit: 10,
+      totalPages: 1
+    };
 
-    it('should return transactions for portfolio', async () => {
+    it('should return transactions for portfolio with default params', async () => {
       req = {
         user: { id: userId },
-        params: { portfolioId }
+        params: { portfolioId },
+        query: {}
       } as any;
 
       mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
       mockHoldingRepo.findByPortfolio.resolves(mockHoldings);
-      mockTransactionRepo.findByHolding.resolves(mockTransactions);
+      mockTransactionRepo.findByHolding.resolves(mockPaginatedTransactions);
+
+      await transactionController.getTransactionsByPortfolio(req as any, res as any, next);
+
+      expect(mockHoldingRepo.findByPortfolio).to.have.been.called();
+      expect(mockTransactionRepo.findByHolding).to.have.been.called();
+      expect(res.json).to.have.been.called();
+    });
+
+    it('should handle query parameters correctly', async () => {
+      const queryParams: TransactionQueryParams = {
+        startDate: '2023-01-01',
+        endDate: '2023-12-31',
+        type: 'SELL',
+        sort: 'amount',
+        order: 'asc',
+        page: 2,
+        limit: 15
+      };
+
+      req = {
+        user: { id: userId },
+        params: { portfolioId },
+        query: queryParams
+      } as any;
+
+      mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
+      mockHoldingRepo.findByPortfolio.resolves(mockHoldings);
+      mockTransactionRepo.findByHolding.resolves(mockPaginatedTransactions);
 
       await transactionController.getTransactionsByPortfolio(req as any, res as any, next);
 
@@ -264,7 +416,8 @@ describe('TransactionController', () => {
     it('should return 403 if portfolio not owned by user', async () => {
       req = {
         user: { id: userId },
-        params: { portfolioId }
+        params: { portfolioId },
+        query: {}
       } as any;
 
       mockPortfolioRepo.findById.resolves({ USERS_ID: 'different-user' });
@@ -273,6 +426,17 @@ describe('TransactionController', () => {
 
       expect(res.status).to.have.been.called.with(403);
       expect(res.json).to.have.been.called.with({ message: 'Unauthorized' });
+    });
+
+    it('should call next with error if user is not authenticated', async () => {
+      req = {
+        params: { portfolioId },
+        query: {}
+      } as any;
+
+      await transactionController.getTransactionsByPortfolio(req as any, res as any, next);
+
+      expect(next).to.have.been.called();
     });
   });
 });

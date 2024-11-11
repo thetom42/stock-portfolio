@@ -13,6 +13,16 @@ interface YahooFinanceQuote {
   close?: number;
 }
 
+interface IntradayQuote {
+  price: number;
+  timestamp: number;
+  volume?: number;
+  open?: number;
+  high?: number;
+  low?: number;
+  close?: number;
+}
+
 interface HistoricalQuote {
   date: Date;
   open: number;
@@ -100,7 +110,7 @@ class YahooFinanceService {
     }));
   }
 
-  async getIntradayQuotes(isin: string): Promise<YahooFinanceQuote[]> {
+  async getIntradayQuotes(isin: string): Promise<IntradayQuote[]> {
     const data = await this.makeRequest('/stock/v2/get-chart', {
       symbol: isin,
       interval: '5m',
@@ -142,4 +152,10 @@ export function getYahooFinanceService(): YahooFinanceService {
   return yahooFinanceService;
 }
 
-export type { YahooFinanceQuote, HistoricalQuote, QuoteOptions, YahooFinanceSearchResult };
+export type { 
+  YahooFinanceQuote, 
+  IntradayQuote, 
+  HistoricalQuote, 
+  QuoteOptions, 
+  YahooFinanceSearchResult 
+};

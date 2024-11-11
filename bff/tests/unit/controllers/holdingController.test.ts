@@ -13,6 +13,7 @@ import {
   HoldingValue,
   HoldingHistory
 } from '../../../src/models/Holding';
+import { Transaction } from '../../../src/models/Transaction';
 
 use(spies);
 
@@ -95,6 +96,16 @@ describe('HoldingController', () => {
 
       expect(next).to.have.been.called.with(error);
     });
+
+    it('should call next with error if user is not authenticated', async () => {
+      req = {
+        body: mockHoldingData
+      } as any;
+
+      await holdingController.createHolding(req as any, res as any, next);
+
+      expect(next).to.have.been.called();
+    });
   });
 
   describe('getHolding', () => {
@@ -141,6 +152,16 @@ describe('HoldingController', () => {
 
       expect(res.status).to.have.been.called.with(404);
       expect(res.json).to.have.been.called.with({ message: 'Holding not found' });
+    });
+
+    it('should call next with error if user is not authenticated', async () => {
+      req = {
+        params: { id: 'holding123' }
+      } as any;
+
+      await holdingController.getHolding(req as any, res as any, next);
+
+      expect(next).to.have.been.called();
     });
   });
 
@@ -195,6 +216,17 @@ describe('HoldingController', () => {
       expect(res.status).to.have.been.called.with(404);
       expect(res.json).to.have.been.called.with({ message: 'Holding not found' });
     });
+
+    it('should call next with error if user is not authenticated', async () => {
+      req = {
+        params: { id: 'holding123' },
+        body: mockUpdateData
+      } as any;
+
+      await holdingController.updateHolding(req as any, res as any, next);
+
+      expect(next).to.have.been.called();
+    });
   });
 
   describe('getHoldingPerformance', () => {
@@ -232,6 +264,78 @@ describe('HoldingController', () => {
       expect(res.status).to.have.been.called.with(404);
       expect(res.json).to.have.been.called.with({ message: 'Holding not found' });
     });
+
+    it('should call next with error if user is not authenticated', async () => {
+      req = {
+        params: { id: 'holding123' }
+      } as any;
+
+      await holdingController.getHoldingPerformance(req as any, res as any, next);
+
+      expect(next).to.have.been.called();
+    });
+  });
+
+  describe('getHoldingTransactions', () => {
+    const mockTransactions: Transaction[] = [
+      {
+        TRANSACTIONS_ID: 'trans1',
+        HOLDINGS_ID: 'holding123',
+        BUY: true,
+        TRANSACTION_TIME: new Date(),
+        AMOUNT: 50,
+        PRICE: 150,
+        COMMISSION: 0,
+        BROKER: 'TestBroker'
+      },
+      {
+        TRANSACTIONS_ID: 'trans2',
+        HOLDINGS_ID: 'holding123',
+        BUY: true,
+        TRANSACTION_TIME: new Date(),
+        AMOUNT: 50,
+        PRICE: 155,
+        COMMISSION: 0,
+        BROKER: 'TestBroker'
+      }
+    ];
+
+    it('should return holding transactions', async () => {
+      req = {
+        user: { id: userId },
+        params: { id: 'holding123' }
+      } as any;
+
+      chai.spy.on(holdingService, 'getHoldingTransactions', () => Promise.resolve(mockTransactions));
+
+      await holdingController.getHoldingTransactions(req as any, res as any, next);
+
+      expect(res.json).to.have.been.called.with(mockTransactions);
+    });
+
+    it('should return 404 if holding not found', async () => {
+      req = {
+        user: { id: userId },
+        params: { id: 'nonexistent' }
+      } as any;
+
+      chai.spy.on(holdingService, 'getHoldingTransactions', () => Promise.resolve(null));
+
+      await holdingController.getHoldingTransactions(req as any, res as any, next);
+
+      expect(res.status).to.have.been.called.with(404);
+      expect(res.json).to.have.been.called.with({ message: 'Holding not found' });
+    });
+
+    it('should call next with error if user is not authenticated', async () => {
+      req = {
+        params: { id: 'holding123' }
+      } as any;
+
+      await holdingController.getHoldingTransactions(req as any, res as any, next);
+
+      expect(next).to.have.been.called();
+    });
   });
 
   describe('getHoldingValue', () => {
@@ -254,6 +358,90 @@ describe('HoldingController', () => {
       await holdingController.getHoldingValue(req as any, res as any, next);
 
       expect(res.json).to.have.been.called.with(mockValue);
+    });
+
+    it('should return 404 if holding not found', async () => {
+      req = {
+        user: { id: userId },
+        params: { id: 'nonexistent' }
+      } as any;
+
+      chai.spy.on(holdingService, 'getHoldingValue', () => Promise.resolve(null));
+
+      await holdingController.getHoldingValue(req as any, res as any, next);
+
+      expect(res.status).to.have.been.called.with(404);
+      expect(res.json).to.have.been.called.with({ message: 'Holding not found' });
+    });
+
+    it('should call next with error if user is not authenticated', async () => {
+      req = {
+        params: { id: 'holding123' }
+      } as any;
+
+      await holdingController.getHoldingValue(req as any, res as any, next);
+
+      expect(next).to.have.been.called();
+    });
+  });
+
+  describe('getHoldingHistory', () => {
+    const mockHistory: HoldingHistory[] = [
+      {
+        date: new Date(),
+        buy: true,
+        amount: 50,
+        price: 150,
+        value: 7500,
+        commission: 0,
+        broker: 'TestBroker'
+      },
+      {
+        date: new Date(),
+        buy: true,
+        amount: 50,
+        price: 155,
+        value: 7750,
+        commission: 0,
+        broker: 'TestBroker'
+      }
+    ];
+
+    it('should return holding history', async () => {
+      req = {
+        user: { id: userId },
+        params: { id: 'holding123' }
+      } as any;
+
+      chai.spy.on(holdingService, 'getHoldingHistory', () => Promise.resolve(mockHistory));
+
+      await holdingController.getHoldingHistory(req as any, res as any, next);
+
+      expect(res.json).to.have.been.called.with(mockHistory);
+    });
+
+    it('should return 404 if holding not found', async () => {
+      req = {
+        user: { id: userId },
+        params: { id: 'nonexistent' }
+      } as any;
+
+      chai.spy.on(holdingService, 'getHoldingHistory', () => Promise.resolve(null));
+
+      await holdingController.getHoldingHistory(req as any, res as any, next);
+
+      expect(res.status).to.have.been.called.with(404);
+      expect(res.json).to.have.been.called.with({ message: 'Holding not found' });
+    });
+
+    it('should call next with error if user is not authenticated', async () => {
+      req = {
+        params: { id: 'holding123' }
+      } as any;
+
+      await holdingController.getHoldingHistory(req as any, res as any, next);
+
+      expect(next).to.have.been.called();
     });
   });
 
@@ -284,6 +472,16 @@ describe('HoldingController', () => {
       await holdingController.deleteHolding(req as any, res as any, next);
 
       expect(next).to.have.been.called.with(error);
+    });
+
+    it('should call next with error if user is not authenticated', async () => {
+      req = {
+        params: { id: 'holding123' }
+      } as any;
+
+      await holdingController.deleteHolding(req as any, res as any, next);
+
+      expect(next).to.have.been.called();
     });
   });
 });
