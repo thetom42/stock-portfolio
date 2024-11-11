@@ -4,8 +4,11 @@ info:
   version: 1.0.0
   description: Backend-for-frontend API for the Stock Portfolio application
 
+security:
+  - bearerAuth: []  # Apply bearer token auth globally
+
 servers:
-  - url: /api/v1
+  - url: https://sp.thetom42.duckdns.org/api/v1
     description: Base API path
 
 components:
@@ -25,10 +28,16 @@ components:
         email:
           type: string
           format: email
+          maxLength: 255
+          pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
         firstName:
           type: string
+          maxLength: 100
+          pattern: ^[a-zA-Z\s-']+$
         lastName:
           type: string
+          maxLength: 100
+          pattern: ^[a-zA-Z\s-']+$
         createdAt:
           type: string
           format: date-time
@@ -49,14 +58,22 @@ components:
         email:
           type: string
           format: email
+          maxLength: 255
+          pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
         firstName:
           type: string
+          maxLength: 100
+          pattern: ^[a-zA-Z\s-']+$
         lastName:
           type: string
+          maxLength: 100
+          pattern: ^[a-zA-Z\s-']+$
         password:
           type: string
           format: password
           minLength: 8
+          maxLength: 72
+          pattern: ^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$
       required:
         - email
         - firstName
@@ -85,8 +102,11 @@ components:
           format: uuid
         name:
           type: string
+          maxLength: 100
+          pattern: ^[\w\s-]+$
         description:
           type: string
+          maxLength: 1000
         createdAt:
           type: string
           format: date-time
@@ -194,22 +214,39 @@ components:
           format: uuid
         symbol:
           type: string
+          maxLength: 20
+          pattern: ^[A-Z0-9.-]+$
         isin:
           type: string
+          maxLength: 12
+          pattern: ^[A-Z]{2}[A-Z0-9]{9}\d$
         name:
           type: string
+          maxLength: 200
+          pattern: ^[\w\s.-]+$
         description:
           type: string
+          maxLength: 2000
         sector:
           type: string
+          maxLength: 100
+          pattern: ^[\w\s&-]+$
         industry:
           type: string
+          maxLength: 100
+          pattern: ^[\w\s&-]+$
         currency:
           type: string
+          maxLength: 3
+          pattern: ^[A-Z]{3}$
         exchange:
           type: string
+          maxLength: 50
+          pattern: ^[\w\s.-]+$
         country:
           type: string
+          maxLength: 100
+          pattern: ^[\w\s-]+$
         createdAt:
           type: string
           format: date-time
@@ -314,6 +351,8 @@ components:
           format: double
         BROKER:
           type: string
+          maxLength: 100
+          pattern: ^[\w\s&-]+$
       required:
         - TRANSACTIONS_ID
         - HOLDINGS_ID
@@ -545,6 +584,8 @@ components:
           format: uuid
         NAME:
           type: string
+          maxLength: 100
+          pattern: ^[\w\s-]+$
       required:
         - CATEGORIES_ID
         - NAME
@@ -1391,48 +1432,6 @@ paths:
           type: string
           format: uuid
         description: Holding ID
-      - name: startDate
-        in: query
-        schema:
-          type: string
-          format: date-time
-        description: Filter transactions from this date
-      - name: endDate
-        in: query
-        schema:
-          type: string
-          format: date-time
-        description: Filter transactions until this date
-      - name: type
-        in: query
-        schema:
-          type: string
-          enum: [BUY, SELL]
-        description: Filter by transaction type
-      - name: sort
-        in: query
-        schema:
-          type: string
-          enum: [date, amount, price]
-        description: Sort field
-      - name: order
-        in: query
-        schema:
-          type: string
-          enum: [asc, desc]
-        description: Sort order
-      - name: page
-        in: query
-        schema:
-          type: integer
-          minimum: 1
-        description: Page number for pagination
-      - name: limit
-        in: query
-        schema:
-          type: integer
-          minimum: 1
-        description: Number of items per page
     
     post:
       summary: Create transaction for a holding
@@ -1473,7 +1472,48 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        $ref: '#/components/parameters/TransactionQueryParams'
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter transactions from this date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter transactions until this date
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [BUY, SELL]
+          description: Filter by transaction type
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [date, amount, price]
+          description: Sort field
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+          description: Sort order
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+          description: Page number for pagination
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+          description: Number of items per page
       responses:
         '200':
           description: List of transactions for the holding
@@ -1504,7 +1544,48 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        $ref: '#/components/parameters/TransactionQueryParams'
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter transactions from this date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter transactions until this date
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [BUY, SELL]
+          description: Filter by transaction type
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [date, amount, price]
+          description: Sort field
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+          description: Sort order
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+          description: Page number for pagination
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+          description: Number of items per page
       responses:
         '200':
           description: List of transactions for the portfolio
