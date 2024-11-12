@@ -4,7 +4,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0-alpha] - Unreleased
+## [v0.2.0-alpha] - 2024-03-10
+
+### Added
+- Complete Backend-for-Frontend (BFF) layer implementation
+- Comprehensive unit tests for all BFF components
+- Integration tests for critical system paths
+- Complete Postman collection for API testing
+- REST API specification
+- Enhanced database design with plugin pattern
+- Comprehensive project documentation
+- Improved test helpers and mock implementations
+
+### Enhanced
+- Portfolio and holding services with robust business logic
+- Stock quote handling optimization
+- Transaction processing improvements
+- Database query optimization
+- Data validation and error handling
+- Type safety across the data layer
+
+## [v0.1.0-alpha] - 2024-02-20
 
 ### Added
 - Initial backend-for-frontend (BFF) implementation with Express.js and TypeScript
