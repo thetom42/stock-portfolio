@@ -1,20 +1,18 @@
-import 'mocha';
-import { expect, use } from 'chai';
-import spies from 'chai-spies';
+import { expect } from 'chai';
 import sinon from 'sinon';
+import * as userService from '../../../src/services/userService';
+import { CreateUserDTO, UpdateUserDTO, UserCredentials } from '../../../src/models/User';
 import { 
   mockUserRepo,
   setupRepositoryMocks, 
   resetRepositoryMocks 
 } from '../../helpers/mockRepositories';
-import * as userService from '../../../src/services/userService';
-import { CreateUserDTO, UpdateUserDTO, UserCredentials } from '../../../src/models/User';
-
-use(spies);
 
 describe('UserService', () => {
   beforeEach(() => {
     setupRepositoryMocks();
+    // Replace the repository instance in the service
+    (userService as any).userRepository = mockUserRepo;
   });
 
   afterEach(() => {
@@ -35,7 +33,7 @@ describe('UserService', () => {
       NAME: mockUserData.firstName,
       SURNAME: mockUserData.lastName,
       NICKNAME: mockUserData.firstName,
-      PASSWORD: 'hashed_password', // actual hash will be handled by the service
+      PASSWORD: 'hashed_password',
       JOIN_DATE: new Date()
     };
 
@@ -50,7 +48,7 @@ describe('UserService', () => {
         firstName: mockCreatedDBUser.NAME,
         lastName: mockCreatedDBUser.SURNAME
       });
-      expect(mockUserRepo.create.calledOnce).to.be.true;
+
       const createCall = mockUserRepo.create.firstCall.args[0];
       expect(createCall).to.deep.include({
         USERS_ID: '',
@@ -59,9 +57,15 @@ describe('UserService', () => {
         SURNAME: mockUserData.lastName,
         NICKNAME: mockUserData.firstName
       });
-      // Don't test the exact hash value, just verify it's present
       expect(createCall.PASSWORD).to.be.a('string').and.not.empty;
       expect(createCall.JOIN_DATE).to.be.instanceOf(Date);
+    });
+
+    it('should throw error if user already exists', async () => {
+      mockUserRepo.create.rejects(new Error('User with this email already exists'));
+
+      await expect(userService.createUser(mockUserData))
+        .to.be.rejectedWith('User with this email already exists');
     });
   });
 
@@ -72,6 +76,7 @@ describe('UserService', () => {
       NAME: 'Test',
       SURNAME: 'User',
       NICKNAME: 'Test',
+      PASSWORD: 'hashed_password',
       JOIN_DATE: new Date()
     };
 
@@ -86,6 +91,7 @@ describe('UserService', () => {
         firstName: mockDBUser.NAME,
         lastName: mockDBUser.SURNAME
       });
+      expect(mockUserRepo.findById.calledWith('1')).to.be.true;
     });
 
     it('should return null if user not found', async () => {
@@ -103,6 +109,7 @@ describe('UserService', () => {
       NAME: 'Test',
       SURNAME: 'User',
       NICKNAME: 'Test',
+      PASSWORD: 'hashed_password',
       JOIN_DATE: new Date()
     };
 
@@ -117,6 +124,7 @@ describe('UserService', () => {
         firstName: mockDBUser.NAME,
         lastName: mockDBUser.SURNAME
       });
+      expect(mockUserRepo.findByEmail.calledWith('test@example.com')).to.be.true;
     });
 
     it('should return null if user not found', async () => {
@@ -136,32 +144,26 @@ describe('UserService', () => {
     const mockDBUser = {
       USERS_ID: '1',
       EMAIL: 'test@example.com',
-      NAME: 'Test',
-      SURNAME: 'User',
-      NICKNAME: 'Test',
+      NAME: 'Updated',
+      SURNAME: 'Name',
+      NICKNAME: 'Updated',
+      PASSWORD: 'hashed_password',
       JOIN_DATE: new Date()
     };
 
-    const mockUpdatedDBUser = {
-      ...mockDBUser,
-      NAME: mockUpdateData.firstName,
-      SURNAME: mockUpdateData.lastName,
-      NICKNAME: mockUpdateData.firstName
-    };
-
     it('should update user successfully', async () => {
-      mockUserRepo.findById.resolves(mockDBUser);
-      mockUserRepo.update.resolves(mockUpdatedDBUser);
+      mockUserRepo.update.resolves(mockDBUser);
 
       const result = await userService.updateUser('1', mockUpdateData);
 
       expect(result).to.deep.include({
-        id: mockUpdatedDBUser.USERS_ID,
-        email: mockUpdatedDBUser.EMAIL,
-        firstName: mockUpdatedDBUser.NAME,
-        lastName: mockUpdatedDBUser.SURNAME
+        id: mockDBUser.USERS_ID,
+        email: mockDBUser.EMAIL,
+        firstName: mockDBUser.NAME,
+        lastName: mockDBUser.SURNAME
       });
-      expect(mockUserRepo.update.calledOnceWith('1', {
+
+      expect(mockUserRepo.update.calledWith('1', {
         NAME: mockUpdateData.firstName,
         SURNAME: mockUpdateData.lastName,
         NICKNAME: mockUpdateData.firstName
@@ -169,7 +171,7 @@ describe('UserService', () => {
     });
 
     it('should return null if user not found', async () => {
-      mockUserRepo.findById.resolves(null);
+      mockUserRepo.update.rejects(new Error('User not found'));
 
       const result = await userService.updateUser('999', mockUpdateData);
       expect(result).to.be.null;
@@ -178,10 +180,17 @@ describe('UserService', () => {
 
   describe('deleteUser', () => {
     it('should delete user successfully', async () => {
-      mockUserRepo.delete.resolves();
+      mockUserRepo.delete.resolves({} as any);
 
       await userService.deleteUser('1');
-      expect(mockUserRepo.delete.calledOnceWith('1')).to.be.true;
+      expect(mockUserRepo.delete.calledWith('1')).to.be.true;
+    });
+
+    it('should throw error if user not found', async () => {
+      mockUserRepo.delete.rejects(new Error('User not found'));
+
+      await expect(userService.deleteUser('999'))
+        .to.be.rejectedWith('User not found');
     });
   });
 
@@ -197,19 +206,14 @@ describe('UserService', () => {
       NAME: 'Test',
       SURNAME: 'User',
       NICKNAME: 'Test',
-      PASSWORD: '', // will be set in beforeEach
+      PASSWORD: '', // Will be set to match hashed password
       JOIN_DATE: new Date()
     };
 
-    beforeEach(async () => {
-      // Create a user and get their hashed password
-      const tempUser = await userService.createUser({
-        email: credentials.email,
-        firstName: 'Test',
-        lastName: 'User',
-        password: credentials.password
-      });
-      mockDBUser.PASSWORD = mockUserRepo.create.firstCall.args[0].PASSWORD;
+    beforeEach(() => {
+      // Set the password to match the hashed version of the test password
+      const crypto = require('crypto');
+      mockDBUser.PASSWORD = crypto.createHash('sha256').update(credentials.password).digest('hex');
     });
 
     it('should return user if credentials are valid', async () => {

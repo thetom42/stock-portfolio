@@ -1,14 +1,15 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { CreateHoldingDTO, UpdateHoldingDTO } from '../models/Holding';
 import * as holdingService from '../services/holdingService';
+import { AuthenticatedRequest } from '../types/express';
 
 export const createHolding = async (
-  req: Request<{}, {}, CreateHoldingDTO>,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.user.id;
     const holdingData = req.body;
     const holding = await holdingService.createHolding(userId, holdingData);
     res.status(201).json(holding);
@@ -18,13 +19,13 @@ export const createHolding = async (
 };
 
 export const getHolding = async (
-  req: Request<{ id: string }>,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const holdingId = req.params.id;
-    const userId = req.user!.id;
+    const userId = req.user.id;
     const holding = await holdingService.getHoldingById(holdingId, userId);
     
     if (!holding) {
@@ -38,13 +39,13 @@ export const getHolding = async (
 };
 
 export const updateHolding = async (
-  req: Request<{ id: string }, {}, UpdateHoldingDTO>,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const holdingId = req.params.id;
-    const userId = req.user!.id;
+    const userId = req.user.id;
     const updateData = req.body;
     
     const updatedHolding = await holdingService.updateHolding(
@@ -64,13 +65,13 @@ export const updateHolding = async (
 };
 
 export const deleteHolding = async (
-  req: Request<{ id: string }>,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const holdingId = req.params.id;
-    const userId = req.user!.id;
+    const userId = req.user.id;
     await holdingService.deleteHolding(holdingId, userId);
     res.status(204).send();
   } catch (error) {
@@ -79,13 +80,13 @@ export const deleteHolding = async (
 };
 
 export const getHoldingPerformance = async (
-  req: Request<{ id: string }>,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const holdingId = req.params.id;
-    const userId = req.user!.id;
+    const userId = req.user.id;
     const performance = await holdingService.getHoldingPerformance(holdingId, userId);
     
     if (!performance) {
@@ -99,13 +100,13 @@ export const getHoldingPerformance = async (
 };
 
 export const getHoldingTransactions = async (
-  req: Request<{ id: string }>,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const holdingId = req.params.id;
-    const userId = req.user!.id;
+    const userId = req.user.id;
     const transactions = await holdingService.getHoldingTransactions(holdingId, userId);
     
     if (!transactions) {
@@ -119,13 +120,13 @@ export const getHoldingTransactions = async (
 };
 
 export const getHoldingValue = async (
-  req: Request<{ id: string }>,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const holdingId = req.params.id;
-    const userId = req.user!.id;
+    const userId = req.user.id;
     const value = await holdingService.getHoldingValue(holdingId, userId);
     
     if (!value) {
@@ -139,13 +140,13 @@ export const getHoldingValue = async (
 };
 
 export const getHoldingHistory = async (
-  req: Request<{ id: string }>,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const holdingId = req.params.id;
-    const userId = req.user!.id;
+    const userId = req.user.id;
     const history = await holdingService.getHoldingHistory(holdingId, userId);
     
     if (!history) {

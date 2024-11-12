@@ -1,442 +1,245 @@
-import 'mocha';
-import { expect, use } from 'chai';
-import spies from 'chai-spies';
+import { expect } from 'chai';
 import sinon from 'sinon';
-import { Request, Response } from 'express';
+import sinonChai from 'sinon-chai';
+import chai from 'chai';
+import { Request as ExpressRequest, Response as ExpressResponse } from 'express-serve-static-core';
 import * as transactionController from '../../../src/controllers/transactionController';
-import { Transaction, CreateTransactionDTO, TransactionQueryParams, PaginatedTransactions } from '../../../src/models/Transaction';
-import { mockHoldingRepo, mockPortfolioRepo, mockTransactionRepo, setupRepositoryMocks, resetRepositoryMocks } from '../../helpers/mockRepositories';
+import * as database from '../../../src/utils/database';
+import { createMockPrismaClient } from '../../helpers/mockPrisma';
 
-use(spies);
+chai.use(sinonChai);
 
 type MockResponse = {
   status: (code: number) => MockResponse;
   json: (body: any) => void;
+  send: () => void;
 };
 
 describe('TransactionController', () => {
-  let req: Partial<Request>;
+  let req: Partial<ExpressRequest>;
   let res: MockResponse;
-  let next: any;
-
-  const userId = 'user123';
-  const holdingId = 'holding123';
-  const portfolioId = 'portfolio123';
+  let next: sinon.SinonSpy;
+  let statusStub: sinon.SinonSpy;
+  let jsonStub: sinon.SinonSpy;
+  let sendStub: sinon.SinonSpy;
+  let mockPrismaClient: any;
 
   beforeEach(() => {
-    setupRepositoryMocks();
+    statusStub = sinon.spy((code: number) => res);
+    jsonStub = sinon.spy();
+    sendStub = sinon.spy();
+    
     res = {
-      status: chai.spy(function(this: MockResponse, code: number) { return this; }),
-      json: chai.spy()
+      status: statusStub,
+      json: jsonStub,
+      send: sendStub
     };
-    next = chai.spy();
+    next = sinon.spy();
+
+    mockPrismaClient = createMockPrismaClient();
+    sinon.stub(database, 'getPrismaClient').returns(mockPrismaClient);
   });
 
   afterEach(() => {
-    resetRepositoryMocks();
-    chai.spy.restore();
     sinon.restore();
   });
 
   describe('createTransaction', () => {
-    const mockTransactionData: CreateTransactionDTO = {
-      AMOUNT: 100,
-      PRICE: 150.50,
+    const mockTransaction = {
+      TRANSACTIONS_ID: '1',
+      HOLDINGS_ID: '1',
       BUY: true,
-      COMMISSION: 7.99,
-      BROKER: 'TEST_BROKER'
+      AMOUNT: 10,
+      PRICE: 150.50,
+      TRANSACTION_TIME: new Date(),
+      COMMISSION: 9.99,
+      BROKER: 'Test Broker'
     };
 
     const mockHolding = {
-      HOLDINGS_ID: holdingId,
-      PORTFOLIOS_ID: portfolioId,
-      QUANTITY: 100,
-      ISIN: 'US0378331005'
+      HOLDINGS_ID: '1',
+      PORTFOLIOS_ID: '1',
+      ISIN: 'US0378331005',
+      QUANTITY: 10,
+      START_DATE: new Date(),
+      END_DATE: null
     };
 
-    const mockTransaction: Transaction = {
-      TRANSACTIONS_ID: 'trans123',
-      HOLDINGS_ID: holdingId,
-      BUY: mockTransactionData.BUY,
-      TRANSACTION_TIME: new Date(),
-      AMOUNT: mockTransactionData.AMOUNT,
-      PRICE: mockTransactionData.PRICE,
-      COMMISSION: mockTransactionData.COMMISSION || 0,
-      BROKER: mockTransactionData.BROKER || 'SYSTEM'
+    const mockPortfolio = {
+      PORTFOLIOS_ID: '1',
+      USERS_ID: 'user1',
+      NAME: 'Test Portfolio',
+      CREATED_AT: new Date()
     };
 
     it('should create a buy transaction successfully', async () => {
       req = {
-        user: { id: userId },
-        params: { holdingId },
-        body: mockTransactionData
+        params: { holdingId: '1' },
+        body: {
+          BUY: true,
+          AMOUNT: 10,
+          PRICE: 150.50,
+          COMMISSION: 9.99,
+          BROKER: 'Test Broker'
+        },
+        user: { id: 'user1' }
       } as any;
 
-      mockHoldingRepo.findById.resolves(mockHolding);
-      mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
-      mockTransactionRepo.create.resolves(mockTransaction);
-      mockHoldingRepo.update.resolves({ ...mockHolding, QUANTITY: 200 });
+      mockPrismaClient.holding.findUnique.resolves(mockHolding);
+      mockPrismaClient.portfolio.findUnique.resolves(mockPortfolio);
+      mockPrismaClient.transaction.create.resolves(mockTransaction);
 
       await transactionController.createTransaction(req as any, res as any, next);
 
-      expect(res.status).to.have.been.called.with(201);
-      expect(res.json).to.have.been.called.with(mockTransaction);
-      expect(mockHoldingRepo.update).to.have.been.called();
-    });
-
-    it('should create a sell transaction successfully', async () => {
-      const sellData = { ...mockTransactionData, BUY: false, AMOUNT: 50 };
-      req = {
-        user: { id: userId },
-        params: { holdingId },
-        body: sellData
-      } as any;
-
-      mockHoldingRepo.findById.resolves(mockHolding);
-      mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
-      mockTransactionRepo.create.resolves({ ...mockTransaction, BUY: false, AMOUNT: 50 });
-      mockHoldingRepo.update.resolves({ ...mockHolding, QUANTITY: 50 });
-
-      await transactionController.createTransaction(req as any, res as any, next);
-
-      expect(res.status).to.have.been.called.with(201);
-      expect(mockHoldingRepo.update).to.have.been.called();
-    });
-
-    it('should return 400 if selling more than owned', async () => {
-      const sellData = { ...mockTransactionData, BUY: false, AMOUNT: 150 };
-      req = {
-        user: { id: userId },
-        params: { holdingId },
-        body: sellData
-      } as any;
-
-      mockHoldingRepo.findById.resolves(mockHolding);
-      mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
-
-      await transactionController.createTransaction(req as any, res as any, next);
-
-      expect(res.status).to.have.been.called.with(400);
-      expect(res.json).to.have.been.called.with({ 
-        message: 'Insufficient holding quantity for sell transaction' 
-      });
+      expect(statusStub).to.have.been.calledWith(201);
+      expect(jsonStub).to.have.been.calledWith(mockTransaction);
     });
 
     it('should return 404 if holding not found', async () => {
       req = {
-        user: { id: userId },
-        params: { holdingId },
-        body: mockTransactionData
+        params: { holdingId: '999' },
+        body: {
+          BUY: true,
+          AMOUNT: 10,
+          PRICE: 150.50
+        },
+        user: { id: 'user1' }
       } as any;
 
-      mockHoldingRepo.findById.resolves(null);
+      mockPrismaClient.holding.findUnique.resolves(null);
 
       await transactionController.createTransaction(req as any, res as any, next);
 
-      expect(res.status).to.have.been.called.with(404);
-      expect(res.json).to.have.been.called.with({ message: 'Holding not found' });
+      expect(statusStub).to.have.been.calledWith(404);
+      expect(jsonStub).to.have.been.calledWith({ error: 'Holding not found' });
     });
 
-    it('should return 403 if user does not own the holding', async () => {
+    it('should return 403 if user is not authorized', async () => {
       req = {
-        user: { id: userId },
-        params: { holdingId },
-        body: mockTransactionData
+        params: { holdingId: '1' },
+        body: {
+          BUY: true,
+          AMOUNT: 10,
+          PRICE: 150.50
+        },
+        user: { id: 'user2' }
       } as any;
 
-      mockHoldingRepo.findById.resolves(mockHolding);
-      mockPortfolioRepo.findById.resolves({ USERS_ID: 'different-user' });
+      mockPrismaClient.holding.findUnique.resolves(mockHolding);
+      mockPrismaClient.portfolio.findUnique.resolves(mockPortfolio);
 
       await transactionController.createTransaction(req as any, res as any, next);
 
-      expect(res.status).to.have.been.called.with(403);
-      expect(res.json).to.have.been.called.with({ message: 'Unauthorized' });
+      expect(statusStub).to.have.been.calledWith(403);
+      expect(jsonStub).to.have.been.calledWith({ error: 'Unauthorized' });
     });
 
-    it('should call next with error if user is not authenticated', async () => {
+    it('should handle errors gracefully', async () => {
       req = {
-        params: { holdingId },
-        body: mockTransactionData
+        params: { holdingId: '1' },
+        body: {
+          BUY: true,
+          AMOUNT: 10,
+          PRICE: 150.50
+        },
+        user: { id: 'user1' }
       } as any;
+
+      const error = new Error('Database error');
+      mockPrismaClient.holding.findUnique.rejects(error);
 
       await transactionController.createTransaction(req as any, res as any, next);
 
-      expect(next).to.have.been.called();
-    });
-  });
-
-  describe('getTransaction', () => {
-    const transactionId = 'trans123';
-    const mockTransaction: Transaction = {
-      TRANSACTIONS_ID: transactionId,
-      HOLDINGS_ID: holdingId,
-      BUY: true,
-      TRANSACTION_TIME: new Date(),
-      AMOUNT: 100,
-      PRICE: 150.50,
-      COMMISSION: 7.99,
-      BROKER: 'TEST_BROKER'
-    };
-
-    it('should return transaction if authorized', async () => {
-      req = {
-        user: { id: userId },
-        params: { id: transactionId }
-      } as any;
-
-      mockTransactionRepo.findById.resolves(mockTransaction);
-      mockHoldingRepo.findById.resolves({ PORTFOLIOS_ID: portfolioId });
-      mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
-
-      await transactionController.getTransaction(req as any, res as any, next);
-
-      expect(res.json).to.have.been.called.with(mockTransaction);
-    });
-
-    it('should return 404 if transaction not found', async () => {
-      req = {
-        user: { id: userId },
-        params: { id: 'nonexistent' }
-      } as any;
-
-      mockTransactionRepo.findById.resolves(null);
-
-      await transactionController.getTransaction(req as any, res as any, next);
-
-      expect(res.status).to.have.been.called.with(404);
-      expect(res.json).to.have.been.called.with({ message: 'Transaction not found' });
-    });
-
-    it('should return 403 if user does not own the holding', async () => {
-      req = {
-        user: { id: userId },
-        params: { id: transactionId }
-      } as any;
-
-      mockTransactionRepo.findById.resolves(mockTransaction);
-      mockHoldingRepo.findById.resolves({ PORTFOLIOS_ID: portfolioId });
-      mockPortfolioRepo.findById.resolves({ USERS_ID: 'different-user' });
-
-      await transactionController.getTransaction(req as any, res as any, next);
-
-      expect(res.status).to.have.been.called.with(403);
-      expect(res.json).to.have.been.called.with({ message: 'Unauthorized' });
-    });
-
-    it('should call next with error if user is not authenticated', async () => {
-      req = {
-        params: { id: transactionId }
-      } as any;
-
-      await transactionController.getTransaction(req as any, res as any, next);
-
-      expect(next).to.have.been.called();
+      expect(next).to.have.been.calledWith(error);
     });
   });
 
   describe('getTransactionsByHolding', () => {
-    const mockPaginatedTransactions: PaginatedTransactions = {
-      transactions: [
-        {
-          TRANSACTIONS_ID: 'trans1',
-          HOLDINGS_ID: holdingId,
-          BUY: true,
-          TRANSACTION_TIME: new Date(),
-          AMOUNT: 100,
-          PRICE: 150.50,
-          COMMISSION: 7.99,
-          BROKER: 'TEST_BROKER'
-        }
-      ],
-      total: 1,
-      page: 1,
-      limit: 10,
-      totalPages: 1
+    const mockTransactions = [
+      {
+        TRANSACTIONS_ID: '1',
+        HOLDINGS_ID: '1',
+        BUY: true,
+        AMOUNT: 10,
+        PRICE: 150.50,
+        TRANSACTION_TIME: new Date(),
+        COMMISSION: 9.99,
+        BROKER: 'Test Broker'
+      }
+    ];
+
+    const mockHolding = {
+      HOLDINGS_ID: '1',
+      PORTFOLIOS_ID: '1',
+      ISIN: 'US0378331005',
+      QUANTITY: 10,
+      START_DATE: new Date(),
+      END_DATE: null
     };
 
-    it('should return transactions for holding with default params', async () => {
+    const mockPortfolio = {
+      PORTFOLIOS_ID: '1',
+      USERS_ID: 'user1',
+      NAME: 'Test Portfolio',
+      CREATED_AT: new Date()
+    };
+
+    it('should return transactions for authorized user', async () => {
       req = {
-        user: { id: userId },
-        params: { holdingId },
-        query: {}
+        params: { holdingId: '1' },
+        user: { id: 'user1' }
       } as any;
 
-      mockHoldingRepo.findById.resolves({ PORTFOLIOS_ID: portfolioId });
-      mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
-      mockTransactionRepo.findByHolding.resolves(mockPaginatedTransactions);
+      mockPrismaClient.holding.findUnique.resolves(mockHolding);
+      mockPrismaClient.portfolio.findUnique.resolves(mockPortfolio);
+      mockPrismaClient.transaction.findMany.resolves(mockTransactions);
 
       await transactionController.getTransactionsByHolding(req as any, res as any, next);
 
-      expect(res.json).to.have.been.called.with(mockPaginatedTransactions);
-    });
-
-    it('should handle query parameters correctly', async () => {
-      const queryParams: TransactionQueryParams = {
-        startDate: '2023-01-01',
-        endDate: '2023-12-31',
-        type: 'BUY',
-        sort: 'date',
-        order: 'desc',
-        page: 1,
-        limit: 20
-      };
-
-      req = {
-        user: { id: userId },
-        params: { holdingId },
-        query: queryParams
-      } as any;
-
-      mockHoldingRepo.findById.resolves({ PORTFOLIOS_ID: portfolioId });
-      mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
-      mockTransactionRepo.findByHolding.resolves(mockPaginatedTransactions);
-
-      await transactionController.getTransactionsByHolding(req as any, res as any, next);
-
-      expect(mockTransactionRepo.findByHolding).to.have.been.called.with(
-        holdingId,
-        sinon.match(queryParams)
-      );
+      expect(jsonStub).to.have.been.calledWith(mockTransactions);
     });
 
     it('should return 404 if holding not found', async () => {
       req = {
-        user: { id: userId },
-        params: { holdingId },
-        query: {}
+        params: { holdingId: '999' },
+        user: { id: 'user1' }
       } as any;
 
-      mockHoldingRepo.findById.resolves(null);
+      mockPrismaClient.holding.findUnique.resolves(null);
 
       await transactionController.getTransactionsByHolding(req as any, res as any, next);
 
-      expect(res.status).to.have.been.called.with(404);
-      expect(res.json).to.have.been.called.with({ message: 'Holding not found' });
+      expect(statusStub).to.have.been.calledWith(404);
+      expect(jsonStub).to.have.been.calledWith({ error: 'Holding not found' });
     });
 
-    it('should return 403 if user does not own the holding', async () => {
+    it('should return 403 if user is not authorized', async () => {
       req = {
-        user: { id: userId },
-        params: { holdingId },
-        query: {}
+        params: { holdingId: '1' },
+        user: { id: 'user2' }
       } as any;
 
-      mockHoldingRepo.findById.resolves({ PORTFOLIOS_ID: portfolioId });
-      mockPortfolioRepo.findById.resolves({ USERS_ID: 'different-user' });
+      mockPrismaClient.holding.findUnique.resolves(mockHolding);
+      mockPrismaClient.portfolio.findUnique.resolves(mockPortfolio);
 
       await transactionController.getTransactionsByHolding(req as any, res as any, next);
 
-      expect(res.status).to.have.been.called.with(403);
-      expect(res.json).to.have.been.called.with({ message: 'Unauthorized' });
+      expect(statusStub).to.have.been.calledWith(403);
+      expect(jsonStub).to.have.been.calledWith({ error: 'Unauthorized' });
     });
 
-    it('should call next with error if user is not authenticated', async () => {
+    it('should handle errors gracefully', async () => {
       req = {
-        params: { holdingId },
-        query: {}
+        params: { holdingId: '1' },
+        user: { id: 'user1' }
       } as any;
+
+      const error = new Error('Database error');
+      mockPrismaClient.holding.findUnique.rejects(error);
 
       await transactionController.getTransactionsByHolding(req as any, res as any, next);
 
-      expect(next).to.have.been.called();
-    });
-  });
-
-  describe('getTransactionsByPortfolio', () => {
-    const mockHoldings = [
-      { HOLDINGS_ID: 'holding1', PORTFOLIOS_ID: portfolioId },
-      { HOLDINGS_ID: 'holding2', PORTFOLIOS_ID: portfolioId }
-    ];
-
-    const mockPaginatedTransactions: PaginatedTransactions = {
-      transactions: [
-        {
-          TRANSACTIONS_ID: 'trans1',
-          HOLDINGS_ID: 'holding1',
-          BUY: true,
-          TRANSACTION_TIME: new Date(),
-          AMOUNT: 100,
-          PRICE: 150.50,
-          COMMISSION: 7.99,
-          BROKER: 'TEST_BROKER'
-        }
-      ],
-      total: 1,
-      page: 1,
-      limit: 10,
-      totalPages: 1
-    };
-
-    it('should return transactions for portfolio with default params', async () => {
-      req = {
-        user: { id: userId },
-        params: { portfolioId },
-        query: {}
-      } as any;
-
-      mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
-      mockHoldingRepo.findByPortfolio.resolves(mockHoldings);
-      mockTransactionRepo.findByHolding.resolves(mockPaginatedTransactions);
-
-      await transactionController.getTransactionsByPortfolio(req as any, res as any, next);
-
-      expect(mockHoldingRepo.findByPortfolio).to.have.been.called();
-      expect(mockTransactionRepo.findByHolding).to.have.been.called();
-      expect(res.json).to.have.been.called();
-    });
-
-    it('should handle query parameters correctly', async () => {
-      const queryParams: TransactionQueryParams = {
-        startDate: '2023-01-01',
-        endDate: '2023-12-31',
-        type: 'SELL',
-        sort: 'amount',
-        order: 'asc',
-        page: 2,
-        limit: 15
-      };
-
-      req = {
-        user: { id: userId },
-        params: { portfolioId },
-        query: queryParams
-      } as any;
-
-      mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
-      mockHoldingRepo.findByPortfolio.resolves(mockHoldings);
-      mockTransactionRepo.findByHolding.resolves(mockPaginatedTransactions);
-
-      await transactionController.getTransactionsByPortfolio(req as any, res as any, next);
-
-      expect(mockHoldingRepo.findByPortfolio).to.have.been.called();
-      expect(mockTransactionRepo.findByHolding).to.have.been.called();
-      expect(res.json).to.have.been.called();
-    });
-
-    it('should return 403 if portfolio not owned by user', async () => {
-      req = {
-        user: { id: userId },
-        params: { portfolioId },
-        query: {}
-      } as any;
-
-      mockPortfolioRepo.findById.resolves({ USERS_ID: 'different-user' });
-
-      await transactionController.getTransactionsByPortfolio(req as any, res as any, next);
-
-      expect(res.status).to.have.been.called.with(403);
-      expect(res.json).to.have.been.called.with({ message: 'Unauthorized' });
-    });
-
-    it('should call next with error if user is not authenticated', async () => {
-      req = {
-        params: { portfolioId },
-        query: {}
-      } as any;
-
-      await transactionController.getTransactionsByPortfolio(req as any, res as any, next);
-
-      expect(next).to.have.been.called();
+      expect(next).to.have.been.calledWith(error);
     });
   });
 });

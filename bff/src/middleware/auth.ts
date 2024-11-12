@@ -1,58 +1,99 @@
 import { Request, Response, NextFunction } from 'express';
-import keycloak, { protect, addUserInfo, handleAuthError } from '../config/keycloak';
+import { protect } from '../config/keycloak';
+import { AuthenticatedRequest } from '../types/express';
 
-// Middleware to protect routes requiring authentication
-export const requireAuth = protect();
+// Type assertion helper for routes
+export const asAuthenticatedHandler = <T extends (...args: any[]) => any>(
+  handler: (req: AuthenticatedRequest, ...args: Parameters<T>) => ReturnType<T>
+) => {
+  return (req: Request, ...args: Parameters<T>) => {
+    return handler(req as AuthenticatedRequest, ...args);
+  };
+};
 
-// Middleware to protect routes requiring specific role
-export const requireRole = (role: string) => protect(role);
+export const assertAuthenticated = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+  next();
+};
 
-// Middleware to attach user information to request
-export const attachUser = addUserInfo;
-
-// Middleware to verify admin access
-export const requireAdmin = protect('admin');
-
-// Middleware to verify resource ownership
 export const verifyOwnership = (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  const resourceUserId = req.params.userId || req.body.userId;
-  const currentUserId = req.user?.id;
-
-  if (!currentUserId) {
+  const user = (req as AuthenticatedRequest).user;
+  if (!user) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
-  if (resourceUserId && resourceUserId !== currentUserId) {
-    // Allow admin to access any resource
-    if (req.user?.roles?.includes('admin')) {
-      return next();
-    }
-    return res.status(403).json({ message: 'Forbidden' });
+  const targetUserId = req.params.userId || req.body.userId;
+  if (user.roles?.includes('admin') || user.id === targetUserId) {
+    return next();
   }
 
+  return res.status(403).json({ message: 'Forbidden' });
+};
+
+export const requireRole = (role: string) => {
+  return [
+    protect(),
+    (req: Request, res: Response, next: NextFunction) => {
+      const user = (req as AuthenticatedRequest).user;
+      if (user.roles?.includes(role)) {
+        next();
+      } else {
+        res.status(403).json({ message: 'Forbidden' });
+      }
+    }
+  ];
+};
+
+export const requireAdmin = [
+  protect(),
+  (req: Request, res: Response, next: NextFunction) => {
+    const user = (req as AuthenticatedRequest).user;
+    if (user.roles?.includes('admin')) {
+      next();
+    } else {
+      res.status(403).json({ message: 'Forbidden' });
+    }
+  }
+];
+
+export const attachUser = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  // This middleware would typically extract user info from the token
+  // and attach it to the request. In our case, Keycloak is handling this.
   next();
 };
 
-// Error handling middleware for authentication errors
-export const authErrorHandler = handleAuthError;
+export const authErrorHandler = (
+  err: Error,
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  if (err.name === 'TokenExpiredError') {
+    return res.status(401).json({ message: 'Token expired' });
+  }
+  if (err.name === 'JsonWebTokenError') {
+    return res.status(401).json({ message: 'Invalid token' });
+  }
+  next(err);
+};
 
-// Initialize Keycloak middleware
 export const initAuth = (app: any) => {
+  const keycloak = require('../config/keycloak').default;
   app.use(keycloak.middleware());
   app.use(attachUser);
   app.use(authErrorHandler);
-};
-
-export default {
-  requireAuth,
-  requireRole,
-  requireAdmin,
-  verifyOwnership,
-  attachUser,
-  authErrorHandler,
-  initAuth
 };

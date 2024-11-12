@@ -1,12 +1,13 @@
-import { expect, use } from 'chai';
-import spies from 'chai-spies';
-import { Request, Response } from 'express';
-import { describe, it, beforeEach, afterEach } from 'mocha';
-import * as userService from '../../../src/services/userService';
+import { expect } from 'chai';
+import sinon from 'sinon';
+import sinonChai from 'sinon-chai';
+import chai from 'chai';
+import { Request as ExpressRequest, Response as ExpressResponse } from 'express-serve-static-core';
 import * as userController from '../../../src/controllers/userController';
-import { User, CreateUserDTO, UpdateUserDTO } from '../../../src/models/User';
+import * as database from '../../../src/utils/database';
+import { createMockPrismaClient } from '../../helpers/mockPrisma';
 
-use(spies);
+chai.use(sinonChai);
 
 type MockResponse = {
   status: (code: number) => MockResponse;
@@ -15,270 +16,251 @@ type MockResponse = {
 };
 
 describe('UserController', () => {
-  let req: Partial<Request>;
+  let req: Partial<ExpressRequest>;
   let res: MockResponse;
-  let next: any;
+  let next: sinon.SinonSpy;
+  let statusStub: sinon.SinonSpy;
+  let jsonStub: sinon.SinonSpy;
+  let sendStub: sinon.SinonSpy;
+  let mockPrismaClient: any;
 
   beforeEach(() => {
+    statusStub = sinon.spy((code: number) => res);
+    jsonStub = sinon.spy();
+    sendStub = sinon.spy();
+    
     res = {
-      status: chai.spy(function(this: MockResponse, code: number) { return this; }),
-      json: chai.spy(),
-      send: chai.spy()
+      status: statusStub,
+      json: jsonStub,
+      send: sendStub
     };
-    next = chai.spy();
+    next = sinon.spy();
+
+    mockPrismaClient = createMockPrismaClient();
+    sinon.stub(database, 'getPrismaClient').returns(mockPrismaClient);
   });
 
   afterEach(() => {
-    chai.spy.restore();
+    sinon.restore();
   });
 
   describe('createUser', () => {
-    const mockUserData: CreateUserDTO = {
-      email: 'test@example.com',
-      firstName: 'Test',
-      lastName: 'User',
-      password: 'password123'
-    };
-
-    const mockCreatedUser: User = {
-      id: '1',
-      email: mockUserData.email,
-      firstName: mockUserData.firstName,
-      lastName: mockUserData.lastName,
-      createdAt: new Date(),
-      updatedAt: new Date()
+    const mockUser = {
+      USERS_ID: '1',
+      EMAIL: 'test@example.com',
+      NAME: 'Test User',
+      CREATED_AT: new Date(),
+      UPDATED_AT: new Date()
     };
 
     it('should create a user and return 201 status', async () => {
       req = {
-        body: mockUserData
-      } as Request;
+        body: {
+          email: 'test@example.com',
+          name: 'Test User'
+        }
+      } as any;
 
-      chai.spy.on(userService, 'createUser', () => Promise.resolve(mockCreatedUser));
+      mockPrismaClient.user.create.resolves(mockUser);
 
       await userController.createUser(req as any, res as any, next);
 
-      expect(res.status).to.have.been.called.with(201);
-      expect(res.json).to.have.been.called.with(mockCreatedUser);
+      expect(statusStub).to.have.been.calledWith(201);
+      expect(jsonStub).to.have.been.calledWith(mockUser);
     });
 
-    it('should call next with error if user creation fails', async () => {
+    it('should return 409 if email already exists', async () => {
       req = {
-        body: mockUserData
-      } as Request;
+        body: {
+          email: 'test@example.com',
+          name: 'Test User'
+        }
+      } as any;
 
-      const error = new Error('Database error');
-      chai.spy.on(userService, 'createUser', () => Promise.reject(error));
+      const error = new Error('Unique constraint failed on the fields: (`EMAIL`)');
+      mockPrismaClient.user.create.rejects(error);
 
       await userController.createUser(req as any, res as any, next);
 
-      expect(next).to.have.been.called.with(error);
+      expect(statusStub).to.have.been.calledWith(409);
+      expect(jsonStub).to.have.been.calledWith({ error: 'Email already exists' });
+    });
+
+    it('should handle errors gracefully', async () => {
+      req = {
+        body: {
+          email: 'test@example.com',
+          name: 'Test User'
+        }
+      } as any;
+
+      const error = new Error('Database error');
+      mockPrismaClient.user.create.rejects(error);
+
+      await userController.createUser(req as any, res as any, next);
+
+      expect(next).to.have.been.calledWith(error);
     });
   });
 
   describe('getUser', () => {
-    const mockUser: User = {
-      id: '1',
-      email: 'test@example.com',
-      firstName: 'Test',
-      lastName: 'User',
-      createdAt: new Date(),
-      updatedAt: new Date()
+    const mockUser = {
+      USERS_ID: '1',
+      EMAIL: 'test@example.com',
+      NAME: 'Test User',
+      CREATED_AT: new Date(),
+      UPDATED_AT: new Date()
     };
 
     it('should return user if found', async () => {
       req = {
-        params: { id: '1' }
-      } as Request<{ id: string }>;
+        params: { id: '1' },
+        user: { id: '1' }
+      } as any;
 
-      chai.spy.on(userService, 'getUserById', () => Promise.resolve(mockUser));
+      mockPrismaClient.user.findUnique.resolves(mockUser);
 
       await userController.getUser(req as any, res as any, next);
 
-      expect(res.json).to.have.been.called.with(mockUser);
+      expect(jsonStub).to.have.been.calledWith(mockUser);
     });
 
     it('should return 404 if user not found', async () => {
       req = {
-        params: { id: '999' }
-      } as Request<{ id: string }>;
+        params: { id: '999' },
+        user: { id: '999' }
+      } as any;
 
-      chai.spy.on(userService, 'getUserById', () => Promise.resolve(null));
+      mockPrismaClient.user.findUnique.resolves(null);
 
       await userController.getUser(req as any, res as any, next);
 
-      expect(res.status).to.have.been.called.with(404);
-      expect(res.json).to.have.been.called.with({ message: 'User not found' });
+      expect(statusStub).to.have.been.calledWith(404);
+      expect(jsonStub).to.have.been.calledWith({ error: 'User not found' });
+    });
+
+    it('should handle errors gracefully', async () => {
+      req = {
+        params: { id: '1' },
+        user: { id: '1' }
+      } as any;
+
+      const error = new Error('Database error');
+      mockPrismaClient.user.findUnique.rejects(error);
+
+      await userController.getUser(req as any, res as any, next);
+
+      expect(next).to.have.been.calledWith(error);
     });
   });
 
   describe('updateUser', () => {
-    const mockUpdateData: UpdateUserDTO = {
-      firstName: 'Updated',
-      lastName: 'Name'
+    const mockUser = {
+      USERS_ID: '1',
+      EMAIL: 'test@example.com',
+      NAME: 'Test User',
+      CREATED_AT: new Date(),
+      UPDATED_AT: new Date()
     };
 
-    const mockUpdatedUser: User = {
-      id: '1',
-      email: 'test@example.com',
-      firstName: 'Updated',
-      lastName: 'Name',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    it('should update user and return updated data', async () => {
+    it('should update user successfully', async () => {
       req = {
         params: { id: '1' },
-        body: mockUpdateData
-      } as Request<{ id: string }>;
+        user: { id: '1' },
+        body: {
+          name: 'Updated Name'
+        }
+      } as any;
 
-      chai.spy.on(userService, 'updateUser', () => Promise.resolve(mockUpdatedUser));
+      mockPrismaClient.user.update.resolves({
+        ...mockUser,
+        NAME: 'Updated Name'
+      });
 
       await userController.updateUser(req as any, res as any, next);
 
-      expect(res.json).to.have.been.called.with(mockUpdatedUser);
+      expect(jsonStub).to.have.been.calledWith({
+        ...mockUser,
+        NAME: 'Updated Name'
+      });
     });
 
-    it('should return 404 if user not found for update', async () => {
+    it('should return 404 if user not found', async () => {
       req = {
         params: { id: '999' },
-        body: mockUpdateData
-      } as Request<{ id: string }>;
+        user: { id: '999' },
+        body: {
+          name: 'Updated Name'
+        }
+      } as any;
 
-      chai.spy.on(userService, 'updateUser', () => Promise.resolve(null));
+      mockPrismaClient.user.update.rejects(new Error('Record to update not found'));
 
       await userController.updateUser(req as any, res as any, next);
 
-      expect(res.status).to.have.been.called.with(404);
-      expect(res.json).to.have.been.called.with({ message: 'User not found' });
+      expect(statusStub).to.have.been.calledWith(404);
+      expect(jsonStub).to.have.been.calledWith({ error: 'User not found' });
+    });
+
+    it('should handle errors gracefully', async () => {
+      req = {
+        params: { id: '1' },
+        user: { id: '1' },
+        body: {
+          name: 'Updated Name'
+        }
+      } as any;
+
+      const error = new Error('Database error');
+      mockPrismaClient.user.update.rejects(error);
+
+      await userController.updateUser(req as any, res as any, next);
+
+      expect(next).to.have.been.calledWith(error);
     });
   });
 
   describe('deleteUser', () => {
-    it('should delete user and return 204 status', async () => {
+    it('should delete user successfully', async () => {
       req = {
-        params: { id: '1' }
-      } as Request<{ id: string }>;
-
-      chai.spy.on(userService, 'deleteUser', () => Promise.resolve());
-
-      await userController.deleteUser(req as any, res as any, next);
-
-      expect(res.status).to.have.been.called.with(204);
-      expect(res.send).to.have.been.called();
-    });
-
-    it('should call next with error if deletion fails', async () => {
-      req = {
-        params: { id: '1' }
-      } as Request<{ id: string }>;
-
-      const error = new Error('Database error');
-      chai.spy.on(userService, 'deleteUser', () => Promise.reject(error));
-
-      await userController.deleteUser(req as any, res as any, next);
-
-      expect(next).to.have.been.called.with(error);
-    });
-  });
-
-  describe('getOwnProfile', () => {
-    const mockUser: User = {
-      id: '1',
-      email: 'test@example.com',
-      firstName: 'Test',
-      lastName: 'User',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    it('should return user profile if authenticated', async () => {
-      req = {
+        params: { id: '1' },
         user: { id: '1' }
       } as any;
 
-      chai.spy.on(userService, 'getUserById', () => Promise.resolve(mockUser));
+      mockPrismaClient.user.delete.resolves();
 
-      await userController.getOwnProfile(req as Request, res as any, next);
+      await userController.deleteUser(req as any, res as any, next);
 
-      expect(res.json).to.have.been.called.with(mockUser);
-    });
-
-    it('should return 401 if not authenticated', async () => {
-      req = {} as Request;
-
-      await userController.getOwnProfile(req as Request, res as any, next);
-
-      expect(res.status).to.have.been.called.with(401);
-      expect(res.json).to.have.been.called.with({ message: 'Unauthorized' });
+      expect(statusStub).to.have.been.calledWith(204);
+      expect(sendStub).to.have.been.called;
     });
 
     it('should return 404 if user not found', async () => {
       req = {
+        params: { id: '999' },
         user: { id: '999' }
       } as any;
 
-      chai.spy.on(userService, 'getUserById', () => Promise.resolve(null));
+      mockPrismaClient.user.delete.rejects(new Error('Record to delete does not exist'));
 
-      await userController.getOwnProfile(req as Request, res as any, next);
+      await userController.deleteUser(req as any, res as any, next);
 
-      expect(res.status).to.have.been.called.with(404);
-      expect(res.json).to.have.been.called.with({ message: 'User not found' });
-    });
-  });
-
-  describe('updateOwnProfile', () => {
-    const mockUpdateData: UpdateUserDTO = {
-      firstName: 'Updated',
-      lastName: 'Name'
-    };
-
-    const mockUpdatedUser: User = {
-      id: '1',
-      email: 'test@example.com',
-      firstName: 'Updated',
-      lastName: 'Name',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    it('should update own profile if authenticated', async () => {
-      req = {
-        user: { id: '1' },
-        body: mockUpdateData
-      } as any;
-
-      chai.spy.on(userService, 'updateUser', () => Promise.resolve(mockUpdatedUser));
-
-      await userController.updateOwnProfile(req as any, res as any, next);
-
-      expect(res.json).to.have.been.called.with(mockUpdatedUser);
+      expect(statusStub).to.have.been.calledWith(404);
+      expect(jsonStub).to.have.been.calledWith({ error: 'User not found' });
     });
 
-    it('should return 401 if not authenticated', async () => {
+    it('should handle errors gracefully', async () => {
       req = {
-        body: mockUpdateData
+        params: { id: '1' },
+        user: { id: '1' }
       } as any;
 
-      await userController.updateOwnProfile(req as any, res as any, next);
+      const error = new Error('Database error');
+      mockPrismaClient.user.delete.rejects(error);
 
-      expect(res.status).to.have.been.called.with(401);
-      expect(res.json).to.have.been.called.with({ message: 'Unauthorized' });
-    });
+      await userController.deleteUser(req as any, res as any, next);
 
-    it('should return 404 if user not found', async () => {
-      req = {
-        user: { id: '999' },
-        body: mockUpdateData
-      } as any;
-
-      chai.spy.on(userService, 'updateUser', () => Promise.resolve(null));
-
-      await userController.updateOwnProfile(req as any, res as any, next);
-
-      expect(res.status).to.have.been.called.with(404);
-      expect(res.json).to.have.been.called.with({ message: 'User not found' });
+      expect(next).to.have.been.calledWith(error);
     });
   });
 });

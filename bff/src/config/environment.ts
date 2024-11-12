@@ -66,8 +66,12 @@ export interface Environment {
 
 // Validate required environment variables
 export const validateEnvironment = (): void => {
-  // Skip validation in test environment
+  // In test environment, use default test values
   if (process.env.NODE_ENV === 'test') {
+    process.env.DB_PASSWORD = process.env.DB_PASSWORD || 'test_password';
+    process.env.KEYCLOAK_CLIENT_SECRET = process.env.KEYCLOAK_CLIENT_SECRET || 'test_client_secret';
+    process.env.YAHOO_FINANCE_API_KEY = process.env.YAHOO_FINANCE_API_KEY || 'test_api_key';
+    process.env.JWT_SECRET = process.env.JWT_SECRET || 'test_jwt_secret';
     return;
   }
 

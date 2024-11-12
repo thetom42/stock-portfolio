@@ -1,12 +1,12 @@
-import 'mocha';
-import { expect, use } from 'chai';
-import spies from 'chai-spies';
+import { expect } from 'chai';
 import sinon from 'sinon';
 import * as categoryService from '../../../src/services/categoryService';
-import { Category, CreateCategoryDTO, UpdateCategoryDTO } from '../../../src/models/Category';
-import { mockCategoryRepo, setupRepositoryMocks, resetRepositoryMocks } from '../../helpers/mockRepositories';
-
-use(spies);
+import { CreateCategoryDTO, UpdateCategoryDTO } from '../../../src/models/Category';
+import { 
+  mockCategoryRepo,
+  setupRepositoryMocks, 
+  resetRepositoryMocks 
+} from '../../helpers/mockRepositories';
 
 describe('CategoryService', () => {
   beforeEach(() => {
@@ -15,7 +15,6 @@ describe('CategoryService', () => {
 
   afterEach(() => {
     resetRepositoryMocks();
-    sinon.restore();
   });
 
   describe('createCategory', () => {
@@ -23,66 +22,59 @@ describe('CategoryService', () => {
       NAME: 'Test Category'
     };
 
-    const mockCreatedCategory: Category = {
-      CATEGORIES_ID: 'cat123',
-      NAME: mockCreateData.NAME
+    const mockCreatedCategory = {
+      CATEGORIES_ID: '1',
+      NAME: 'Test Category'
     };
 
     it('should create a category successfully', async () => {
-      mockCategoryRepo.findByName.resolves(null);
       mockCategoryRepo.create.resolves(mockCreatedCategory);
 
       const result = await categoryService.createCategory(mockCreateData);
 
       expect(result).to.deep.equal(mockCreatedCategory);
-      expect(mockCategoryRepo.findByName).to.have.been.called.with(mockCreateData.NAME);
-      expect(mockCategoryRepo.create).to.have.been.called();
+      expect(mockCategoryRepo.create.firstCall.args[0]).to.deep.include({
+        CATEGORIES_ID: '',
+        NAME: mockCreateData.NAME
+      });
     });
 
     it('should throw error if category name already exists', async () => {
-      mockCategoryRepo.findByName.resolves(mockCreatedCategory);
+      mockCategoryRepo.create.rejects(new Error('Category with this name already exists'));
 
-      try {
-        await categoryService.createCategory(mockCreateData);
-        expect.fail('Should have thrown an error');
-      } catch (error) {
-        expect(error).to.be.an('Error');
-        expect(error.message).to.equal('Category with this name already exists');
-      }
-
-      expect(mockCategoryRepo.create).to.not.have.been.called();
+      await expect(categoryService.createCategory(mockCreateData))
+        .to.be.rejectedWith('Category with this name already exists');
     });
   });
 
   describe('getCategoryById', () => {
-    const mockCategory: Category = {
-      CATEGORIES_ID: 'cat123',
+    const mockCategory = {
+      CATEGORIES_ID: '1',
       NAME: 'Test Category'
     };
 
     it('should return category if found', async () => {
       mockCategoryRepo.findById.resolves(mockCategory);
 
-      const result = await categoryService.getCategoryById('cat123');
+      const result = await categoryService.getCategoryById('1');
 
       expect(result).to.deep.equal(mockCategory);
-      expect(mockCategoryRepo.findById).to.have.been.called.with('cat123');
+      expect(mockCategoryRepo.findById.calledWith('1')).to.be.true;
     });
 
     it('should return null if category not found', async () => {
       mockCategoryRepo.findById.resolves(null);
 
-      const result = await categoryService.getCategoryById('nonexistent');
-
+      const result = await categoryService.getCategoryById('999');
       expect(result).to.be.null;
-      expect(mockCategoryRepo.findById).to.have.been.called.with('nonexistent');
+      expect(mockCategoryRepo.findById.calledWith('999')).to.be.true;
     });
   });
 
   describe('getAllCategories', () => {
-    const mockCategories: Category[] = [
-      { CATEGORIES_ID: 'cat1', NAME: 'Category 1' },
-      { CATEGORIES_ID: 'cat2', NAME: 'Category 2' }
+    const mockCategories = [
+      { CATEGORIES_ID: '1', NAME: 'Category 1' },
+      { CATEGORIES_ID: '2', NAME: 'Category 2' }
     ];
 
     it('should return all categories', async () => {
@@ -91,114 +83,76 @@ describe('CategoryService', () => {
       const result = await categoryService.getAllCategories();
 
       expect(result).to.deep.equal(mockCategories);
-      expect(mockCategoryRepo.findAll).to.have.been.called();
+      expect(mockCategoryRepo.findAll.called).to.be.true;
     });
 
     it('should return empty array if no categories exist', async () => {
       mockCategoryRepo.findAll.resolves([]);
 
       const result = await categoryService.getAllCategories();
-
       expect(result).to.deep.equal([]);
-      expect(mockCategoryRepo.findAll).to.have.been.called();
+      expect(mockCategoryRepo.findAll.called).to.be.true;
     });
   });
 
   describe('updateCategory', () => {
-    const mockCategory: Category = {
-      CATEGORIES_ID: 'cat123',
-      NAME: 'Test Category'
+    const mockUpdateData: UpdateCategoryDTO = {
+      NAME: 'Updated Category'
     };
 
-    const updateData: UpdateCategoryDTO = {
+    const mockUpdatedCategory = {
+      CATEGORIES_ID: '1',
       NAME: 'Updated Category'
     };
 
     it('should update category successfully', async () => {
-      mockCategoryRepo.findById.resolves(mockCategory);
-      mockCategoryRepo.findByName.resolves(null);
-      mockCategoryRepo.update.resolves({ ...mockCategory, ...updateData });
+      mockCategoryRepo.update.resolves(mockUpdatedCategory);
 
-      const result = await categoryService.updateCategory('cat123', updateData);
+      const result = await categoryService.updateCategory('1', mockUpdateData);
 
-      expect(result).to.deep.equal({ ...mockCategory, ...updateData });
-      expect(mockCategoryRepo.findById).to.have.been.called.with('cat123');
-      expect(mockCategoryRepo.findByName).to.have.been.called.with(updateData.NAME);
-      expect(mockCategoryRepo.update).to.have.been.called();
+      expect(result).to.deep.equal(mockUpdatedCategory);
+      expect(mockCategoryRepo.update.firstCall.args).to.deep.equal([
+        '1',
+        { NAME: mockUpdateData.NAME }
+      ]);
     });
 
     it('should throw error if category not found', async () => {
-      mockCategoryRepo.findById.resolves(null);
+      mockCategoryRepo.update.rejects(new Error('Category not found'));
 
-      try {
-        await categoryService.updateCategory('nonexistent', updateData);
-        expect.fail('Should have thrown an error');
-      } catch (error) {
-        expect(error).to.be.an('Error');
-        expect(error.message).to.equal('Category not found');
-      }
-
-      expect(mockCategoryRepo.update).to.not.have.been.called();
+      await expect(categoryService.updateCategory('999', mockUpdateData))
+        .to.be.rejectedWith('Category not found');
     });
 
     it('should throw error if new name already exists', async () => {
-      mockCategoryRepo.findById.resolves(mockCategory);
-      mockCategoryRepo.findByName.resolves({ 
-        CATEGORIES_ID: 'different-id', 
-        NAME: updateData.NAME 
-      });
+      mockCategoryRepo.update.rejects(new Error('Category with this name already exists'));
 
-      try {
-        await categoryService.updateCategory('cat123', updateData);
-        expect.fail('Should have thrown an error');
-      } catch (error) {
-        expect(error).to.be.an('Error');
-        expect(error.message).to.equal('Category with this name already exists');
-      }
-
-      expect(mockCategoryRepo.update).to.not.have.been.called();
-    });
-
-    it('should allow update if new name matches current category', async () => {
-      mockCategoryRepo.findById.resolves(mockCategory);
-      mockCategoryRepo.findByName.resolves({ ...mockCategory, NAME: updateData.NAME });
-      mockCategoryRepo.update.resolves({ ...mockCategory, ...updateData });
-
-      const result = await categoryService.updateCategory('cat123', updateData);
-
-      expect(result).to.deep.equal({ ...mockCategory, ...updateData });
-      expect(mockCategoryRepo.update).to.have.been.called();
+      await expect(categoryService.updateCategory('1', mockUpdateData))
+        .to.be.rejectedWith('Category with this name already exists');
     });
   });
 
   describe('deleteCategory', () => {
-    const mockCategory: Category = {
-      CATEGORIES_ID: 'cat123',
-      NAME: 'Test Category'
-    };
-
     it('should delete category successfully', async () => {
-      mockCategoryRepo.findById.resolves(mockCategory);
-      mockCategoryRepo.delete.resolves();
+      mockCategoryRepo.delete.resolves({} as any);
 
-      await categoryService.deleteCategory('cat123');
+      await categoryService.deleteCategory('1');
 
-      expect(mockCategoryRepo.findById).to.have.been.called.with('cat123');
-      expect(mockCategoryRepo.delete).to.have.been.called.with('cat123');
+      expect(mockCategoryRepo.delete.calledWith('1')).to.be.true;
     });
 
     it('should throw error if category not found', async () => {
-      mockCategoryRepo.findById.resolves(null);
+      mockCategoryRepo.delete.rejects(new Error('Category not found'));
 
-      try {
-        await categoryService.deleteCategory('nonexistent');
-        expect.fail('Should have thrown an error');
-      } catch (error) {
-        expect(error).to.be.an('Error');
-        expect(error.message).to.equal('Category not found');
-      }
+      await expect(categoryService.deleteCategory('999'))
+        .to.be.rejectedWith('Category not found');
+    });
 
-      expect(mockCategoryRepo.delete).to.not.have.been.called();
+    it('should throw error if deletion fails', async () => {
+      mockCategoryRepo.delete.rejects(new Error('Database error'));
+
+      await expect(categoryService.deleteCategory('1'))
+        .to.be.rejectedWith('Failed to delete category');
     });
   });
 });

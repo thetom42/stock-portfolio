@@ -1,405 +1,133 @@
-import { Holding, CreateHoldingDTO, UpdateHoldingDTO, HoldingDetails, HoldingPerformance, HoldingValue, HoldingHistory } from '../models/Holding';
-import { Transaction } from '../models/Transaction';
-import { Stock } from '../models/Stock';
-import { getHoldingRepository, getPortfolioRepository, getTransactionRepository, getStockRepository } from '../utils/database';
+import { getPrismaClient } from '../utils/database';
+import { CreateHoldingDTO, UpdateHoldingDTO, HoldingDetails } from '../models/Holding';
+import * as stockService from './stockService';
 import * as quoteService from './quoteService';
-import { Decimal } from '@prisma/client/runtime/library';
+import { HoldingRepository } from '../../../db/repositories/HoldingRepository';
+import { TransactionRepository } from '../../../db/repositories/TransactionRepository';
 
-// Helper type for holding with stock information
-interface HoldingWithStock extends Holding {
-    stockInfo: {
-        symbol: string;
-        name: string;
-        isin: string;
-    };
-}
+// Initialize repositories
+const prisma = getPrismaClient();
+const holdingRepository = new HoldingRepository(prisma);
+const transactionRepository = new TransactionRepository(prisma);
 
-const calculateHoldingValue = async (
-    holding: HoldingWithStock
-): Promise<HoldingValue> => {
-    const transactionRepo = getTransactionRepository();
-    const transactions = await transactionRepo.findByHolding(holding.HOLDINGS_ID);
-    
-    let totalCost = new Decimal(0);
-    let totalQuantity = new Decimal(0);
-    
-    transactions.forEach(t => {
-        if (t.BUY) {
-            totalCost = totalCost.add(t.PRICE.mul(t.AMOUNT));
-            totalQuantity = totalQuantity.add(t.AMOUNT);
-        } else {
-            const avgCost = totalCost.div(totalQuantity);
-            totalCost = totalCost.sub(avgCost.mul(t.AMOUNT));
-            totalQuantity = totalQuantity.sub(t.AMOUNT);
-        }
-    });
+// Helper function to map DB Holding to API response
+const mapDBHoldingToDetails = async (dbHolding: any): Promise<HoldingDetails> => {
+  const stock = await stockService.getStockByISIN(dbHolding.ISIN);
+  const quotes = await quoteService.getLatestQuotes([dbHolding.ISIN]);
+  
+  const currentPrice = quotes[0]?.price || 0;
+  const totalValue = currentPrice * dbHolding.QUANTITY;
 
-    const quote = await quoteService.getRealTimeQuote(holding.stockInfo.isin);
-    const averageCost = totalQuantity.equals(0) ? new Decimal(0) : totalCost.div(totalQuantity);
-    const currentValue = new Decimal(quote.price).mul(holding.QUANTITY);
-    const unrealizedGainLoss = currentValue.sub(averageCost.mul(holding.QUANTITY));
+  // Calculate gain/loss using transaction history
+  const transactions = await transactionRepository.findByHolding(dbHolding.HOLDINGS_ID);
+  const totalCost = await transactionRepository.getTotalValue(dbHolding.HOLDINGS_ID);
+  const gainLoss = totalValue - Number(totalCost);
+  const gainLossPercentage = Number(totalCost) > 0 ? (gainLoss / Number(totalCost)) * 100 : 0;
 
-    return {
-        quantity: holding.QUANTITY,
-        costBasis: Number(totalCost),
-        averageCost: Number(averageCost),
-        currentValue: Number(currentValue),
-        unrealizedGainLoss: Number(unrealizedGainLoss)
-    };
+  return {
+    HOLDINGS_ID: dbHolding.HOLDINGS_ID,
+    PORTFOLIOS_ID: dbHolding.PORTFOLIOS_ID,
+    ISIN: dbHolding.ISIN,
+    QUANTITY: dbHolding.QUANTITY,
+    START_DATE: dbHolding.START_DATE,
+    END_DATE: dbHolding.END_DATE,
+    stock: {
+      symbol: stock?.symbol || '',
+      name: stock?.name || '',
+      currency: stock?.currency || 'USD'
+    },
+    currentPrice,
+    totalValue,
+    gainLoss,
+    gainLossPercentage
+  };
 };
 
 export const createHolding = async (
-    userId: string,
-    createHoldingDTO: CreateHoldingDTO
+  holdingData: CreateHoldingDTO
 ): Promise<HoldingDetails> => {
-    // Verify portfolio ownership
-    const portfolioRepo = getPortfolioRepository();
-    const portfolio = await portfolioRepo.findById(createHoldingDTO.PORTFOLIOS_ID);
-    
-    if (!portfolio || portfolio.USERS_ID !== userId) {
-        throw new Error('Unauthorized');
+  try {
+    // First verify the stock exists
+    const stock = await stockService.getStockByISIN(holdingData.ISIN);
+    if (!stock) {
+      throw new Error('Stock not found');
     }
 
-    // Verify stock exists
-    const stockRepo = getStockRepository();
-    const dbStock = await stockRepo.findByISIN(createHoldingDTO.ISIN);
-    
-    if (!dbStock) {
-        throw new Error('Stock not found');
+    // Create the holding using repository
+    const dbHolding = await holdingRepository.create({
+      HOLDINGS_ID: '', // Will be generated
+      PORTFOLIOS_ID: holdingData.PORTFOLIOS_ID,
+      ISIN: holdingData.ISIN,
+      QUANTITY: holdingData.QUANTITY,
+      START_DATE: new Date(),
+      END_DATE: null
+    });
+
+    // Create initial transaction using repository
+    await transactionRepository.create({
+      TRANSACTIONS_ID: '', // Will be generated
+      HOLDINGS_ID: dbHolding.HOLDINGS_ID,
+      BUY: true, // Initial transaction is always a buy
+      AMOUNT: holdingData.QUANTITY,
+      PRICE: holdingData.PRICE,
+      TRANSACTION_TIME: new Date(),
+      COMMISSION: 0,
+      BROKER: 'SYSTEM'
+    });
+
+    return await mapDBHoldingToDetails(dbHolding);
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
     }
-
-    // Create holding
-    const holdingRepo = getHoldingRepository();
-    const holding = await holdingRepo.create({
-        HOLDINGS_ID: '', // Will be generated by the repository
-        PORTFOLIOS_ID: createHoldingDTO.PORTFOLIOS_ID,
-        ISIN: createHoldingDTO.ISIN,
-        QUANTITY: createHoldingDTO.QUANTITY,
-        START_DATE: new Date(),
-        END_DATE: null
-    });
-
-    // Create initial buy transaction
-    const transactionRepo = getTransactionRepository();
-    await transactionRepo.create({
-        TRANSACTIONS_ID: '', // Will be generated by the repository
-        HOLDINGS_ID: holding.HOLDINGS_ID,
-        BUY: true,
-        TRANSACTION_TIME: new Date(),
-        AMOUNT: createHoldingDTO.QUANTITY,
-        PRICE: new Decimal(createHoldingDTO.PRICE),
-        COMMISSION: new Decimal(0),
-        BROKER: 'SYSTEM'
-    });
-
-    // Get current price
-    const quote = await quoteService.getRealTimeQuote(dbStock.ISIN);
-    const totalValue = quote.price * holding.QUANTITY;
-    const gainLoss = totalValue - (createHoldingDTO.PRICE * holding.QUANTITY);
-    const gainLossPercentage = (gainLoss / (createHoldingDTO.PRICE * holding.QUANTITY)) * 100;
-
-    return {
-        ...holding,
-        stock: {
-            symbol: dbStock.SYMBOL.toLowerCase(),
-            name: dbStock.NAME,
-            currency: 'USD' // Default currency since it's not in DB model
-        },
-        currentPrice: quote.price,
-        totalValue,
-        gainLoss,
-        gainLossPercentage
-    };
+    throw new Error('Failed to create holding');
+  }
 };
 
 export const getHoldingById = async (
-    userId: string,
-    holdingId: string
-): Promise<HoldingDetails> => {
-    const holdingRepo = getHoldingRepository();
-    const holding = await holdingRepo.findById(holdingId);
-    
-    if (!holding) {
-        throw new Error('Holding not found');
-    }
+  holdingId: string
+): Promise<HoldingDetails | null> => {
+  const holding = await holdingRepository.findById(holdingId);
 
-    // Verify ownership through portfolio
-    const portfolioRepo = getPortfolioRepository();
-    const portfolio = await portfolioRepo.findById(holding.PORTFOLIOS_ID);
-    
-    if (!portfolio || portfolio.USERS_ID !== userId) {
-        throw new Error('Unauthorized');
-    }
+  if (!holding) {
+    return null;
+  }
 
-    // Get stock details
-    const stockRepo = getStockRepository();
-    const dbStock = await stockRepo.findByISIN(holding.ISIN);
-    
-    if (!dbStock) {
-        throw new Error('Stock not found');
-    }
-
-    const holdingWithStock: HoldingWithStock = {
-        ...holding,
-        stockInfo: {
-            symbol: dbStock.SYMBOL.toLowerCase(),
-            name: dbStock.NAME,
-            isin: dbStock.ISIN
-        }
-    };
-
-    // Get current price and calculate values
-    const quote = await quoteService.getRealTimeQuote(dbStock.ISIN);
-    const holdingValue = await calculateHoldingValue(holdingWithStock);
-
-    return {
-        ...holding,
-        stock: {
-            symbol: dbStock.SYMBOL.toLowerCase(),
-            name: dbStock.NAME,
-            currency: 'USD' // Default currency since it's not in DB model
-        },
-        currentPrice: quote.price,
-        totalValue: holdingValue.currentValue,
-        gainLoss: holdingValue.unrealizedGainLoss,
-        gainLossPercentage: (holdingValue.unrealizedGainLoss / holdingValue.costBasis) * 100
-    };
+  return await mapDBHoldingToDetails(holding);
 };
 
-export const getHoldingPerformance = async (
-    userId: string,
-    holdingId: string
-): Promise<HoldingPerformance> => {
-    const holdingRepo = getHoldingRepository();
-    const holding = await holdingRepo.findById(holdingId);
-    
-    if (!holding) {
-        throw new Error('Holding not found');
-    }
-
-    // Verify ownership through portfolio
-    const portfolioRepo = getPortfolioRepository();
-    const portfolio = await portfolioRepo.findById(holding.PORTFOLIOS_ID);
-    
-    if (!portfolio || portfolio.USERS_ID !== userId) {
-        throw new Error('Unauthorized');
-    }
-
-    // Get stock details
-    const stockRepo = getStockRepository();
-    const dbStock = await stockRepo.findByISIN(holding.ISIN);
-    
-    if (!dbStock) {
-        throw new Error('Stock not found');
-    }
-
-    const holdingWithStock: HoldingWithStock = {
-        ...holding,
-        stockInfo: {
-            symbol: dbStock.SYMBOL.toLowerCase(),
-            name: dbStock.NAME,
-            isin: dbStock.ISIN
-        }
-    };
-
-    // Get transactions
-    const transactionRepo = getTransactionRepository();
-    const transactions = await transactionRepo.findByHolding(holdingId);
-
-    // Calculate performance metrics
-    const holdingValue = await calculateHoldingValue(holdingWithStock);
-
-    return {
-        totalInvested: holdingValue.costBasis,
-        currentValue: holdingValue.currentValue,
-        totalReturn: holdingValue.unrealizedGainLoss,
-        totalReturnPercentage: (holdingValue.unrealizedGainLoss / holdingValue.costBasis) * 100,
-        transactions: transactions.map(t => ({
-            ...t,
-            PRICE: Number(t.PRICE),
-            COMMISSION: Number(t.COMMISSION)
-        }))
-    };
+export const getHoldingsByPortfolioId = async (
+  portfolioId: string
+): Promise<HoldingDetails[]> => {
+  const holdings = await holdingRepository.findActiveByPortfolio(portfolioId);
+  return Promise.all(holdings.map(mapDBHoldingToDetails));
 };
 
 export const updateHolding = async (
-    userId: string,
-    holdingId: string,
-    updateHoldingDTO: UpdateHoldingDTO
+  holdingId: string,
+  updateData: UpdateHoldingDTO
 ): Promise<HoldingDetails> => {
-    const holdingRepo = getHoldingRepository();
-    const holding = await holdingRepo.findById(holdingId);
-    
-    if (!holding) {
-        throw new Error('Holding not found');
+  try {
+    if (updateData.QUANTITY === undefined) {
+      throw new Error('Quantity is required for update');
     }
-
-    // Verify ownership through portfolio
-    const portfolioRepo = getPortfolioRepository();
-    const portfolio = await portfolioRepo.findById(holding.PORTFOLIOS_ID);
-    
-    if (!portfolio || portfolio.USERS_ID !== userId) {
-        throw new Error('Unauthorized');
+    const updatedHolding = await holdingRepository.updateQuantity(holdingId, updateData.QUANTITY);
+    return await mapDBHoldingToDetails(updatedHolding);
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
     }
-
-    // Update holding
-    const updatedHolding = await holdingRepo.update(holdingId, updateHoldingDTO);
-
-    // Get stock details
-    const stockRepo = getStockRepository();
-    const dbStock = await stockRepo.findByISIN(updatedHolding.ISIN);
-    
-    if (!dbStock) {
-        throw new Error('Stock not found');
-    }
-
-    const holdingWithStock: HoldingWithStock = {
-        ...updatedHolding,
-        stockInfo: {
-            symbol: dbStock.SYMBOL.toLowerCase(),
-            name: dbStock.NAME,
-            isin: dbStock.ISIN
-        }
-    };
-
-    // Get current price and calculate values
-    const quote = await quoteService.getRealTimeQuote(dbStock.ISIN);
-    const holdingValue = await calculateHoldingValue(holdingWithStock);
-
-    return {
-        ...updatedHolding,
-        stock: {
-            symbol: dbStock.SYMBOL.toLowerCase(),
-            name: dbStock.NAME,
-            currency: 'USD' // Default currency since it's not in DB model
-        },
-        currentPrice: quote.price,
-        totalValue: holdingValue.currentValue,
-        gainLoss: holdingValue.unrealizedGainLoss,
-        gainLossPercentage: (holdingValue.unrealizedGainLoss / holdingValue.costBasis) * 100
-    };
+    throw new Error('Failed to update holding');
+  }
 };
 
-export const getHoldingHistory = async (
-    userId: string,
-    holdingId: string
-): Promise<HoldingHistory[]> => {
-    const holdingRepo = getHoldingRepository();
-    const holding = await holdingRepo.findById(holdingId);
-    
-    if (!holding) {
-        throw new Error('Holding not found');
+export const closeHolding = async (holdingId: string): Promise<void> => {
+  try {
+    await holdingRepository.closeHolding(holdingId, new Date());
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
     }
-
-    // Verify ownership through portfolio
-    const portfolioRepo = getPortfolioRepository();
-    const portfolio = await portfolioRepo.findById(holding.PORTFOLIOS_ID);
-    
-    if (!portfolio || portfolio.USERS_ID !== userId) {
-        throw new Error('Unauthorized');
-    }
-
-    // Get transactions
-    const transactionRepo = getTransactionRepository();
-    const transactions = await transactionRepo.findByHolding(holdingId);
-
-    return transactions.map(t => ({
-        date: t.TRANSACTION_TIME,
-        buy: t.BUY,
-        amount: t.AMOUNT,
-        price: Number(t.PRICE),
-        value: Number(t.PRICE) * t.AMOUNT,
-        commission: Number(t.COMMISSION),
-        broker: t.BROKER
-    }));
-};
-
-export const deleteHolding = async (
-    userId: string,
-    holdingId: string
-): Promise<void> => {
-    const holdingRepo = getHoldingRepository();
-    const holding = await holdingRepo.findById(holdingId);
-    
-    if (!holding) {
-        throw new Error('Holding not found');
-    }
-
-    // Verify ownership through portfolio
-    const portfolioRepo = getPortfolioRepository();
-    const portfolio = await portfolioRepo.findById(holding.PORTFOLIOS_ID);
-    
-    if (!portfolio || portfolio.USERS_ID !== userId) {
-        throw new Error('Unauthorized');
-    }
-
-    await holdingRepo.delete(holdingId);
-};
-
-export const getHoldingTransactions = async (
-    userId: string,
-    holdingId: string
-): Promise<Transaction[]> => {
-    const holdingRepo = getHoldingRepository();
-    const holding = await holdingRepo.findById(holdingId);
-    
-    if (!holding) {
-        throw new Error('Holding not found');
-    }
-
-    // Verify ownership through portfolio
-    const portfolioRepo = getPortfolioRepository();
-    const portfolio = await portfolioRepo.findById(holding.PORTFOLIOS_ID);
-    
-    if (!portfolio || portfolio.USERS_ID !== userId) {
-        throw new Error('Unauthorized');
-    }
-
-    const transactionRepo = getTransactionRepository();
-    const transactions = await transactionRepo.findByHolding(holdingId);
-
-    return transactions.map(t => ({
-        ...t,
-        PRICE: Number(t.PRICE),
-        COMMISSION: Number(t.COMMISSION)
-    }));
-};
-
-export const getHoldingValue = async (
-    userId: string,
-    holdingId: string
-): Promise<HoldingValue> => {
-    const holdingRepo = getHoldingRepository();
-    const holding = await holdingRepo.findById(holdingId);
-    
-    if (!holding) {
-        throw new Error('Holding not found');
-    }
-
-    // Verify ownership through portfolio
-    const portfolioRepo = getPortfolioRepository();
-    const portfolio = await portfolioRepo.findById(holding.PORTFOLIOS_ID);
-    
-    if (!portfolio || portfolio.USERS_ID !== userId) {
-        throw new Error('Unauthorized');
-    }
-
-    // Get stock details
-    const stockRepo = getStockRepository();
-    const dbStock = await stockRepo.findByISIN(holding.ISIN);
-    
-    if (!dbStock) {
-        throw new Error('Stock not found');
-    }
-
-    const holdingWithStock: HoldingWithStock = {
-        ...holding,
-        stockInfo: {
-            symbol: dbStock.SYMBOL.toLowerCase(),
-            name: dbStock.NAME,
-            isin: dbStock.ISIN
-        }
-    };
-
-    return calculateHoldingValue(holdingWithStock);
+    throw new Error('Failed to close holding');
+  }
 };

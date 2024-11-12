@@ -1,6 +1,10 @@
 import { User, CreateUserDTO, UpdateUserDTO, UserCredentials } from '../models/User';
-import { getUserRepository } from '../utils/database';
+import { getPrismaClient } from '../utils/database';
 import { createHash } from 'crypto';
+import { UserRepository } from '../../../db/repositories/UserRepository';
+
+// Initialize repository
+const userRepository = new UserRepository(getPrismaClient());
 
 // Helper function to map DB User to BFF User
 const mapDBUserToBFF = (dbUser: any): User => ({
@@ -18,27 +22,31 @@ const hashPassword = (password: string): string => {
 };
 
 export const createUser = async (userData: CreateUserDTO): Promise<User> => {
-  const userRepo = getUserRepository();
+  try {
+    // Hash password
+    const hashedPassword = hashPassword(userData.password);
 
-  // Hash password
-  const hashedPassword = hashPassword(userData.password);
+    const dbUser = await userRepository.create({
+      USERS_ID: '', // Will be generated
+      EMAIL: userData.email,
+      NAME: userData.firstName,
+      SURNAME: userData.lastName,
+      NICKNAME: userData.firstName, // Using firstName as nickname
+      PASSWORD: hashedPassword,
+      JOIN_DATE: new Date()
+    });
 
-  const dbUser = await userRepo.create({
-    USERS_ID: '', // Will be generated
-    EMAIL: userData.email,
-    NAME: userData.firstName,
-    SURNAME: userData.lastName,
-    NICKNAME: userData.firstName, // Using firstName as nickname
-    PASSWORD: hashedPassword,
-    JOIN_DATE: new Date()
-  });
-
-  return mapDBUserToBFF(dbUser);
+    return mapDBUserToBFF(dbUser);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('already exists')) {
+      throw new Error('User with this email already exists');
+    }
+    throw error;
+  }
 };
 
 export const getUserById = async (userId: string): Promise<User | null> => {
-  const userRepo = getUserRepository();
-  const user = await userRepo.findById(userId);
+  const user = await userRepository.findById(userId);
   
   if (!user) {
     return null;
@@ -48,8 +56,7 @@ export const getUserById = async (userId: string): Promise<User | null> => {
 };
 
 export const getUserByEmail = async (email: string): Promise<User | null> => {
-  const userRepo = getUserRepository();
-  const user = await userRepo.findByEmail(email);
+  const user = await userRepository.findByEmail(email);
   
   if (!user) {
     return null;
@@ -62,36 +69,40 @@ export const updateUser = async (
   userId: string,
   updateData: UpdateUserDTO
 ): Promise<User | null> => {
-  const userRepo = getUserRepository();
-  
-  // First check if user exists
-  const existingUser = await userRepo.findById(userId);
-  if (!existingUser) {
-    return null;
+  try {
+    // Build update data
+    const updateFields: any = {
+      ...(updateData.email && { EMAIL: updateData.email }),
+      ...(updateData.firstName && { NAME: updateData.firstName }),
+      ...(updateData.lastName && { SURNAME: updateData.lastName }),
+      ...(updateData.firstName && { NICKNAME: updateData.firstName }) // Update nickname if firstName changes
+    };
+
+    const updatedUser = await userRepository.update(userId, updateFields);
+    return mapDBUserToBFF(updatedUser);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('not found')) {
+      return null;
+    }
+    throw error;
   }
-
-  // Build update data
-  const updateFields: any = {
-    ...(updateData.email && { EMAIL: updateData.email }),
-    ...(updateData.firstName && { NAME: updateData.firstName }),
-    ...(updateData.lastName && { SURNAME: updateData.lastName }),
-    ...(updateData.firstName && { NICKNAME: updateData.firstName }) // Update nickname if firstName changes
-  };
-
-  const updatedUser = await userRepo.update(userId, updateFields);
-  return mapDBUserToBFF(updatedUser);
 };
 
 export const deleteUser = async (userId: string): Promise<void> => {
-  const userRepo = getUserRepository();
-  await userRepo.delete(userId);
+  try {
+    await userRepository.delete(userId);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('not found')) {
+      throw new Error('User not found');
+    }
+    throw error;
+  }
 };
 
 export const validateUserCredentials = async (
   credentials: UserCredentials
 ): Promise<User | null> => {
-  const userRepo = getUserRepository();
-  const user = await userRepo.findByEmail(credentials.email);
+  const user = await userRepository.findByEmail(credentials.email);
 
   if (!user) {
     return null;

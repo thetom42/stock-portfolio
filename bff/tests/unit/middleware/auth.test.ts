@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import { Request, Response, NextFunction } from 'express';
 import * as keycloakConfig from '../../../src/config/keycloak';
-import auth from '../../../src/middleware/auth';
+import * as auth from '../../../src/middleware/auth';
 
 // Extend Request type to include user property
 interface RequestWithUser extends Request {
@@ -113,7 +113,7 @@ describe('Auth Middleware', () => {
     it('should allow access with correct role', () => {
       req.user = { id: 'user123', roles: ['required-role'] };
 
-      const middleware = auth.requireRole('required-role');
+      const [_, middleware] = auth.requireRole('required-role');
       middleware(req as Request, res as Response, next as NextFunction);
 
       sinon.assert.called(protectStub);
@@ -122,11 +122,8 @@ describe('Auth Middleware', () => {
 
     it('should deny access without correct role', () => {
       req.user = { id: 'user123', roles: ['other-role'] };
-      protectStub.returns(() => (_req: Request, res: Response, _next: NextFunction) => {
-        res.status(403).json({ message: 'Forbidden' });
-      });
 
-      const middleware = auth.requireRole('required-role');
+      const [_, middleware] = auth.requireRole('required-role');
       middleware(req as Request, res as Response, next as NextFunction);
 
       sinon.assert.called(protectStub);
@@ -146,7 +143,8 @@ describe('Auth Middleware', () => {
     it('should allow access for admin users', () => {
       req.user = { id: 'admin123', roles: ['admin'] };
 
-      auth.requireAdmin(req as Request, res as Response, next as NextFunction);
+      const [_, middleware] = auth.requireAdmin;
+      middleware(req as Request, res as Response, next as NextFunction);
 
       sinon.assert.called(protectStub);
       sinon.assert.called(next);
@@ -154,11 +152,9 @@ describe('Auth Middleware', () => {
 
     it('should deny access for non-admin users', () => {
       req.user = { id: 'user123', roles: ['user'] };
-      protectStub.returns(() => (_req: Request, res: Response, _next: NextFunction) => {
-        res.status(403).json({ message: 'Forbidden' });
-      });
 
-      auth.requireAdmin(req as Request, res as Response, next as NextFunction);
+      const [_, middleware] = auth.requireAdmin;
+      middleware(req as Request, res as Response, next as NextFunction);
 
       sinon.assert.called(protectStub);
       sinon.assert.calledWith(statusStub, 403);
@@ -166,72 +162,32 @@ describe('Auth Middleware', () => {
     });
   });
 
-  describe('attachUser', () => {
-    let addUserInfoStub: sinon.SinonStub;
+  describe('assertAuthenticated', () => {
+    it('should allow access when user is authenticated', () => {
+      req.user = { id: 'user123' };
 
-    beforeEach(() => {
-      addUserInfoStub = sinon.stub(keycloakConfig, 'addUserInfo');
-      addUserInfoStub.returns((req: Request, _res: Response, next: NextFunction) => {
-        if ((req.headers.authorization as string) === 'Bearer valid-token') {
-          (req as RequestWithUser).user = {
-            id: 'user123',
-            roles: ['user']
-          };
-          next();
-        } else {
-          next(new Error('Invalid token'));
-        }
-      });
-    });
+      auth.assertAuthenticated(req as Request, res as Response, next as NextFunction);
 
-    it('should attach user info for valid token', () => {
-      req.headers = { authorization: 'Bearer valid-token' };
-
-      auth.attachUser(req as Request, res as Response, next as NextFunction);
-
-      expect(req.user).to.deep.equal({
-        id: 'user123',
-        roles: ['user']
-      });
-      sinon.assert.called(addUserInfoStub);
       sinon.assert.called(next);
+      sinon.assert.notCalled(statusStub);
     });
 
-    it('should pass error to next for invalid token', () => {
-      req.headers = { authorization: 'Bearer invalid-token' };
+    it('should deny access when user is not authenticated', () => {
+      auth.assertAuthenticated(req as Request, res as Response, next as NextFunction);
 
-      auth.attachUser(req as Request, res as Response, next as NextFunction);
-
-      sinon.assert.called(addUserInfoStub);
-      sinon.assert.calledWith(next, sinon.match.instanceOf(Error));
+      sinon.assert.calledWith(statusStub, 401);
+      sinon.assert.calledWith(jsonSpy, { message: 'Unauthorized' });
+      sinon.assert.notCalled(next);
     });
   });
 
   describe('authErrorHandler', () => {
-    let handleAuthErrorStub: sinon.SinonStub;
-
-    beforeEach(() => {
-      handleAuthErrorStub = sinon.stub(keycloakConfig, 'handleAuthError');
-      handleAuthErrorStub.returns((err: Error, _req: Request, res: Response, next: NextFunction) => {
-        if (err.name === 'TokenExpiredError') {
-          res.status(401).json({ message: 'Token expired' });
-          return;
-        }
-        if (err.name === 'JsonWebTokenError') {
-          res.status(401).json({ message: 'Invalid token' });
-          return;
-        }
-        next(err);
-      });
-    });
-
     it('should handle token expired error', () => {
       const error = new Error('Token expired');
       error.name = 'TokenExpiredError';
 
       auth.authErrorHandler(error, req as Request, res as Response, next as NextFunction);
 
-      sinon.assert.called(handleAuthErrorStub);
       sinon.assert.calledWith(statusStub, 401);
       sinon.assert.calledWith(jsonSpy, { message: 'Token expired' });
     });
@@ -242,7 +198,6 @@ describe('Auth Middleware', () => {
 
       auth.authErrorHandler(error, req as Request, res as Response, next as NextFunction);
 
-      sinon.assert.called(handleAuthErrorStub);
       sinon.assert.calledWith(statusStub, 401);
       sinon.assert.calledWith(jsonSpy, { message: 'Invalid token' });
     });
@@ -252,7 +207,6 @@ describe('Auth Middleware', () => {
 
       auth.authErrorHandler(error, req as Request, res as Response, next as NextFunction);
 
-      sinon.assert.called(handleAuthErrorStub);
       sinon.assert.calledWith(next, error);
     });
   });

@@ -1,39 +1,24 @@
-import 'mocha';
-import { expect, use } from 'chai';
-import spies from 'chai-spies';
+import { expect } from 'chai';
 import sinon from 'sinon';
-import { Decimal } from '@prisma/client/runtime/library';
+import * as portfolioService from '../../../src/services/portfolioService';
+import * as holdingService from '../../../src/services/holdingService';
+import { CreatePortfolioDTO, UpdatePortfolioDTO } from '../../../src/models/Portfolio';
 import { 
   mockPortfolioRepo,
-  mockHoldingRepo,
-  mockTransactionRepo,
-  mockStockRepo,
   setupRepositoryMocks, 
   resetRepositoryMocks 
 } from '../../helpers/mockRepositories';
-import * as portfolioService from '../../../src/services/portfolioService';
-import * as quoteService from '../../../src/services/quoteService';
-import { CreatePortfolioDTO, UpdatePortfolioDTO } from '../../../src/models/Portfolio';
-
-use(spies);
 
 describe('PortfolioService', () => {
-  const userId = 'user123';
-  const portfolioId = 'portfolio123';
-  const holdingId = 'holding123';
-
-  const mockQuote = {
-    price: 160.50,
-    change: 10,
-    changePercent: 6.64,
-    timestamp: new Date()
-  };
-
-  const mockCreatedDate = new Date('2023-01-01T00:00:00Z');
+  let holdingServiceStub: sinon.SinonStub;
 
   beforeEach(() => {
     setupRepositoryMocks();
-    sinon.stub(quoteService, 'getRealTimeQuote').resolves(mockQuote);
+    // Replace the repository instance in the service
+    (portfolioService as any).portfolioRepository = mockPortfolioRepo;
+    
+    // Stub holdingService.getHoldingsByPortfolioId
+    holdingServiceStub = sinon.stub(holdingService, 'getHoldingsByPortfolioId').resolves([]);
   });
 
   afterEach(() => {
@@ -42,314 +27,213 @@ describe('PortfolioService', () => {
   });
 
   describe('createPortfolio', () => {
-    const mockPortfolioData: CreatePortfolioDTO = {
-      name: 'Test Portfolio'
+    const mockCreateData: CreatePortfolioDTO = {
+      name: 'Test Portfolio',
+      description: 'Test Description'
     };
 
-    const mockCreatedPortfolio = {
-      PORTFOLIOS_ID: portfolioId,
-      USERS_ID: userId,
-      NAME: mockPortfolioData.name,
-      CREATED_AT: mockCreatedDate
+    const mockDBPortfolio = {
+      PORTFOLIOS_ID: '1',
+      USERS_ID: 'user1',
+      NAME: 'Test Portfolio',
+      CREATED_AT: new Date()
     };
 
     it('should create a portfolio successfully', async () => {
-      mockPortfolioRepo.create.resolves(mockCreatedPortfolio);
+      mockPortfolioRepo.create.resolves(mockDBPortfolio);
 
-      const result = await portfolioService.createPortfolio(userId, mockPortfolioData);
+      const result = await portfolioService.createPortfolio('user1', mockCreateData);
 
       expect(result).to.deep.include({
-        id: portfolioId,
-        userId: userId,
-        name: mockPortfolioData.name,
-        createdAt: mockCreatedDate,
-        updatedAt: mockCreatedDate // Should match CREATED_AT since no updated_at in DB
+        id: mockDBPortfolio.PORTFOLIOS_ID,
+        userId: mockDBPortfolio.USERS_ID,
+        name: mockDBPortfolio.NAME,
+        description: '',
+        createdAt: mockDBPortfolio.CREATED_AT,
+        updatedAt: mockDBPortfolio.CREATED_AT,
+        totalValue: 0,
+        totalGainLoss: 0,
+        totalGainLossPercentage: 0,
+        holdings: []
       });
-      expect(mockPortfolioRepo.create.calledOnceWith({
+
+      expect(mockPortfolioRepo.create.firstCall.args[0]).to.deep.include({
         PORTFOLIOS_ID: '',
-        USERS_ID: userId,
-        NAME: mockPortfolioData.name,
+        USERS_ID: 'user1',
+        NAME: mockCreateData.name,
         CREATED_AT: sinon.match.date
-      })).to.be.true;
-    });
-  });
-
-  describe('getPortfoliosByUserId', () => {
-    const mockPortfolios = [{
-      PORTFOLIOS_ID: portfolioId,
-      USERS_ID: userId,
-      NAME: 'Test Portfolio',
-      CREATED_AT: mockCreatedDate
-    }];
-
-    it('should return user portfolios with correct date mapping', async () => {
-      mockPortfolioRepo.findByUserId.resolves(mockPortfolios);
-
-      const result = await portfolioService.getPortfoliosByUserId(userId);
-
-      expect(result).to.be.an('array');
-      expect(result[0]).to.deep.include({
-        id: portfolioId,
-        userId: userId,
-        name: 'Test Portfolio',
-        createdAt: mockCreatedDate,
-        updatedAt: mockCreatedDate
       });
     });
 
-    it('should return empty array when user has no portfolios', async () => {
-      mockPortfolioRepo.findByUserId.resolves([]);
+    it('should throw error if user not found', async () => {
+      mockPortfolioRepo.create.rejects(new Error('User not found'));
 
-      const result = await portfolioService.getPortfoliosByUserId(userId);
+      await expect(portfolioService.createPortfolio('user1', mockCreateData))
+        .to.be.rejectedWith('User not found');
+    });
 
-      expect(result).to.be.an('array').that.is.empty;
+    it('should throw error if creation fails', async () => {
+      mockPortfolioRepo.create.rejects(new Error('Database error'));
+
+      await expect(portfolioService.createPortfolio('user1', mockCreateData))
+        .to.be.rejectedWith('Failed to create portfolio');
     });
   });
 
   describe('getPortfolioById', () => {
-    const mockPortfolio = {
-      PORTFOLIOS_ID: portfolioId,
-      USERS_ID: userId,
+    const mockDBPortfolio = {
+      PORTFOLIOS_ID: '1',
+      USERS_ID: 'user1',
       NAME: 'Test Portfolio',
-      CREATED_AT: mockCreatedDate
+      CREATED_AT: new Date()
     };
 
-    const mockHoldings = [
-      {
-        HOLDINGS_ID: holdingId,
-        PORTFOLIOS_ID: portfolioId,
-        ISIN: 'US0378331005',
-        QUANTITY: 100,
-        START_DATE: new Date(),
-        END_DATE: null
-      },
-      {
-        HOLDINGS_ID: 'holding456',
-        PORTFOLIOS_ID: portfolioId,
-        ISIN: 'US5949181045',
-        QUANTITY: 50,
-        START_DATE: new Date(),
-        END_DATE: null
-      }
-    ];
+    it('should return portfolio if found', async () => {
+      mockPortfolioRepo.findById.resolves(mockDBPortfolio);
 
-    const mockTransactions = [
-      {
-        TRANSACTIONS_ID: 'trans1',
-        HOLDINGS_ID: holdingId,
-        BUY: true,
-        TRANSACTION_TIME: new Date(),
-        AMOUNT: 100,
-        PRICE: new Decimal(150),
-        COMMISSION: new Decimal(0),
-        BROKER: 'SYSTEM'
-      }
-    ];
+      const result = await portfolioService.getPortfolioById('1');
 
-    it('should return portfolio with holdings and calculations', async () => {
-      mockPortfolioRepo.findById.resolves(mockPortfolio);
-      mockHoldingRepo.findByPortfolio.resolves(mockHoldings);
-      mockTransactionRepo.findByHolding.resolves(mockTransactions);
-
-      const result = await portfolioService.getPortfolioById(portfolioId, userId);
-
-      expect(result).to.not.be.null;
       expect(result).to.deep.include({
-        id: portfolioId,
-        userId: userId,
-        name: 'Test Portfolio',
-        createdAt: mockCreatedDate,
-        updatedAt: mockCreatedDate
+        id: mockDBPortfolio.PORTFOLIOS_ID,
+        userId: mockDBPortfolio.USERS_ID,
+        name: mockDBPortfolio.NAME,
+        description: '',
+        createdAt: mockDBPortfolio.CREATED_AT,
+        updatedAt: mockDBPortfolio.CREATED_AT,
+        totalValue: 0,
+        totalGainLoss: 0,
+        totalGainLossPercentage: 0,
+        holdings: []
       });
-      expect(result?.holdings).to.have.length(2);
+
+      expect(mockPortfolioRepo.findById.calledWith('1')).to.be.true;
+    });
+
+    it('should return null if portfolio not found', async () => {
+      mockPortfolioRepo.findById.resolves(null);
+
+      const result = await portfolioService.getPortfolioById('999');
+      expect(result).to.be.null;
+    });
+
+    it('should calculate portfolio totals with holdings', async () => {
+      mockPortfolioRepo.findById.resolves(mockDBPortfolio);
+      
+      const mockHoldings = [
+        {
+          HOLDINGS_ID: 'h1',
+          ISIN: 'stock1',
+          QUANTITY: 10,
+          currentPrice: 100 // Mock current price
+        },
+        {
+          HOLDINGS_ID: 'h2',
+          ISIN: 'stock2',
+          QUANTITY: 5,
+          currentPrice: 200 // Mock current price
+        }
+      ];
+      
+      holdingServiceStub.resolves(mockHoldings);
+
+      const result = await portfolioService.getPortfolioById('1');
+
+      expect(result).to.deep.include({
+        totalValue: 2000, // (10 * 100) + (5 * 200)
+        totalGainLoss: 0, // In this test case, cost equals value
+        totalGainLossPercentage: 0
+      });
+
+      expect(result?.holdings).to.have.lengthOf(2);
       expect(result?.holdings[0]).to.deep.include({
-        id: holdingId,
-        stockId: mockHoldings[0].ISIN,
-        quantity: mockHoldings[0].QUANTITY,
-        currentValue: mockQuote.price * mockHoldings[0].QUANTITY
+        id: 'h1',
+        stockId: 'stock1',
+        quantity: 10,
+        currentValue: 1000
       });
-    });
-
-    it('should handle empty portfolio (no holdings)', async () => {
-      mockPortfolioRepo.findById.resolves(mockPortfolio);
-      mockHoldingRepo.findByPortfolio.resolves([]);
-
-      const result = await portfolioService.getPortfolioById(portfolioId, userId);
-
-      expect(result).to.not.be.null;
-      expect(result?.holdings).to.be.an('array').that.is.empty;
-      expect(result?.totalValue).to.equal(0);
-      expect(result?.totalGainLoss).to.equal(0);
-      expect(result?.totalGainLossPercentage).to.equal(0);
-    });
-
-    it('should calculate total values correctly with multiple holdings', async () => {
-      mockPortfolioRepo.findById.resolves(mockPortfolio);
-      mockHoldingRepo.findByPortfolio.resolves(mockHoldings);
-      mockTransactionRepo.findByHolding.resolves([{
-        TRANSACTIONS_ID: 'trans1',
-        HOLDINGS_ID: holdingId,
-        BUY: true,
-        TRANSACTION_TIME: new Date(),
-        AMOUNT: 100,
-        PRICE: new Decimal(100),
-        COMMISSION: new Decimal(0),
-        BROKER: 'SYSTEM'
-      }]);
-
-      const result = await portfolioService.getPortfolioById(portfolioId, userId);
-
-      const expectedTotalValue = mockQuote.price * (mockHoldings[0].QUANTITY + mockHoldings[1].QUANTITY);
-      expect(result?.totalValue).to.be.closeTo(expectedTotalValue, 0.01);
     });
   });
 
   describe('updatePortfolio', () => {
     const mockUpdateData: UpdatePortfolioDTO = {
-      name: 'Updated Portfolio'
+      name: 'Updated Portfolio',
+      description: 'Updated Description'
     };
 
-    const mockPortfolio = {
-      PORTFOLIOS_ID: portfolioId,
-      USERS_ID: userId,
+    const mockDBPortfolio = {
+      PORTFOLIOS_ID: '1',
+      USERS_ID: 'user1',
       NAME: 'Test Portfolio',
-      CREATED_AT: mockCreatedDate
+      CREATED_AT: new Date()
     };
 
-    it('should update portfolio name if authorized', async () => {
-      mockPortfolioRepo.findById.resolves(mockPortfolio);
-      mockPortfolioRepo.update.resolves({
-        ...mockPortfolio,
-        NAME: mockUpdateData.name
-      });
+    const mockUpdatedDBPortfolio = {
+      ...mockDBPortfolio,
+      NAME: 'Updated Portfolio'
+    };
 
-      const result = await portfolioService.updatePortfolio(portfolioId, userId, mockUpdateData);
+    it('should update portfolio successfully', async () => {
+      mockPortfolioRepo.findById.resolves(mockDBPortfolio);
+      mockPortfolioRepo.update.resolves(mockUpdatedDBPortfolio);
 
-      expect(result).to.not.be.null;
+      const result = await portfolioService.updatePortfolio('1', mockUpdateData);
+
       expect(result).to.deep.include({
-        id: portfolioId,
-        name: mockUpdateData.name,
-        createdAt: mockCreatedDate,
-        updatedAt: mockCreatedDate
+        id: mockUpdatedDBPortfolio.PORTFOLIOS_ID,
+        userId: mockUpdatedDBPortfolio.USERS_ID,
+        name: mockUpdatedDBPortfolio.NAME,
+        description: '',
+        createdAt: mockUpdatedDBPortfolio.CREATED_AT,
+        updatedAt: mockUpdatedDBPortfolio.CREATED_AT,
+        totalValue: 0,
+        totalGainLoss: 0,
+        totalGainLossPercentage: 0,
+        holdings: []
       });
-      expect(mockPortfolioRepo.update.calledOnceWith(portfolioId, {
-        NAME: mockUpdateData.name
-      })).to.be.true;
+
+      expect(mockPortfolioRepo.update.firstCall.args).to.deep.equal([
+        '1',
+        { NAME: mockUpdateData.name }
+      ]);
     });
 
-    it('should preserve existing name if not provided in update', async () => {
-      mockPortfolioRepo.findById.resolves(mockPortfolio);
-      mockPortfolioRepo.update.resolves(mockPortfolio);
+    it('should return null if portfolio not found', async () => {
+      mockPortfolioRepo.findById.resolves(null);
 
-      const result = await portfolioService.updatePortfolio(portfolioId, userId, {});
+      const result = await portfolioService.updatePortfolio('999', mockUpdateData);
+      expect(result).to.be.null;
+    });
 
-      expect(result?.name).to.equal(mockPortfolio.NAME);
+    it('should throw error if update fails', async () => {
+      mockPortfolioRepo.findById.resolves(mockDBPortfolio);
+      mockPortfolioRepo.update.rejects(new Error('Database error'));
+
+      await expect(portfolioService.updatePortfolio('1', mockUpdateData))
+        .to.be.rejectedWith('Failed to update portfolio');
     });
   });
 
   describe('deletePortfolio', () => {
-    const mockPortfolio = {
-      PORTFOLIOS_ID: portfolioId,
-      USERS_ID: userId,
-      NAME: 'Test Portfolio',
-      CREATED_AT: mockCreatedDate
-    };
+    it('should delete portfolio successfully', async () => {
+      mockPortfolioRepo.delete.resolves({} as any);
 
-    it('should delete portfolio and return void if authorized', async () => {
-      mockPortfolioRepo.findById.resolves(mockPortfolio);
-      mockPortfolioRepo.delete.resolves();
+      await portfolioService.deletePortfolio('1');
 
-      const result = await portfolioService.deletePortfolio(portfolioId, userId);
-
-      expect(result).to.be.undefined;
-      expect(mockPortfolioRepo.delete.calledOnceWith(portfolioId)).to.be.true;
+      expect(mockPortfolioRepo.delete.calledWith('1')).to.be.true;
     });
 
-    it('should throw error with correct message if unauthorized', async () => {
-      mockPortfolioRepo.findById.resolves({
-        ...mockPortfolio,
-        USERS_ID: 'different-user'
-      });
+    it('should throw error if portfolio not found', async () => {
+      mockPortfolioRepo.delete.rejects(new Error('Portfolio not found'));
 
-      try {
-        await portfolioService.deletePortfolio(portfolioId, userId);
-        expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).to.equal('Portfolio not found or unauthorized');
-      }
-    });
-  });
-
-  describe('getPortfolioSummary', () => {
-    const mockPortfolio = {
-      PORTFOLIOS_ID: portfolioId,
-      USERS_ID: userId,
-      NAME: 'Test Portfolio',
-      CREATED_AT: mockCreatedDate
-    };
-
-    const mockHoldings = [
-      {
-        HOLDINGS_ID: holdingId,
-        PORTFOLIOS_ID: portfolioId,
-        ISIN: 'US0378331005',
-        QUANTITY: 100,
-        START_DATE: new Date(),
-        END_DATE: null
-      }
-    ];
-
-    const mockTransactions = [
-      {
-        TRANSACTIONS_ID: 'trans1',
-        HOLDINGS_ID: holdingId,
-        BUY: true,
-        TRANSACTION_TIME: new Date(),
-        AMOUNT: 100,
-        PRICE: new Decimal(100),
-        COMMISSION: new Decimal(0),
-        BROKER: 'SYSTEM'
-      }
-    ];
-
-    it('should return correct summary with calculations', async () => {
-      mockPortfolioRepo.findById.resolves(mockPortfolio);
-      mockHoldingRepo.findByPortfolio.resolves(mockHoldings);
-      mockTransactionRepo.findByHolding.resolves(mockTransactions);
-
-      const result = await portfolioService.getPortfolioSummary(portfolioId, userId);
-
-      expect(result).to.not.be.null;
-      expect(result).to.deep.include({
-        id: portfolioId,
-        name: mockPortfolio.NAME,
-        holdingsCount: 1
-      });
-      
-      const expectedTotalValue = mockQuote.price * mockHoldings[0].QUANTITY;
-      const expectedTotalCost = 100 * mockHoldings[0].QUANTITY; // Price * Quantity from mockTransactions
-      const expectedGainLoss = expectedTotalValue - expectedTotalCost;
-      const expectedGainLossPercentage = (expectedGainLoss / expectedTotalCost) * 100;
-
-      expect(result?.totalValue).to.be.closeTo(expectedTotalValue, 0.01);
-      expect(result?.totalGainLoss).to.be.closeTo(expectedGainLoss, 0.01);
-      expect(result?.totalGainLossPercentage).to.be.closeTo(expectedGainLossPercentage, 0.01);
+      await expect(portfolioService.deletePortfolio('999'))
+        .to.be.rejectedWith('Portfolio not found');
     });
 
-    it('should handle empty portfolio in summary', async () => {
-      mockPortfolioRepo.findById.resolves(mockPortfolio);
-      mockHoldingRepo.findByPortfolio.resolves([]);
+    it('should throw error if deletion fails', async () => {
+      mockPortfolioRepo.delete.rejects(new Error('Database error'));
 
-      const result = await portfolioService.getPortfolioSummary(portfolioId, userId);
-
-      expect(result).to.deep.include({
-        id: portfolioId,
-        name: mockPortfolio.NAME,
-        holdingsCount: 0,
-        totalValue: 0,
-        totalGainLoss: 0,
-        totalGainLossPercentage: 0
-      });
+      await expect(portfolioService.deletePortfolio('1'))
+        .to.be.rejectedWith('Failed to delete portfolio');
     });
   });
 });

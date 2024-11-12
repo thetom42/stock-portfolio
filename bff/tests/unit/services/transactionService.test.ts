@@ -20,6 +20,10 @@ import {
 
 use(spies);
 
+interface ServiceError extends Error {
+  message: string;
+}
+
 describe('TransactionService', () => {
   const userId = 'user123';
   const holdingId = 'holding123';
@@ -124,7 +128,8 @@ describe('TransactionService', () => {
         await transactionService.createTransaction(userId, holdingId, sellData);
         expect.fail('Should have thrown an error');
       } catch (error) {
-        expect(error.message).to.equal('Insufficient holding quantity for sell transaction');
+        const serviceError = error as ServiceError;
+        expect(serviceError.message).to.equal('Insufficient holding quantity for sell transaction');
       }
 
       expect(mockTransactionRepo.create).to.not.have.been.called();
@@ -138,7 +143,8 @@ describe('TransactionService', () => {
         await transactionService.createTransaction(userId, holdingId, mockCreateData);
         expect.fail('Should have thrown an error');
       } catch (error) {
-        expect(error.message).to.equal('Holding not found');
+        const serviceError = error as ServiceError;
+        expect(serviceError.message).to.equal('Holding not found');
       }
     });
 
@@ -150,7 +156,8 @@ describe('TransactionService', () => {
         await transactionService.createTransaction(userId, holdingId, mockCreateData);
         expect.fail('Should have thrown an error');
       } catch (error) {
-        expect(error.message).to.equal('Unauthorized');
+        const serviceError = error as ServiceError;
+        expect(serviceError.message).to.equal('Unauthorized');
       }
     });
   });
@@ -196,7 +203,8 @@ describe('TransactionService', () => {
         await transactionService.getTransactionById(userId, transactionId);
         expect.fail('Should have thrown an error');
       } catch (error) {
-        expect(error.message).to.equal('Transaction not found');
+        const serviceError = error as ServiceError;
+        expect(serviceError.message).to.equal('Transaction not found');
       }
     });
 
@@ -208,7 +216,8 @@ describe('TransactionService', () => {
         await transactionService.getTransactionById(userId, transactionId);
         expect.fail('Should have thrown an error');
       } catch (error) {
-        expect(error.message).to.equal('Holding not found');
+        const serviceError = error as ServiceError;
+        expect(serviceError.message).to.equal('Holding not found');
       }
     });
 
@@ -221,7 +230,8 @@ describe('TransactionService', () => {
         await transactionService.getTransactionById(userId, transactionId);
         expect.fail('Should have thrown an error');
       } catch (error) {
-        expect(error.message).to.equal('Unauthorized');
+        const serviceError = error as ServiceError;
+        expect(serviceError.message).to.equal('Unauthorized');
       }
     });
   });
@@ -417,7 +427,8 @@ describe('TransactionService', () => {
         await transactionService.getTransactionsByPortfolio(userId, portfolioId);
         expect.fail('Should have thrown an error');
       } catch (error) {
-        expect(error.message).to.equal('Unauthorized');
+        const serviceError = error as ServiceError;
+        expect(serviceError.message).to.equal('Unauthorized');
       }
 
       expect(mockHoldingRepo.findByPortfolio).to.not.have.been.called();

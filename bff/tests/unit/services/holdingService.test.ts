@@ -1,38 +1,32 @@
-import 'mocha';
-import { expect, use } from 'chai';
-import spies from 'chai-spies';
+import { expect } from 'chai';
 import sinon from 'sinon';
-import { Decimal } from '@prisma/client/runtime/library';
-import { 
-  mockHoldingRepo, 
-  mockPortfolioRepo, 
-  mockTransactionRepo,
-  mockStockRepo,
-  setupRepositoryMocks, 
-  resetRepositoryMocks 
-} from '../../helpers/mockRepositories';
 import * as holdingService from '../../../src/services/holdingService';
+import * as stockService from '../../../src/services/stockService';
 import * as quoteService from '../../../src/services/quoteService';
-import { CreateHoldingDTO, UpdateHoldingDTO, Holding } from '../../../src/models/Holding';
-import { Transaction } from '../../../src/models/Transaction';
-
-use(spies);
+import { CreateHoldingDTO, UpdateHoldingDTO } from '../../../src/models/Holding';
+import { Transaction } from '../../../../db/models/Transaction';
+import { 
+  mockHoldingRepo,
+  mockTransactionRepo,
+  setupRepositoryMocks, 
+  resetRepositoryMocks,
+  createDecimal 
+} from '../../helpers/mockRepositories';
 
 describe('HoldingService', () => {
-  const userId = 'user123';
-  const portfolioId = 'portfolio123';
-  const holdingId = 'holding123';
-
-  const mockQuote = {
-    price: 160.50,
-    change: 10,
-    changePercent: 6.64,
-    timestamp: new Date()
-  };
+  let stockServiceStub: sinon.SinonStub;
+  let quoteServiceStub: sinon.SinonStub;
 
   beforeEach(() => {
     setupRepositoryMocks();
-    sinon.stub(quoteService, 'getRealTimeQuote').resolves(mockQuote);
+    
+    // Replace the repository instances in the service
+    (holdingService as any).holdingRepository = mockHoldingRepo;
+    (holdingService as any).transactionRepository = mockTransactionRepo;
+    
+    // Stub service dependencies
+    stockServiceStub = sinon.stub(stockService, 'getStockByISIN');
+    quoteServiceStub = sinon.stub(quoteService, 'getLatestQuotes');
   });
 
   afterEach(() => {
@@ -41,285 +35,244 @@ describe('HoldingService', () => {
   });
 
   describe('createHolding', () => {
-    const mockCreateDTO: CreateHoldingDTO = {
-      PORTFOLIOS_ID: portfolioId,
+    const mockCreateData: CreateHoldingDTO = {
+      PORTFOLIOS_ID: '1',
       ISIN: 'US0378331005',
-      QUANTITY: 100,
+      QUANTITY: 10,
       PRICE: 150.50
     };
 
-    const mockPortfolio = {
-      PORTFOLIOS_ID: portfolioId,
-      USERS_ID: userId,
-      NAME: 'Test Portfolio'
-    };
-
     const mockStock = {
-      ISIN: 'US0378331005',
-      SYMBOL: 'AAPL',
-      NAME: 'Apple Inc.',
-      WKN: '123456'
+      id: '1',
+      symbol: 'AAPL',
+      isin: 'US0378331005',
+      name: 'Apple Inc.',
+      currency: 'USD',
+      exchange: 'NASDAQ',
+      country: 'USA',
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
 
-    const mockCreatedHolding: Holding = {
-      HOLDINGS_ID: holdingId,
-      PORTFOLIOS_ID: portfolioId,
+    const mockQuote = {
+      id: '1',
+      stockId: '1',
+      price: 150.50,
+      currency: 'USD',
+      timestamp: new Date()
+    };
+
+    const mockCreatedHolding = {
+      HOLDINGS_ID: '1',
+      PORTFOLIOS_ID: '1',
       ISIN: 'US0378331005',
-      QUANTITY: 100,
+      QUANTITY: 10,
       START_DATE: new Date(),
       END_DATE: null
     };
 
     it('should create a holding with initial transaction', async () => {
-      mockPortfolioRepo.findById.resolves(mockPortfolio);
-      mockStockRepo.findByISIN.resolves(mockStock);
+      stockServiceStub.resolves(mockStock);
+      quoteServiceStub.resolves([mockQuote]);
       mockHoldingRepo.create.resolves(mockCreatedHolding);
-      mockTransactionRepo.create.resolves({} as Transaction);
+      
+      const mockTransaction: Transaction = {
+        TRANSACTIONS_ID: '1',
+        HOLDINGS_ID: '1',
+        BUY: true,
+        AMOUNT: 10,
+        PRICE: createDecimal(150.50),
+        TRANSACTION_TIME: new Date(),
+        COMMISSION: createDecimal(0),
+        BROKER: 'SYSTEM'
+      };
+      
+      mockTransactionRepo.create.resolves(mockTransaction);
+      mockTransactionRepo.getTotalValue.resolves(createDecimal(1505.00));
 
-      const result = await holdingService.createHolding(userId, mockCreateDTO);
+      const result = await holdingService.createHolding(mockCreateData);
 
-      expect(mockPortfolioRepo.findById).to.have.been.called();
-      expect(mockStockRepo.findByISIN).to.have.been.called();
-      expect(mockHoldingRepo.create).to.have.been.called();
-      expect(mockTransactionRepo.create).to.have.been.called();
       expect(result).to.deep.include({
-        ...mockCreatedHolding,
+        HOLDINGS_ID: mockCreatedHolding.HOLDINGS_ID,
+        PORTFOLIOS_ID: mockCreatedHolding.PORTFOLIOS_ID,
+        ISIN: mockCreatedHolding.ISIN,
+        QUANTITY: mockCreatedHolding.QUANTITY,
         stock: {
-          symbol: mockStock.SYMBOL.toLowerCase(),
-          name: mockStock.NAME,
-          currency: 'USD'
-        }
-      });
-    });
-
-    it('should throw Unauthorized if portfolio belongs to different user', async () => {
-      mockPortfolioRepo.findById.resolves({
-        ...mockPortfolio,
-        USERS_ID: 'different-user'
+          symbol: mockStock.symbol,
+          name: mockStock.name,
+          currency: mockStock.currency
+        },
+        currentPrice: mockQuote.price,
+        totalValue: mockQuote.price * mockCreatedHolding.QUANTITY
       });
 
-      try {
-        await holdingService.createHolding(userId, mockCreateDTO);
-        expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).to.equal('Unauthorized');
-      }
+      expect(mockHoldingRepo.create.firstCall.args[0]).to.deep.include({
+        HOLDINGS_ID: '',
+        PORTFOLIOS_ID: mockCreateData.PORTFOLIOS_ID,
+        ISIN: mockCreateData.ISIN,
+        QUANTITY: mockCreateData.QUANTITY,
+        END_DATE: null
+      });
+
+      const createTransactionCall = mockTransactionRepo.create.firstCall.args[0];
+      expect(createTransactionCall).to.deep.include({
+        TRANSACTIONS_ID: '',
+        HOLDINGS_ID: mockCreatedHolding.HOLDINGS_ID,
+        BUY: true,
+        AMOUNT: mockCreateData.QUANTITY,
+        BROKER: 'SYSTEM'
+      });
+      expect(createTransactionCall.PRICE.toString()).to.equal('150.5');
+      expect(createTransactionCall.COMMISSION.toString()).to.equal('0');
     });
 
-    it('should throw Stock not found if stock does not exist', async () => {
-      mockPortfolioRepo.findById.resolves(mockPortfolio);
-      mockStockRepo.findByISIN.resolves(null);
+    it('should throw error if stock not found', async () => {
+      stockServiceStub.resolves(null);
 
-      try {
-        await holdingService.createHolding(userId, mockCreateDTO);
-        expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).to.equal('Stock not found');
-      }
+      await expect(holdingService.createHolding(mockCreateData))
+        .to.be.rejectedWith('Stock not found');
     });
   });
 
   describe('getHoldingById', () => {
-    const mockHolding: Holding = {
-      HOLDINGS_ID: holdingId,
-      PORTFOLIOS_ID: portfolioId,
+    const mockHolding = {
+      HOLDINGS_ID: '1',
+      PORTFOLIOS_ID: '1',
       ISIN: 'US0378331005',
-      QUANTITY: 100,
+      QUANTITY: 10,
       START_DATE: new Date(),
       END_DATE: null
-    };
-
-    const mockPortfolio = {
-      PORTFOLIOS_ID: portfolioId,
-      USERS_ID: userId,
-      NAME: 'Test Portfolio'
     };
 
     const mockStock = {
-      ISIN: 'US0378331005',
-      SYMBOL: 'AAPL',
-      NAME: 'Apple Inc.',
-      WKN: '123456'
+      id: '1',
+      symbol: 'AAPL',
+      isin: 'US0378331005',
+      name: 'Apple Inc.',
+      currency: 'USD',
+      exchange: 'NASDAQ',
+      country: 'USA',
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
 
-    it('should throw Holding not found if holding does not exist', async () => {
-      mockHoldingRepo.findById.resolves(null);
+    const mockQuote = {
+      id: '1',
+      stockId: '1',
+      price: 150.50,
+      currency: 'USD',
+      timestamp: new Date()
+    };
 
-      try {
-        await holdingService.getHoldingById(userId, holdingId);
-        expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).to.equal('Holding not found');
-      }
-    });
-
-    it('should throw Unauthorized if portfolio belongs to different user', async () => {
+    it('should return holding if found', async () => {
       mockHoldingRepo.findById.resolves(mockHolding);
-      mockPortfolioRepo.findById.resolves({
-        ...mockPortfolio,
-        USERS_ID: 'different-user'
-      });
+      stockServiceStub.resolves(mockStock);
+      quoteServiceStub.resolves([mockQuote]);
+      mockTransactionRepo.getTotalValue.resolves(createDecimal(1505.00));
+      mockTransactionRepo.findByHolding.resolves([]);
 
-      try {
-        await holdingService.getHoldingById(userId, holdingId);
-        expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).to.equal('Unauthorized');
-      }
-    });
-
-    it('should return holding details with calculations', async () => {
-      mockHoldingRepo.findById.resolves(mockHolding);
-      mockPortfolioRepo.findById.resolves(mockPortfolio);
-      mockStockRepo.findByISIN.resolves(mockStock);
-      mockTransactionRepo.findByHolding.resolves([{
-        TRANSACTIONS_ID: 'trans1',
-        HOLDINGS_ID: holdingId,
-        BUY: true,
-        TRANSACTION_TIME: new Date(),
-        AMOUNT: 100,
-        PRICE: new Decimal(150),
-        COMMISSION: new Decimal(0),
-        BROKER: 'SYSTEM'
-      }]);
-
-      const result = await holdingService.getHoldingById(userId, holdingId);
+      const result = await holdingService.getHoldingById('1');
 
       expect(result).to.deep.include({
-        ...mockHolding,
-        stock: {
-          symbol: mockStock.SYMBOL.toLowerCase(),
-          name: mockStock.NAME,
-          currency: 'USD'
-        },
-        currentPrice: mockQuote.price
-      });
-      expect(result.totalValue).to.equal(mockQuote.price * mockHolding.QUANTITY);
-    });
-  });
-
-  describe('getHoldingPerformance', () => {
-    const mockHolding: Holding = {
-      HOLDINGS_ID: holdingId,
-      PORTFOLIOS_ID: portfolioId,
-      ISIN: 'US0378331005',
-      QUANTITY: 100,
-      START_DATE: new Date(),
-      END_DATE: null
-    };
-
-    const mockTransactions = [
-      {
-        TRANSACTIONS_ID: 'trans1',
-        HOLDINGS_ID: holdingId,
-        BUY: true,
-        TRANSACTION_TIME: new Date(),
-        AMOUNT: 50,
-        PRICE: new Decimal(100),
-        COMMISSION: new Decimal(0),
-        BROKER: 'SYSTEM'
-      },
-      {
-        TRANSACTIONS_ID: 'trans2',
-        HOLDINGS_ID: holdingId,
-        BUY: true,
-        TRANSACTION_TIME: new Date(),
-        AMOUNT: 50,
-        PRICE: new Decimal(200),
-        COMMISSION: new Decimal(0),
-        BROKER: 'SYSTEM'
-      }
-    ];
-
-    it('should calculate performance metrics correctly', async () => {
-      mockHoldingRepo.findById.resolves(mockHolding);
-      mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
-      mockStockRepo.findByISIN.resolves({
+        HOLDINGS_ID: mockHolding.HOLDINGS_ID,
+        PORTFOLIOS_ID: mockHolding.PORTFOLIOS_ID,
         ISIN: mockHolding.ISIN,
-        SYMBOL: 'AAPL',
-        NAME: 'Apple Inc.'
+        QUANTITY: mockHolding.QUANTITY,
+        stock: {
+          symbol: mockStock.symbol,
+          name: mockStock.name,
+          currency: mockStock.currency
+        },
+        currentPrice: mockQuote.price,
+        totalValue: mockQuote.price * mockHolding.QUANTITY
       });
-      mockTransactionRepo.findByHolding.resolves(mockTransactions);
+    });
 
-      const result = await holdingService.getHoldingPerformance(userId, holdingId);
+    it('should return null if holding not found', async () => {
+      mockHoldingRepo.findById.resolves(null);
 
-      expect(result.totalInvested).to.equal(15000); // (50 * 100) + (50 * 200)
-      expect(result.currentValue).to.equal(16050); // 100 * 160.50 (mockQuote.price)
-      expect(result.totalReturn).to.equal(1050); // 16050 - 15000
-      expect(result.totalReturnPercentage).to.equal(7); // (1050 / 15000) * 100
-      expect(result.transactions).to.have.length(2);
+      const result = await holdingService.getHoldingById('999');
+      expect(result).to.be.null;
     });
   });
 
-  describe('getHoldingHistory', () => {
-    const mockHolding: Holding = {
-      HOLDINGS_ID: holdingId,
-      PORTFOLIOS_ID: portfolioId,
+  describe('updateHolding', () => {
+    const mockUpdateData: UpdateHoldingDTO = {
+      QUANTITY: 15
+    };
+
+    const mockHolding = {
+      HOLDINGS_ID: '1',
+      PORTFOLIOS_ID: '1',
       ISIN: 'US0378331005',
-      QUANTITY: 100,
+      QUANTITY: 15,
       START_DATE: new Date(),
       END_DATE: null
     };
 
-    const mockTransactions = [
-      {
-        TRANSACTIONS_ID: 'trans1',
-        HOLDINGS_ID: holdingId,
-        BUY: true,
-        TRANSACTION_TIME: new Date('2023-01-01'),
-        AMOUNT: 50,
-        PRICE: new Decimal(100),
-        COMMISSION: new Decimal(1.5),
-        BROKER: 'SYSTEM'
-      },
-      {
-        TRANSACTIONS_ID: 'trans2',
-        HOLDINGS_ID: holdingId,
-        BUY: false,
-        TRANSACTION_TIME: new Date('2023-02-01'),
-        AMOUNT: 25,
-        PRICE: new Decimal(150),
-        COMMISSION: new Decimal(1.5),
-        BROKER: 'SYSTEM'
-      }
-    ];
+    const mockStock = {
+      id: '1',
+      symbol: 'AAPL',
+      isin: 'US0378331005',
+      name: 'Apple Inc.',
+      currency: 'USD',
+      exchange: 'NASDAQ',
+      country: 'USA',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
 
-    it('should return transaction history', async () => {
-      mockHoldingRepo.findById.resolves(mockHolding);
-      mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
-      mockTransactionRepo.findByHolding.resolves(mockTransactions);
+    const mockQuote = {
+      id: '1',
+      stockId: '1',
+      price: 150.50,
+      currency: 'USD',
+      timestamp: new Date()
+    };
 
-      const result = await holdingService.getHoldingHistory(userId, holdingId);
+    it('should update holding successfully', async () => {
+      mockHoldingRepo.updateQuantity.resolves(mockHolding);
+      stockServiceStub.resolves(mockStock);
+      quoteServiceStub.resolves([mockQuote]);
+      mockTransactionRepo.getTotalValue.resolves(createDecimal(2257.50));
+      mockTransactionRepo.findByHolding.resolves([]);
 
-      expect(result).to.have.length(2);
-      expect(result[0]).to.deep.include({
-        buy: true,
-        amount: 50,
-        price: 100,
-        value: 5000,
-        commission: 1.5,
-        broker: 'SYSTEM'
-      });
-      expect(result[1]).to.deep.include({
-        buy: false,
-        amount: 25,
-        price: 150,
-        value: 3750,
-        commission: 1.5,
-        broker: 'SYSTEM'
-      });
+      const result = await holdingService.updateHolding('1', mockUpdateData);
+
+      expect(result.QUANTITY).to.equal(mockUpdateData.QUANTITY);
+      expect(mockHoldingRepo.updateQuantity.firstCall.args).to.deep.equal([
+        '1',
+        mockUpdateData.QUANTITY
+      ]);
     });
 
-    it('should throw Unauthorized if portfolio belongs to different user', async () => {
-      mockHoldingRepo.findById.resolves(mockHolding);
-      mockPortfolioRepo.findById.resolves({ USERS_ID: 'different-user' });
+    it('should throw error if quantity is not provided', async () => {
+      await expect(holdingService.updateHolding('1', {} as UpdateHoldingDTO))
+        .to.be.rejectedWith('Quantity is required for update');
+    });
+  });
 
-      try {
-        await holdingService.getHoldingHistory(userId, holdingId);
-        expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).to.equal('Unauthorized');
-      }
+  describe('closeHolding', () => {
+    it('should close holding successfully', async () => {
+      mockHoldingRepo.closeHolding.resolves({} as any);
+
+      await holdingService.closeHolding('1');
+
+      expect(mockHoldingRepo.closeHolding.calledWith('1', sinon.match.date)).to.be.true;
+    });
+
+    it('should throw error if holding not found', async () => {
+      mockHoldingRepo.closeHolding.rejects(new Error('Holding not found'));
+
+      await expect(holdingService.closeHolding('999'))
+        .to.be.rejectedWith('Holding not found');
+    });
+
+    it('should throw error if holding is already closed', async () => {
+      mockHoldingRepo.closeHolding.rejects(new Error('Holding is already closed'));
+
+      await expect(holdingService.closeHolding('1'))
+        .to.be.rejectedWith('Holding is already closed');
     });
   });
 });

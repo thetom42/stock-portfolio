@@ -1,124 +1,83 @@
 import sinon from 'sinon';
-import * as database from '../../src/utils/database';
+import { HoldingRepository } from '../../../db/repositories/HoldingRepository';
+import { PortfolioRepository } from '../../../db/repositories/PortfolioRepository';
+import { TransactionRepository } from '../../../db/repositories/TransactionRepository';
+import { QuoteRepository } from '../../../db/repositories/QuoteRepository';
+import { StockRepository } from '../../../db/repositories/StockRepository';
+import { UserRepository } from '../../../db/repositories/UserRepository';
+import { CategoryRepository } from '../../../db/repositories/CategoryRepository';
 
-// Create minimal mock implementations that match what our tests need
-export const mockHoldingRepo = {
-  create: sinon.stub(),
-  findById: sinon.stub(),
-  update: sinon.stub(),
-  delete: sinon.stub(),
-  validateHolding: sinon.stub(),
-  findByPortfolio: sinon.stub(),
-  findActiveByPortfolio: sinon.stub()
-};
+// Create type-safe stub instances
+export const mockHoldingRepo = sinon.createStubInstance(HoldingRepository);
+export const mockPortfolioRepo = sinon.createStubInstance(PortfolioRepository);
+export const mockTransactionRepo = sinon.createStubInstance(TransactionRepository);
+export const mockQuoteRepo = sinon.createStubInstance(QuoteRepository);
+export const mockStockRepo = sinon.createStubInstance(StockRepository);
+export const mockUserRepo = sinon.createStubInstance(UserRepository);
+export const mockCategoryRepo = sinon.createStubInstance(CategoryRepository);
 
-export const mockPortfolioRepo = {
-  create: sinon.stub(),
-  findById: sinon.stub(),
-  update: sinon.stub(),
-  delete: sinon.stub(),
-  findByUserId: sinon.stub()
-};
-
-export const mockTransactionRepo = {
-  create: sinon.stub(),
-  findById: sinon.stub(),
-  update: sinon.stub(),
-  delete: sinon.stub(),
-  findByHolding: sinon.stub(),
-  validateTransaction: sinon.stub(),
-  findByHoldingAndType: sinon.stub(),
-  calculateHoldingCostBasis: sinon.stub()
-};
-
-export const mockQuoteRepo = {
-  create: sinon.stub(),
-  findLatestByStock: sinon.stub(),
-  findByStockAndTimeRange: sinon.stub()
-};
-
-export const mockStockRepo = {
-  findByISIN: sinon.stub(),
-  findBySymbol: sinon.stub(),
-  findByWKN: sinon.stub(),
-  findAll: sinon.stub(),
-  findByCategory: sinon.stub(),
-  create: sinon.stub(),
-  update: sinon.stub(),
-  delete: sinon.stub()
-};
-
-export const mockUserRepo = {
-  create: sinon.stub(),
-  findById: sinon.stub(),
-  findByEmail: sinon.stub(),
-  update: sinon.stub(),
-  delete: sinon.stub()
-};
-
-export const mockCategoryRepo = {
-  create: sinon.stub(),
-  findById: sinon.stub(),
-  findByName: sinon.stub(),
-  findAll: sinon.stub(),
-  update: sinon.stub(),
-  delete: sinon.stub()
-};
-
-// Type assertion to match repository interfaces
+// Setup mocks by replacing the repository instances in services
 export const setupRepositoryMocks = () => {
-  sinon.stub(database, 'getHoldingRepository').returns(mockHoldingRepo as any);
-  sinon.stub(database, 'getPortfolioRepository').returns(mockPortfolioRepo as any);
-  sinon.stub(database, 'getTransactionRepository').returns(mockTransactionRepo as any);
-  sinon.stub(database, 'getQuoteRepository').returns(mockQuoteRepo as any);
-  sinon.stub(database, 'getStockRepository').returns(mockStockRepo as any);
-  sinon.stub(database, 'getUserRepository').returns(mockUserRepo as any);
-  sinon.stub(database, 'getCategoryRepository').returns(mockCategoryRepo as any);
+  // The actual replacement of repository instances will be done in each test
+  // by directly assigning the mock to the service's repository property
+  // Example: (holdingService as any).holdingRepository = mockHoldingRepo;
 };
 
 export const resetRepositoryMocks = () => {
   // Reset all stubs
-  Object.values(mockHoldingRepo).forEach(stub => {
-    if (typeof stub === 'function' && 'reset' in stub) {
-      (stub as sinon.SinonStub).reset();
-    }
-  });
+  mockHoldingRepo.create.reset();
+  mockHoldingRepo.findById.reset();
+  mockHoldingRepo.update.reset();
+  mockHoldingRepo.delete.reset();
+  mockHoldingRepo.findByPortfolio.reset();
+  mockHoldingRepo.findActiveByPortfolio.reset();
+  mockHoldingRepo.updateQuantity.reset();
+  mockHoldingRepo.closeHolding.reset();
 
-  Object.values(mockPortfolioRepo).forEach(stub => {
-    if (typeof stub === 'function' && 'reset' in stub) {
-      (stub as sinon.SinonStub).reset();
-    }
-  });
+  mockPortfolioRepo.create.reset();
+  mockPortfolioRepo.findById.reset();
+  mockPortfolioRepo.update.reset();
+  mockPortfolioRepo.delete.reset();
+  mockPortfolioRepo.findByUserId.reset();
 
-  Object.values(mockTransactionRepo).forEach(stub => {
-    if (typeof stub === 'function' && 'reset' in stub) {
-      (stub as sinon.SinonStub).reset();
-    }
-  });
+  mockTransactionRepo.create.reset();
+  mockTransactionRepo.findById.reset();
+  mockTransactionRepo.update.reset();
+  mockTransactionRepo.delete.reset();
+  mockTransactionRepo.findByHolding.reset();
+  mockTransactionRepo.findByHoldingAndType.reset();
+  mockTransactionRepo.getTotalValue.reset();
 
-  Object.values(mockQuoteRepo).forEach(stub => {
-    if (typeof stub === 'function' && 'reset' in stub) {
-      (stub as sinon.SinonStub).reset();
-    }
-  });
+  mockQuoteRepo.create.reset();
+  mockQuoteRepo.findLatestByStock.reset();
+  mockQuoteRepo.findByStockAndTimeRange.reset();
 
-  Object.values(mockStockRepo).forEach(stub => {
-    if (typeof stub === 'function' && 'reset' in stub) {
-      (stub as sinon.SinonStub).reset();
-    }
-  });
+  mockStockRepo.findByISIN.reset();
+  mockStockRepo.findBySymbol.reset();
+  mockStockRepo.findByWKN.reset();
+  mockStockRepo.findAll.reset();
+  mockStockRepo.findByCategory.reset();
+  mockStockRepo.create.reset();
+  mockStockRepo.update.reset();
+  mockStockRepo.delete.reset();
 
-  Object.values(mockUserRepo).forEach(stub => {
-    if (typeof stub === 'function' && 'reset' in stub) {
-      (stub as sinon.SinonStub).reset();
-    }
-  });
+  mockUserRepo.create.reset();
+  mockUserRepo.findById.reset();
+  mockUserRepo.findByEmail.reset();
+  mockUserRepo.update.reset();
+  mockUserRepo.delete.reset();
 
-  Object.values(mockCategoryRepo).forEach(stub => {
-    if (typeof stub === 'function' && 'reset' in stub) {
-      (stub as sinon.SinonStub).reset();
-    }
-  });
+  mockCategoryRepo.create.reset();
+  mockCategoryRepo.findById.reset();
+  mockCategoryRepo.findByName.reset();
+  mockCategoryRepo.findAll.reset();
+  mockCategoryRepo.update.reset();
+  mockCategoryRepo.delete.reset();
 
   sinon.restore();
+};
+
+// Helper function to create a Decimal value for tests
+export const createDecimal = (value: number) => {
+  return { toString: () => value.toString() } as any;
 };

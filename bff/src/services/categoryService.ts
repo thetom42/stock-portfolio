@@ -1,77 +1,79 @@
-import { Category, CreateCategoryDTO, UpdateCategoryDTO } from '../models/Category';
-import { getCategoryRepository } from '../utils/database';
+import { getPrismaClient } from '../utils/database';
+import { Category, CreateCategoryDTO, UpdateCategoryDTO, CategoryResponse } from '../models/Category';
+import { CategoryRepository } from '../../../db/repositories/CategoryRepository';
+
+// Initialize repository
+const categoryRepository = new CategoryRepository(getPrismaClient());
 
 // Helper function to map DB Category to BFF Category
-const mapDBCategoryToBFF = (dbCategory: any): Category => ({
-    CATEGORIES_ID: dbCategory.CATEGORIES_ID,
-    NAME: dbCategory.NAME
+const mapDBCategoryToBFF = (dbCategory: any): CategoryResponse => ({
+  CATEGORIES_ID: dbCategory.CATEGORIES_ID,
+  NAME: dbCategory.NAME
 });
 
-export const createCategory = async (categoryData: CreateCategoryDTO): Promise<Category> => {
-    const categoryRepo = getCategoryRepository();
-    const existingCategory = await categoryRepo.findByName(categoryData.NAME);
-    
-    if (existingCategory) {
-        throw new Error('Category with this name already exists');
-    }
-
-    const dbCategory = await categoryRepo.create({
-        CATEGORIES_ID: '', // Will be generated
-        NAME: categoryData.NAME
+export const createCategory = async (categoryData: CreateCategoryDTO): Promise<CategoryResponse> => {
+  try {
+    const dbCategory = await categoryRepository.create({
+      CATEGORIES_ID: '', // Will be generated
+      NAME: categoryData.NAME
     });
 
     return mapDBCategoryToBFF(dbCategory);
-};
-
-export const getCategoryById = async (id: string): Promise<Category | null> => {
-    const categoryRepo = getCategoryRepository();
-    const category = await categoryRepo.findById(id);
-    
-    if (!category) {
-        return null;
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('already exists')) {
+      throw new Error('Category with this name already exists');
     }
-
-    return mapDBCategoryToBFF(category);
+    throw error;
+  }
 };
 
-export const getAllCategories = async (): Promise<Category[]> => {
-    const categoryRepo = getCategoryRepository();
-    const categories = await categoryRepo.findAll();
-    return categories.map(mapDBCategoryToBFF);
+export const getCategoryById = async (categoryId: string): Promise<CategoryResponse | null> => {
+  const category = await categoryRepository.findById(categoryId);
+
+  if (!category) {
+    return null;
+  }
+
+  return mapDBCategoryToBFF(category);
+};
+
+export const getAllCategories = async (): Promise<CategoryResponse[]> => {
+  const categories = await categoryRepository.findAll();
+  return categories.map(mapDBCategoryToBFF);
 };
 
 export const updateCategory = async (
-    id: string,
-    updateData: UpdateCategoryDTO
-): Promise<Category> => {
-    const categoryRepo = getCategoryRepository();
-    
-    const category = await categoryRepo.findById(id);
-    if (!category) {
-        throw new Error('Category not found');
-    }
-
-    if (updateData.NAME) {
-        const existingCategory = await categoryRepo.findByName(updateData.NAME);
-        if (existingCategory && existingCategory.CATEGORIES_ID !== id) {
-            throw new Error('Category with this name already exists');
-        }
-    }
-
-    const updatedCategory = await categoryRepo.update(id, {
-        NAME: updateData.NAME || category.NAME
+  categoryId: string,
+  updateData: UpdateCategoryDTO
+): Promise<CategoryResponse> => {
+  try {
+    const updatedCategory = await categoryRepository.update(categoryId, {
+      NAME: updateData.NAME
     });
 
     return mapDBCategoryToBFF(updatedCategory);
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.includes('not found')) {
+        throw new Error('Category not found');
+      }
+      if (error.message.includes('already exists')) {
+        throw new Error('Category with this name already exists');
+      }
+    }
+    throw new Error('Failed to update category');
+  }
 };
 
-export const deleteCategory = async (id: string): Promise<void> => {
-    const categoryRepo = getCategoryRepository();
-    
-    const category = await categoryRepo.findById(id);
-    if (!category) {
+export const deleteCategory = async (categoryId: string): Promise<void> => {
+  try {
+    await categoryRepository.delete(categoryId);
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.includes('not found')) {
         throw new Error('Category not found');
+      }
     }
-
-    await categoryRepo.delete(id);
+    throw new Error('Failed to delete category');
+  }
 };

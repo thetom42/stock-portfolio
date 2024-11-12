@@ -11,6 +11,10 @@ import {
   YahooFinanceSearchResult 
 } from '../../../src/services/yahooFinanceService';
 
+interface ServiceError extends Error {
+  message: string;
+}
+
 describe('YahooFinanceService', () => {
   const mockApiKey = 'test-api-key';
   const mockApiHost = 'yh-finance.p.rapidapi.com';
@@ -82,7 +86,8 @@ describe('YahooFinanceService', () => {
         await service.getRealTimeQuote(mockIsin);
         expect.fail('Should have thrown an error');
       } catch (error) {
-        expect(error.message).to.equal('Failed to fetch data from Yahoo Finance');
+        const serviceError = error as ServiceError;
+        expect(serviceError.message).to.equal('Failed to fetch data from Yahoo Finance');
       }
     });
   });
@@ -265,7 +270,8 @@ describe('YahooFinanceService', () => {
         await service.getRealTimeQuote(mockIsin);
         expect.fail('Should have thrown an error');
       } catch (error) {
-        expect(error.message).to.equal('Failed to fetch data from Yahoo Finance');
+        const serviceError = error as ServiceError;
+        expect(serviceError.message).to.equal('Failed to fetch data from Yahoo Finance');
       }
     });
 
@@ -277,7 +283,8 @@ describe('YahooFinanceService', () => {
         await service.getRealTimeQuote(mockIsin);
         expect.fail('Should have thrown an error');
       } catch (error) {
-        expect(error).to.be.an('error');
+        const serviceError = error as ServiceError;
+        expect(serviceError).to.be.an('error');
       }
     });
 
@@ -294,7 +301,8 @@ describe('YahooFinanceService', () => {
         await service.getRealTimeQuote(mockIsin);
         expect.fail('Should have thrown an error');
       } catch (error) {
-        expect(error.message).to.equal('Failed to fetch data from Yahoo Finance');
+        const serviceError = error as ServiceError;
+        expect(serviceError.message).to.equal('Failed to fetch data from Yahoo Finance');
       }
     });
   });
