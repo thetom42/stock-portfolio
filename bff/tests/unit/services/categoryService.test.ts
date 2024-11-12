@@ -1,20 +1,21 @@
-import { expect } from 'chai';
+import { expect, use } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import * as categoryService from '../../../src/services/categoryService';
 import { CreateCategoryDTO, UpdateCategoryDTO } from '../../../src/models/Category';
-import { 
-  mockCategoryRepo,
-  setupRepositoryMocks, 
-  resetRepositoryMocks 
-} from '../../helpers/mockRepositories';
+import { mockCategoryRepo } from '../../helpers/mockRepositories';
+
+use(chaiAsPromised);
 
 describe('CategoryService', () => {
   beforeEach(() => {
-    setupRepositoryMocks();
+    // Set up mock repository
+    categoryService.setCategoryRepository(mockCategoryRepo);
   });
 
   afterEach(() => {
-    resetRepositoryMocks();
+    // Reset all stubs
+    sinon.restore();
   });
 
   describe('createCategory', () => {
@@ -134,7 +135,7 @@ describe('CategoryService', () => {
 
   describe('deleteCategory', () => {
     it('should delete category successfully', async () => {
-      mockCategoryRepo.delete.resolves({} as any);
+      mockCategoryRepo.delete.resolves();
 
       await categoryService.deleteCategory('1');
 

@@ -1,14 +1,32 @@
-import 'mocha';
 import { expect } from 'chai';
-import { environment, validateEnvironment } from '../../../src/config/environment';
 
 describe('Environment Configuration', () => {
-  // Store original process.env
+  // Store original process.env and require cache
   const originalEnv = { ...process.env };
 
   beforeEach(() => {
     // Reset process.env before each test
     process.env = { ...originalEnv };
+    // Clear all environment variables that might affect our tests
+    delete process.env.NODE_ENV;
+    delete process.env.PORT;
+    delete process.env.DB_HOST;
+    delete process.env.DB_PORT;
+    delete process.env.DB_NAME;
+    delete process.env.DB_USER;
+    delete process.env.DB_PASSWORD;
+    delete process.env.DB_SSL;
+    delete process.env.KEYCLOAK_CLIENT_SECRET;
+    delete process.env.YAHOO_FINANCE_API_KEY;
+    delete process.env.JWT_SECRET;
+    delete process.env.CORS_ORIGIN;
+    delete process.env.LOG_LEVEL;
+    delete process.env.RATE_LIMIT_WINDOW_MS;
+    delete process.env.RATE_LIMIT_MAX_REQUESTS;
+    delete process.env.CACHE_TTL;
+
+    // Clear require cache for environment module
+    delete require.cache[require.resolve('./test-environment')];
   });
 
   afterEach(() => {
@@ -18,20 +36,7 @@ describe('Environment Configuration', () => {
 
   describe('Default Values', () => {
     it('should have default values when environment variables are not set', () => {
-      // Clear all relevant environment variables
-      delete process.env.NODE_ENV;
-      delete process.env.PORT;
-      delete process.env.DB_HOST;
-      delete process.env.DB_PORT;
-      delete process.env.DB_NAME;
-      delete process.env.DB_USER;
-      delete process.env.DB_SSL;
-      delete process.env.CORS_ORIGIN;
-      delete process.env.LOG_LEVEL;
-      delete process.env.RATE_LIMIT_WINDOW_MS;
-      delete process.env.RATE_LIMIT_MAX_REQUESTS;
-      delete process.env.CACHE_TTL;
-
+      const { environment } = require('./test-environment');
       expect(environment.NODE_ENV).to.equal('development');
       expect(environment.PORT).to.equal(3000);
       expect(environment.API_PREFIX).to.equal('/api');
@@ -50,6 +55,7 @@ describe('Environment Configuration', () => {
 
   describe('Environment Variable Override', () => {
     it('should use environment variables when set', () => {
+      // Set environment variables
       process.env.NODE_ENV = 'production';
       process.env.PORT = '8080';
       process.env.DB_HOST = 'db.example.com';
@@ -64,6 +70,7 @@ describe('Environment Configuration', () => {
       process.env.RATE_LIMIT_MAX_REQUESTS = '50';
       process.env.CACHE_TTL = '600';
 
+      const { environment } = require('./test-environment');
       expect(environment.NODE_ENV).to.equal('production');
       expect(environment.PORT).to.equal(8080);
       expect(environment.DB_HOST).to.equal('db.example.com');
@@ -86,50 +93,61 @@ describe('Environment Configuration', () => {
       process.env.RATE_LIMIT_MAX_REQUESTS = 'invalid';
       process.env.CACHE_TTL = 'invalid';
 
-      expect(environment.PORT).to.equal(3000); // Default value
-      expect(environment.DB_PORT).to.equal(5432); // Default value
-      expect(environment.RATE_LIMIT_WINDOW_MS).to.equal(900000); // Default value
-      expect(environment.RATE_LIMIT_MAX_REQUESTS).to.equal(100); // Default value
-      expect(environment.CACHE_TTL).to.equal(300); // Default value
+      const { environment } = require('./test-environment');
+      expect(environment.PORT).to.equal(3000);
+      expect(environment.DB_PORT).to.equal(5432);
+      expect(environment.RATE_LIMIT_WINDOW_MS).to.equal(900000);
+      expect(environment.RATE_LIMIT_MAX_REQUESTS).to.equal(100);
+      expect(environment.CACHE_TTL).to.equal(300);
     });
   });
 
   describe('Environment Validation', () => {
-    beforeEach(() => {
-      // Set required environment variables
+    it('should pass validation when all required variables are set', () => {
       process.env.DB_PASSWORD = 'password123';
       process.env.KEYCLOAK_CLIENT_SECRET = 'secret123';
       process.env.YAHOO_FINANCE_API_KEY = 'apikey123';
       process.env.JWT_SECRET = 'jwtsecret123';
-    });
-
-    it('should pass validation when all required variables are set', () => {
+      const { validateEnvironment } = require('./test-environment');
       expect(() => validateEnvironment()).to.not.throw();
     });
 
     it('should throw error when DB_PASSWORD is missing', () => {
-      delete process.env.DB_PASSWORD;
+      process.env.KEYCLOAK_CLIENT_SECRET = 'secret123';
+      process.env.YAHOO_FINANCE_API_KEY = 'apikey123';
+      process.env.JWT_SECRET = 'jwtsecret123';
+      const { validateEnvironment } = require('./test-environment');
       expect(() => validateEnvironment()).to.throw('Missing required environment variable: DB_PASSWORD');
     });
 
     it('should throw error when KEYCLOAK_CLIENT_SECRET is missing', () => {
-      delete process.env.KEYCLOAK_CLIENT_SECRET;
+      process.env.DB_PASSWORD = 'password123';
+      process.env.YAHOO_FINANCE_API_KEY = 'apikey123';
+      process.env.JWT_SECRET = 'jwtsecret123';
+      const { validateEnvironment } = require('./test-environment');
       expect(() => validateEnvironment()).to.throw('Missing required environment variable: KEYCLOAK_CLIENT_SECRET');
     });
 
     it('should throw error when YAHOO_FINANCE_API_KEY is missing', () => {
-      delete process.env.YAHOO_FINANCE_API_KEY;
+      process.env.DB_PASSWORD = 'password123';
+      process.env.KEYCLOAK_CLIENT_SECRET = 'secret123';
+      process.env.JWT_SECRET = 'jwtsecret123';
+      const { validateEnvironment } = require('./test-environment');
       expect(() => validateEnvironment()).to.throw('Missing required environment variable: YAHOO_FINANCE_API_KEY');
     });
 
     it('should throw error when JWT_SECRET is missing', () => {
-      delete process.env.JWT_SECRET;
+      process.env.DB_PASSWORD = 'password123';
+      process.env.KEYCLOAK_CLIENT_SECRET = 'secret123';
+      process.env.YAHOO_FINANCE_API_KEY = 'apikey123';
+      const { validateEnvironment } = require('./test-environment');
       expect(() => validateEnvironment()).to.throw('Missing required environment variable: JWT_SECRET');
     });
   });
 
   describe('Type Safety', () => {
     it('should maintain correct types for all environment variables', () => {
+      const { environment } = require('./test-environment');
       expect(typeof environment.NODE_ENV).to.equal('string');
       expect(typeof environment.PORT).to.equal('number');
       expect(typeof environment.API_PREFIX).to.equal('string');

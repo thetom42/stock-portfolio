@@ -1,9 +1,6 @@
-import { getPrismaClient } from '../utils/database';
 import { Category, CreateCategoryDTO, UpdateCategoryDTO, CategoryResponse } from '../models/Category';
 import { CategoryRepository } from '../../../db/repositories/CategoryRepository';
-
-// Initialize repository
-const categoryRepository = new CategoryRepository(getPrismaClient());
+import { getPrismaClient } from '../utils/database';
 
 // Helper function to map DB Category to BFF Category
 const mapDBCategoryToBFF = (dbCategory: any): CategoryResponse => ({
@@ -11,9 +8,24 @@ const mapDBCategoryToBFF = (dbCategory: any): CategoryResponse => ({
   NAME: dbCategory.NAME
 });
 
+// Repository factory
+let categoryRepository: CategoryRepository;
+
+export const getCategoryRepository = () => {
+  if (!categoryRepository) {
+    categoryRepository = new CategoryRepository(getPrismaClient());
+  }
+  return categoryRepository;
+};
+
+// For testing purposes
+export const setCategoryRepository = (repo: CategoryRepository) => {
+  categoryRepository = repo;
+};
+
 export const createCategory = async (categoryData: CreateCategoryDTO): Promise<CategoryResponse> => {
   try {
-    const dbCategory = await categoryRepository.create({
+    const dbCategory = await getCategoryRepository().create({
       CATEGORIES_ID: '', // Will be generated
       NAME: categoryData.NAME
     });
@@ -28,7 +40,7 @@ export const createCategory = async (categoryData: CreateCategoryDTO): Promise<C
 };
 
 export const getCategoryById = async (categoryId: string): Promise<CategoryResponse | null> => {
-  const category = await categoryRepository.findById(categoryId);
+  const category = await getCategoryRepository().findById(categoryId);
 
   if (!category) {
     return null;
@@ -38,7 +50,7 @@ export const getCategoryById = async (categoryId: string): Promise<CategoryRespo
 };
 
 export const getAllCategories = async (): Promise<CategoryResponse[]> => {
-  const categories = await categoryRepository.findAll();
+  const categories = await getCategoryRepository().findAll();
   return categories.map(mapDBCategoryToBFF);
 };
 
@@ -47,7 +59,7 @@ export const updateCategory = async (
   updateData: UpdateCategoryDTO
 ): Promise<CategoryResponse> => {
   try {
-    const updatedCategory = await categoryRepository.update(categoryId, {
+    const updatedCategory = await getCategoryRepository().update(categoryId, {
       NAME: updateData.NAME
     });
 
@@ -67,7 +79,7 @@ export const updateCategory = async (
 
 export const deleteCategory = async (categoryId: string): Promise<void> => {
   try {
-    await categoryRepository.delete(categoryId);
+    await getCategoryRepository().delete(categoryId);
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes('not found')) {

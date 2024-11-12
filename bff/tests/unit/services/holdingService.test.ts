@@ -1,4 +1,5 @@
-import { expect } from 'chai';
+import { expect, use } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import * as holdingService from '../../../src/services/holdingService';
 import * as stockService from '../../../src/services/stockService';
@@ -13,6 +14,8 @@ import {
   createDecimal 
 } from '../../helpers/mockRepositories';
 
+use(chaiAsPromised);
+
 describe('HoldingService', () => {
   let stockServiceStub: sinon.SinonStub;
   let quoteServiceStub: sinon.SinonStub;
@@ -20,9 +23,9 @@ describe('HoldingService', () => {
   beforeEach(() => {
     setupRepositoryMocks();
     
-    // Replace the repository instances in the service
-    (holdingService as any).holdingRepository = mockHoldingRepo;
-    (holdingService as any).transactionRepository = mockTransactionRepo;
+    // Set the repository instances in the service using the new setter methods
+    holdingService.setHoldingRepository(mockHoldingRepo);
+    holdingService.setTransactionRepository(mockTransactionRepo);
     
     // Stub service dependencies
     stockServiceStub = sinon.stub(stockService, 'getStockByISIN');

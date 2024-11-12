@@ -117,14 +117,18 @@ class YahooFinanceService {
       range: '1d'
     });
 
-    return data.chart.result[0].indicators.quote[0].map((quote: any, index: number) => ({
-      price: quote.close,
-      timestamp: data.chart.result[0].timestamp[index] * 1000,
-      volume: quote.volume,
-      open: quote.open,
-      high: quote.high,
-      low: quote.low,
-      close: quote.close
+    const result = data.chart.result[0];
+    const quotes = result.indicators.quote[0];
+    const timestamps = result.timestamp;
+
+    return timestamps.map((timestamp: number, index: number) => ({
+      price: quotes.close[index],
+      timestamp: timestamp * 1000,
+      volume: quotes.volume[index],
+      open: quotes.open[index],
+      high: quotes.high[index],
+      low: quotes.low[index],
+      close: quotes.close[index]
     }));
   }
 
@@ -150,6 +154,11 @@ export function getYahooFinanceService(): YahooFinanceService {
     yahooFinanceService = new YahooFinanceService();
   }
   return yahooFinanceService;
+}
+
+// For testing purposes only
+export function resetYahooFinanceService(): void {
+  yahooFinanceService = null;
 }
 
 export type { 

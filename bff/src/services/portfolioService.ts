@@ -48,7 +48,12 @@ const mapDBPortfolioToDetails = async (dbPortfolio: any): Promise<PortfolioDetai
 };
 
 // Initialize repository
-const portfolioRepository = new PortfolioRepository(getPrismaClient());
+let portfolioRepository = new PortfolioRepository(getPrismaClient());
+
+// For testing: allow repository injection
+export const setPortfolioRepository = (repo: any) => {
+  portfolioRepository = repo;
+};
 
 export const createPortfolio = async (
   userId: string,

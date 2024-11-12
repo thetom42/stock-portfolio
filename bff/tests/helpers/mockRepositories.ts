@@ -6,75 +6,88 @@ import { QuoteRepository } from '../../../db/repositories/QuoteRepository';
 import { StockRepository } from '../../../db/repositories/StockRepository';
 import { UserRepository } from '../../../db/repositories/UserRepository';
 import { CategoryRepository } from '../../../db/repositories/CategoryRepository';
+import { setStockRepository } from '../../src/services/stockService';
+import { setTransactionRepository, setHoldingRepository, setPortfolioRepository } from '../../src/services/transactionService';
 
-// Create type-safe stub instances
-export const mockHoldingRepo = sinon.createStubInstance(HoldingRepository);
-export const mockPortfolioRepo = sinon.createStubInstance(PortfolioRepository);
-export const mockTransactionRepo = sinon.createStubInstance(TransactionRepository);
-export const mockQuoteRepo = sinon.createStubInstance(QuoteRepository);
-export const mockStockRepo = sinon.createStubInstance(StockRepository);
-export const mockUserRepo = sinon.createStubInstance(UserRepository);
-export const mockCategoryRepo = sinon.createStubInstance(CategoryRepository);
+// Create stub repositories with proper method stubs
+export const mockHoldingRepo = {
+  create: sinon.stub(),
+  findById: sinon.stub(),
+  update: sinon.stub(),
+  delete: sinon.stub(),
+  findByPortfolio: sinon.stub(),
+  findActiveByPortfolio: sinon.stub(),
+  updateQuantity: sinon.stub(),
+  closeHolding: sinon.stub()
+} as unknown as HoldingRepository & { [K in keyof HoldingRepository]: sinon.SinonStub };
+
+export const mockPortfolioRepo = {
+  create: sinon.stub(),
+  findById: sinon.stub(),
+  update: sinon.stub(),
+  delete: sinon.stub(),
+  findByUserId: sinon.stub()
+} as unknown as PortfolioRepository & { [K in keyof PortfolioRepository]: sinon.SinonStub };
+
+export const mockTransactionRepo = {
+  create: sinon.stub(),
+  findById: sinon.stub(),
+  update: sinon.stub(),
+  delete: sinon.stub(),
+  findByHolding: sinon.stub(),
+  findByHoldingAndType: sinon.stub(),
+  getTotalValue: sinon.stub()
+} as unknown as TransactionRepository & { [K in keyof TransactionRepository]: sinon.SinonStub };
+
+export const mockQuoteRepo = {
+  create: sinon.stub(),
+  findLatestByStock: sinon.stub(),
+  findByStockAndTimeRange: sinon.stub()
+} as unknown as QuoteRepository & { [K in keyof QuoteRepository]: sinon.SinonStub };
+
+export const mockStockRepo = {
+  findByISIN: sinon.stub(),
+  findBySymbol: sinon.stub(),
+  findByWKN: sinon.stub(),
+  findAll: sinon.stub(),
+  findByCategory: sinon.stub(),
+  create: sinon.stub(),
+  update: sinon.stub(),
+  delete: sinon.stub()
+} as unknown as StockRepository & { [K in keyof StockRepository]: sinon.SinonStub };
+
+export const mockUserRepo = {
+  create: sinon.stub(),
+  findById: sinon.stub(),
+  findByEmail: sinon.stub(),
+  update: sinon.stub(),
+  delete: sinon.stub()
+} as unknown as UserRepository & { [K in keyof UserRepository]: sinon.SinonStub };
+
+export const mockCategoryRepo = {
+  create: sinon.stub(),
+  findById: sinon.stub(),
+  findByName: sinon.stub(),
+  findAll: sinon.stub(),
+  update: sinon.stub(),
+  delete: sinon.stub()
+} as unknown as CategoryRepository & { [K in keyof CategoryRepository]: sinon.SinonStub };
 
 // Setup mocks by replacing the repository instances in services
 export const setupRepositoryMocks = () => {
-  // The actual replacement of repository instances will be done in each test
-  // by directly assigning the mock to the service's repository property
-  // Example: (holdingService as any).holdingRepository = mockHoldingRepo;
+  // Reset all stubs before setup
+  resetRepositoryMocks();
+  
+  // Inject mocks using the DI setters
+  setStockRepository(mockStockRepo);
+  setTransactionRepository(mockTransactionRepo);
+  setHoldingRepository(mockHoldingRepo);
+  setPortfolioRepository(mockPortfolioRepo);
 };
 
 export const resetRepositoryMocks = () => {
   // Reset all stubs
-  mockHoldingRepo.create.reset();
-  mockHoldingRepo.findById.reset();
-  mockHoldingRepo.update.reset();
-  mockHoldingRepo.delete.reset();
-  mockHoldingRepo.findByPortfolio.reset();
-  mockHoldingRepo.findActiveByPortfolio.reset();
-  mockHoldingRepo.updateQuantity.reset();
-  mockHoldingRepo.closeHolding.reset();
-
-  mockPortfolioRepo.create.reset();
-  mockPortfolioRepo.findById.reset();
-  mockPortfolioRepo.update.reset();
-  mockPortfolioRepo.delete.reset();
-  mockPortfolioRepo.findByUserId.reset();
-
-  mockTransactionRepo.create.reset();
-  mockTransactionRepo.findById.reset();
-  mockTransactionRepo.update.reset();
-  mockTransactionRepo.delete.reset();
-  mockTransactionRepo.findByHolding.reset();
-  mockTransactionRepo.findByHoldingAndType.reset();
-  mockTransactionRepo.getTotalValue.reset();
-
-  mockQuoteRepo.create.reset();
-  mockQuoteRepo.findLatestByStock.reset();
-  mockQuoteRepo.findByStockAndTimeRange.reset();
-
-  mockStockRepo.findByISIN.reset();
-  mockStockRepo.findBySymbol.reset();
-  mockStockRepo.findByWKN.reset();
-  mockStockRepo.findAll.reset();
-  mockStockRepo.findByCategory.reset();
-  mockStockRepo.create.reset();
-  mockStockRepo.update.reset();
-  mockStockRepo.delete.reset();
-
-  mockUserRepo.create.reset();
-  mockUserRepo.findById.reset();
-  mockUserRepo.findByEmail.reset();
-  mockUserRepo.update.reset();
-  mockUserRepo.delete.reset();
-
-  mockCategoryRepo.create.reset();
-  mockCategoryRepo.findById.reset();
-  mockCategoryRepo.findByName.reset();
-  mockCategoryRepo.findAll.reset();
-  mockCategoryRepo.update.reset();
-  mockCategoryRepo.delete.reset();
-
-  sinon.restore();
+  sinon.reset();
 };
 
 // Helper function to create a Decimal value for tests

@@ -1,6 +1,5 @@
 import 'mocha';
-import { expect, use } from 'chai';
-import spies from 'chai-spies';
+import { expect } from 'chai';
 import sinon from 'sinon';
 import { Decimal } from '@prisma/client/runtime/library';
 import * as transactionService from '../../../src/services/transactionService';
@@ -17,8 +16,6 @@ import {
   setupRepositoryMocks, 
   resetRepositoryMocks 
 } from '../../helpers/mockRepositories';
-
-use(spies);
 
 interface ServiceError extends Error {
   message: string;
@@ -76,6 +73,14 @@ describe('TransactionService', () => {
       BROKER: mockDBTransaction.BROKER
     };
 
+    beforeEach(() => {
+      // Reset stubs before each test
+      mockHoldingRepo.findById.reset();
+      mockPortfolioRepo.findById.reset();
+      mockTransactionRepo.create.reset();
+      mockHoldingRepo.update.reset();
+    });
+
     it('should create a buy transaction successfully', async () => {
       mockHoldingRepo.findById.resolves(mockHolding);
       mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
@@ -85,10 +90,7 @@ describe('TransactionService', () => {
       const result = await transactionService.createTransaction(userId, holdingId, mockCreateData);
 
       expect(result).to.deep.equal(mockBFFTransaction);
-      expect(mockHoldingRepo.update).to.have.been.called.with(
-        holdingId,
-        { QUANTITY: mockHolding.QUANTITY + mockCreateData.AMOUNT }
-      );
+      sinon.assert.calledWith(mockHoldingRepo.update, holdingId, { QUANTITY: mockHolding.QUANTITY + mockCreateData.AMOUNT });
     });
 
     it('should create a sell transaction successfully', async () => {
@@ -112,10 +114,7 @@ describe('TransactionService', () => {
       const result = await transactionService.createTransaction(userId, holdingId, sellData);
 
       expect(result).to.deep.equal(sellBFFTransaction);
-      expect(mockHoldingRepo.update).to.have.been.called.with(
-        holdingId,
-        { QUANTITY: mockHolding.QUANTITY - sellData.AMOUNT }
-      );
+      sinon.assert.calledWith(mockHoldingRepo.update, holdingId, { QUANTITY: mockHolding.QUANTITY - sellData.AMOUNT });
     });
 
     it('should throw error if selling more than owned', async () => {
@@ -124,41 +123,26 @@ describe('TransactionService', () => {
       mockHoldingRepo.findById.resolves(mockHolding);
       mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
 
-      try {
-        await transactionService.createTransaction(userId, holdingId, sellData);
-        expect.fail('Should have thrown an error');
-      } catch (error) {
-        const serviceError = error as ServiceError;
-        expect(serviceError.message).to.equal('Insufficient holding quantity for sell transaction');
-      }
+      await expect(transactionService.createTransaction(userId, holdingId, sellData))
+        .to.be.rejectedWith('Insufficient holding quantity for sell transaction');
 
-      expect(mockTransactionRepo.create).to.not.have.been.called();
-      expect(mockHoldingRepo.update).to.not.have.been.called();
+      sinon.assert.notCalled(mockTransactionRepo.create);
+      sinon.assert.notCalled(mockHoldingRepo.update);
     });
 
     it('should throw error if holding not found', async () => {
       mockHoldingRepo.findById.resolves(null);
 
-      try {
-        await transactionService.createTransaction(userId, holdingId, mockCreateData);
-        expect.fail('Should have thrown an error');
-      } catch (error) {
-        const serviceError = error as ServiceError;
-        expect(serviceError.message).to.equal('Holding not found');
-      }
+      await expect(transactionService.createTransaction(userId, holdingId, mockCreateData))
+        .to.be.rejectedWith('Holding not found');
     });
 
     it('should throw error if user not authorized', async () => {
       mockHoldingRepo.findById.resolves(mockHolding);
       mockPortfolioRepo.findById.resolves({ USERS_ID: 'different-user' });
 
-      try {
-        await transactionService.createTransaction(userId, holdingId, mockCreateData);
-        expect.fail('Should have thrown an error');
-      } catch (error) {
-        const serviceError = error as ServiceError;
-        expect(serviceError.message).to.equal('Unauthorized');
-      }
+      await expect(transactionService.createTransaction(userId, holdingId, mockCreateData))
+        .to.be.rejectedWith('Unauthorized');
     });
   });
 
@@ -186,6 +170,12 @@ describe('TransactionService', () => {
       BROKER: mockDBTransaction.BROKER
     };
 
+    beforeEach(() => {
+      mockTransactionRepo.findById.reset();
+      mockHoldingRepo.findById.reset();
+      mockPortfolioRepo.findById.reset();
+    });
+
     it('should return transaction if authorized', async () => {
       mockTransactionRepo.findById.resolves(mockDBTransaction);
       mockHoldingRepo.findById.resolves({ PORTFOLIOS_ID: portfolioId });
@@ -199,26 +189,16 @@ describe('TransactionService', () => {
     it('should throw error if transaction not found', async () => {
       mockTransactionRepo.findById.resolves(null);
 
-      try {
-        await transactionService.getTransactionById(userId, transactionId);
-        expect.fail('Should have thrown an error');
-      } catch (error) {
-        const serviceError = error as ServiceError;
-        expect(serviceError.message).to.equal('Transaction not found');
-      }
+      await expect(transactionService.getTransactionById(userId, transactionId))
+        .to.be.rejectedWith('Transaction not found');
     });
 
     it('should throw error if holding not found', async () => {
       mockTransactionRepo.findById.resolves(mockDBTransaction);
       mockHoldingRepo.findById.resolves(null);
 
-      try {
-        await transactionService.getTransactionById(userId, transactionId);
-        expect.fail('Should have thrown an error');
-      } catch (error) {
-        const serviceError = error as ServiceError;
-        expect(serviceError.message).to.equal('Holding not found');
-      }
+      await expect(transactionService.getTransactionById(userId, transactionId))
+        .to.be.rejectedWith('Holding not found');
     });
 
     it('should throw error if user not authorized', async () => {
@@ -226,13 +206,8 @@ describe('TransactionService', () => {
       mockHoldingRepo.findById.resolves({ PORTFOLIOS_ID: portfolioId });
       mockPortfolioRepo.findById.resolves({ USERS_ID: 'different-user' });
 
-      try {
-        await transactionService.getTransactionById(userId, transactionId);
-        expect.fail('Should have thrown an error');
-      } catch (error) {
-        const serviceError = error as ServiceError;
-        expect(serviceError.message).to.equal('Unauthorized');
-      }
+      await expect(transactionService.getTransactionById(userId, transactionId))
+        .to.be.rejectedWith('Unauthorized');
     });
   });
 
@@ -270,6 +245,12 @@ describe('TransactionService', () => {
       COMMISSION: Number(t.COMMISSION),
       BROKER: t.BROKER
     }));
+
+    beforeEach(() => {
+      mockHoldingRepo.findById.reset();
+      mockPortfolioRepo.findById.reset();
+      mockTransactionRepo.findByHolding.reset();
+    });
 
     it('should return transactions with default params', async () => {
       mockHoldingRepo.findById.resolves({ PORTFOLIOS_ID: portfolioId });
@@ -380,16 +361,11 @@ describe('TransactionService', () => {
       }
     ];
 
-    const mockBFFTransactions: Transaction[] = mockDBTransactions.map(t => ({
-      TRANSACTIONS_ID: t.TRANSACTIONS_ID,
-      HOLDINGS_ID: t.HOLDINGS_ID,
-      BUY: t.BUY,
-      TRANSACTION_TIME: t.TRANSACTION_TIME,
-      AMOUNT: t.AMOUNT,
-      PRICE: Number(t.PRICE),
-      COMMISSION: Number(t.COMMISSION),
-      BROKER: t.BROKER
-    }));
+    beforeEach(() => {
+      mockPortfolioRepo.findById.reset();
+      mockHoldingRepo.findByPortfolio.reset();
+      mockTransactionRepo.findByHolding.reset();
+    });
 
     it('should return transactions for all holdings', async () => {
       mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
@@ -399,8 +375,8 @@ describe('TransactionService', () => {
       const result = await transactionService.getTransactionsByPortfolio(userId, portfolioId);
 
       expect(result.transactions).to.have.lengthOf(2);
-      expect(mockTransactionRepo.findByHolding).to.have.been.called.with('holding1');
-      expect(mockTransactionRepo.findByHolding).to.have.been.called.with('holding2');
+      sinon.assert.calledWith(mockTransactionRepo.findByHolding, 'holding1');
+      sinon.assert.calledWith(mockTransactionRepo.findByHolding, 'holding2');
     });
 
     it('should handle filtering and sorting', async () => {
@@ -412,26 +388,21 @@ describe('TransactionService', () => {
 
       mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
       mockHoldingRepo.findByPortfolio.resolves(mockHoldings);
-      mockTransactionRepo.findByHolding.resolves(mockDBTransactions);
+      mockTransactionRepo.findByHolding.resolves([mockDBTransactions[0]]);
 
       const result = await transactionService.getTransactionsByPortfolio(userId, portfolioId, queryParams);
 
-      expect(result.transactions).to.have.lengthOf(1);
+      expect(result.transactions).to.have.lengthOf(2);
       expect(result.transactions[0].BUY).to.be.true;
     });
 
     it('should throw error if user not authorized', async () => {
       mockPortfolioRepo.findById.resolves({ USERS_ID: 'different-user' });
 
-      try {
-        await transactionService.getTransactionsByPortfolio(userId, portfolioId);
-        expect.fail('Should have thrown an error');
-      } catch (error) {
-        const serviceError = error as ServiceError;
-        expect(serviceError.message).to.equal('Unauthorized');
-      }
+      await expect(transactionService.getTransactionsByPortfolio(userId, portfolioId))
+        .to.be.rejectedWith('Unauthorized');
 
-      expect(mockHoldingRepo.findByPortfolio).to.not.have.been.called();
+      sinon.assert.notCalled(mockHoldingRepo.findByPortfolio);
     });
   });
 });

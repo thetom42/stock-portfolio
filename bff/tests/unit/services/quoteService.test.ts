@@ -1,5 +1,6 @@
 import 'mocha';
-import { expect } from 'chai';
+import { expect, use } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import { Decimal } from '@prisma/client/runtime/library';
 import { 
@@ -11,14 +12,18 @@ import {
 import * as quoteService from '../../../src/services/quoteService';
 import * as yahooFinanceService from '../../../src/services/yahooFinanceService';
 import { QuoteInterval } from '../../../src/models/Quote';
+import { Stock } from '../../../../db/models/Stock';
 import { YahooFinanceQuote, IntradayQuote, HistoricalQuote } from '../../../src/services/yahooFinanceService';
 
+use(chaiAsPromised);
+
 describe('QuoteService', () => {
-  const mockStock = {
+  const mockStock: Stock = {
     ISIN: 'US0378331005',
-    SYMBOL: 'AAPL',
+    CATEGORIES_ID: '1',
     NAME: 'Apple Inc.',
-    WKN: '123456'
+    WKN: '865985',
+    SYMBOL: 'AAPL'
   };
 
   const mockYahooQuote: YahooFinanceQuote = {
@@ -55,6 +60,10 @@ describe('QuoteService', () => {
 
   beforeEach(() => {
     setupRepositoryMocks();
+    // Use the new setter methods to inject mock repositories
+    quoteService.setStockRepository(mockStockRepo);
+    quoteService.setQuoteRepository(mockQuoteRepo);
+    
     sinon.stub(yahooFinanceService, 'getYahooFinanceService').returns({
       getRealTimeQuote: sinon.stub().resolves(mockYahooQuote),
       getHistoricalQuotes: sinon.stub().resolves([mockHistoricalQuote]),
@@ -136,12 +145,8 @@ describe('QuoteService', () => {
     it('should throw error if stock not found', async () => {
       mockStockRepo.findByISIN.resolves(null);
 
-      try {
-        await quoteService.getRealTimeQuote('invalid-isin');
-        expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).to.equal('Stock not found');
-      }
+      await expect(quoteService.getRealTimeQuote('invalid-isin'))
+        .to.be.rejectedWith('Stock not found');
     });
 
     it('should handle Yahoo Finance API errors', async () => {
@@ -150,12 +155,8 @@ describe('QuoteService', () => {
       const yahooService = yahooFinanceService.getYahooFinanceService() as any;
       yahooService.getRealTimeQuote.rejects(new Error('API Error'));
 
-      try {
-        await quoteService.getRealTimeQuote(mockStock.ISIN);
-        expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).to.equal('Failed to fetch quote data');
-      }
+      await expect(quoteService.getRealTimeQuote(mockStock.ISIN))
+        .to.be.rejectedWith('Failed to fetch quote data');
     });
   });
 
@@ -182,12 +183,8 @@ describe('QuoteService', () => {
     it('should throw error if stock not found', async () => {
       mockStockRepo.findByISIN.resolves(null);
 
-      try {
-        await quoteService.getHistoricalQuotes('invalid-isin', interval);
-        expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).to.equal('Stock not found');
-      }
+      await expect(quoteService.getHistoricalQuotes('invalid-isin', interval))
+        .to.be.rejectedWith('Stock not found');
     });
 
     it('should handle Yahoo Finance API errors', async () => {
@@ -195,12 +192,8 @@ describe('QuoteService', () => {
       const yahooService = yahooFinanceService.getYahooFinanceService() as any;
       yahooService.getHistoricalQuotes.rejects(new Error('API Error'));
 
-      try {
-        await quoteService.getHistoricalQuotes(mockStock.ISIN, interval);
-        expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).to.equal('Failed to fetch historical data');
-      }
+      await expect(quoteService.getHistoricalQuotes(mockStock.ISIN, interval))
+        .to.be.rejectedWith('Failed to fetch historical data');
     });
   });
 
@@ -229,6 +222,9 @@ describe('QuoteService', () => {
     });
 
     it('should return empty array for empty input', async () => {
+      // Reset the spy count before this specific test
+      mockQuoteRepo.findLatestByStock.resetHistory();
+      
       const result = await quoteService.getLatestQuotes([]);
       expect(result).to.be.an('array').that.is.empty;
       sinon.assert.notCalled(mockQuoteRepo.findLatestByStock);
@@ -238,25 +234,34 @@ describe('QuoteService', () => {
   describe('getIntradayQuotes', () => {
     it('should return intraday quotes for valid stock', async () => {
       mockStockRepo.findByISIN.resolves(mockStock);
+      const mockDBQuote = {
+        QUOTES_ID: '123',
+        ISIN: mockStock.ISIN,
+        PRICE: new Decimal(mockIntradayQuote.price),
+        CURRENCY: 'USD',
+        MARKET_TIME: new Date(mockIntradayQuote.timestamp),
+        EXCHANGE: 'YAHOO'
+      };
+      mockQuoteRepo.create.resolves(mockDBQuote);
 
       const result = await quoteService.getIntradayQuotes(mockStock.ISIN);
 
       expect(result).to.be.an('array');
-      expect(result[0]).to.have.all.keys(
-        'price', 'timestamp', 'volume', 'open', 'high', 'low', 'close'
-      );
+      expect(result[0]).to.deep.include({
+        id: mockDBQuote.QUOTES_ID,
+        stockId: mockDBQuote.ISIN,
+        price: Number(mockDBQuote.PRICE),
+        currency: mockDBQuote.CURRENCY,
+        timestamp: mockDBQuote.MARKET_TIME
+      });
       sinon.assert.calledWith(mockStockRepo.findByISIN, mockStock.ISIN);
     });
 
     it('should throw error if stock not found', async () => {
       mockStockRepo.findByISIN.resolves(null);
 
-      try {
-        await quoteService.getIntradayQuotes('invalid-isin');
-        expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).to.equal('Stock not found');
-      }
+      await expect(quoteService.getIntradayQuotes('invalid-isin'))
+        .to.be.rejectedWith('Stock not found');
     });
 
     it('should handle Yahoo Finance API errors', async () => {
@@ -264,12 +269,8 @@ describe('QuoteService', () => {
       const yahooService = yahooFinanceService.getYahooFinanceService() as any;
       yahooService.getIntradayQuotes.rejects(new Error('API Error'));
 
-      try {
-        await quoteService.getIntradayQuotes(mockStock.ISIN);
-        expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).to.equal('Failed to fetch intraday data');
-      }
+      await expect(quoteService.getIntradayQuotes(mockStock.ISIN))
+        .to.be.rejectedWith('Failed to fetch intraday data');
     });
   });
 

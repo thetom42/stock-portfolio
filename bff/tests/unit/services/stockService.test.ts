@@ -40,6 +40,8 @@ describe('StockService', () => {
 
   beforeEach(() => {
     setupRepositoryMocks();
+    // Inject the mock repository
+    stockService.setStockRepository(mockStockRepo);
     sinon.stub(yahooFinanceService, 'getYahooFinanceService').returns({
       getRealTimeQuote: sinon.stub().resolves(mockYahooQuote),
       searchStocks: sinon.stub().resolves([mockSearchResult])
@@ -291,7 +293,7 @@ describe('StockService', () => {
     });
 
     it('should return null when stock not found', async () => {
-      mockStockRepo.update.resolves(null);
+      mockStockRepo.update.resolves(undefined);
 
       const result = await stockService.updateStock('invalid-isin', updateData);
       expect(result).to.be.null;

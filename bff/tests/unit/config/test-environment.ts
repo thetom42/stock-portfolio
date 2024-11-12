@@ -1,12 +1,19 @@
+// Test environment configuration
+const parseIntWithDefault = (value: string | undefined, defaultValue: number): number => {
+  if (!value) return defaultValue;
+  const parsed = parseInt(value, 10);
+  return isNaN(parsed) ? defaultValue : parsed;
+};
+
 export const environment = {
   // Server configuration
   NODE_ENV: process.env.NODE_ENV || 'development',
-  PORT: parseInt(process.env.PORT || '3000', 10),
+  PORT: parseIntWithDefault(process.env.PORT, 3000),
   API_PREFIX: '/api',
 
   // Database configuration
   DB_HOST: process.env.DB_HOST || 'localhost',
-  DB_PORT: parseInt(process.env.DB_PORT || '5432', 10),
+  DB_PORT: parseIntWithDefault(process.env.DB_PORT, 5432),
   DB_NAME: process.env.DB_NAME || 'stockportfolio',
   DB_USER: process.env.DB_USER || 'postgres',
   DB_PASSWORD: process.env.DB_PASSWORD || '',
@@ -31,38 +38,12 @@ export const environment = {
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
 
   // Rate limiting
-  RATE_LIMIT_WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 minutes
-  RATE_LIMIT_MAX_REQUESTS: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
+  RATE_LIMIT_WINDOW_MS: parseIntWithDefault(process.env.RATE_LIMIT_WINDOW_MS, 900000), // 15 minutes
+  RATE_LIMIT_MAX_REQUESTS: parseIntWithDefault(process.env.RATE_LIMIT_MAX_REQUESTS, 100),
 
   // Cache configuration
-  CACHE_TTL: parseInt(process.env.CACHE_TTL || '300', 10), // 5 minutes in seconds
+  CACHE_TTL: parseIntWithDefault(process.env.CACHE_TTL, 300), // 5 minutes in seconds
 };
-
-// Type definitions for environment variables
-export interface Environment {
-  NODE_ENV: string;
-  PORT: number;
-  API_PREFIX: string;
-  DB_HOST: string;
-  DB_PORT: number;
-  DB_NAME: string;
-  DB_USER: string;
-  DB_PASSWORD: string;
-  DB_SSL: boolean;
-  KEYCLOAK_AUTH_SERVER_URL: string;
-  KEYCLOAK_REALM: string;
-  KEYCLOAK_CLIENT_ID: string;
-  KEYCLOAK_CLIENT_SECRET: string;
-  YAHOO_FINANCE_API_KEY: string;
-  YAHOO_FINANCE_API_HOST: string;
-  CORS_ORIGIN: string;
-  JWT_SECRET: string;
-  JWT_EXPIRATION: string;
-  LOG_LEVEL: string;
-  RATE_LIMIT_WINDOW_MS: number;
-  RATE_LIMIT_MAX_REQUESTS: number;
-  CACHE_TTL: number;
-}
 
 // Validate required environment variables
 export const validateEnvironment = (): void => {

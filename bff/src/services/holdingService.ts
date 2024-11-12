@@ -7,8 +7,17 @@ import { TransactionRepository } from '../../../db/repositories/TransactionRepos
 
 // Initialize repositories
 const prisma = getPrismaClient();
-const holdingRepository = new HoldingRepository(prisma);
-const transactionRepository = new TransactionRepository(prisma);
+let holdingRepository = new HoldingRepository(prisma);
+let transactionRepository = new TransactionRepository(prisma);
+
+// For testing: allow repository injection
+export const setHoldingRepository = (repo: any) => {
+  holdingRepository = repo;
+};
+
+export const setTransactionRepository = (repo: any) => {
+  transactionRepository = repo;
+};
 
 // Helper function to map DB Holding to API response
 const mapDBHoldingToDetails = async (dbHolding: any): Promise<HoldingDetails> => {

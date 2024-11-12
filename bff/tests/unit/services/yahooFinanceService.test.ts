@@ -4,7 +4,8 @@ import sinon from 'sinon';
 import axios from 'axios';
 import { environment } from '../../../src/config/environment';
 import { 
-  getYahooFinanceService, 
+  getYahooFinanceService,
+  resetYahooFinanceService,
   YahooFinanceQuote, 
   IntradayQuote,
   HistoricalQuote, 
@@ -21,6 +22,8 @@ describe('YahooFinanceService', () => {
   const mockIsin = 'US0378331005';
 
   beforeEach(() => {
+    // Reset singleton instance
+    resetYahooFinanceService();
     // Mock environment configuration
     sinon.stub(environment, 'YAHOO_FINANCE_API_KEY').value(mockApiKey);
     sinon.stub(environment, 'YAHOO_FINANCE_API_HOST').value(mockApiHost);
@@ -36,7 +39,9 @@ describe('YahooFinanceService', () => {
     });
 
     it('should throw error if API key is not configured', () => {
+      sinon.restore(); // Remove previous stubs
       sinon.stub(environment, 'YAHOO_FINANCE_API_KEY').value('');
+      sinon.stub(environment, 'YAHOO_FINANCE_API_HOST').value(mockApiHost);
       expect(() => getYahooFinanceService()).to.throw('Yahoo Finance API key is not configured');
     });
   });

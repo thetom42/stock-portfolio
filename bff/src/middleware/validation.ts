@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express-serve-static-core';
 import { body, param, query, validationResult } from 'express-validator';
 
 // Helper function to handle validation errors
@@ -148,9 +148,12 @@ export const validateStockCreation = [
     .withMessage('Stock name is required'),
   body('wkn')
     .trim()
-    .isLength({ min: 6, max: 6 })
-    .matches(/^[A-Z0-9]{6}$/)
-    .withMessage('Invalid WKN format'),
+    .custom((value) => {
+      if (!value.match(/^[A-Z0-9]{6}$/)) {
+        throw new Error('Invalid WKN format');
+      }
+      return true;
+    }),
   body('symbol')
     .trim()
     .isLength({ min: 1 })
@@ -170,9 +173,12 @@ export const validateStockUpdate = [
   body('wkn')
     .optional()
     .trim()
-    .isLength({ min: 6, max: 6 })
-    .matches(/^[A-Z0-9]{6}$/)
-    .withMessage('Invalid WKN format'),
+    .custom((value) => {
+      if (!value.match(/^[A-Z0-9]{6}$/)) {
+        throw new Error('Invalid WKN format');
+      }
+      return true;
+    }),
   body('symbol')
     .optional()
     .trim()
@@ -213,8 +219,11 @@ export const validateISIN = (paramName: string) => [
 export const validateWKN = (paramName: string) => [
   param(paramName)
     .trim()
-    .isLength({ min: 6, max: 6 })
-    .matches(/^[A-Z0-9]{6}$/)
-    .withMessage(`Invalid WKN format`),
+    .custom((value) => {
+      if (!value.match(/^[A-Z0-9]{6}$/)) {
+        throw new Error('Invalid WKN format');
+      }
+      return true;
+    }),
   handleValidationErrors
 ];
