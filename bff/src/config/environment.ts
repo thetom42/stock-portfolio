@@ -66,6 +66,11 @@ export interface Environment {
 
 // Validate required environment variables
 export const validateEnvironment = (): void => {
+  // Skip validation in test environment
+  if (process.env.NODE_ENV === 'test') {
+    return;
+  }
+
   const requiredVars = [
     'DB_PASSWORD',
     'KEYCLOAK_CLIENT_SECRET',

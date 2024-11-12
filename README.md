@@ -1,7 +1,7 @@
 # Stock Portfolio
 
 > This project serves as a comprehensive example of how a complete full-stack application can be developed using AI tools, specifically "Cline". While the development followed an iterative approach, each architectural layer (database, BFF, etc.) was generated as a complete unit through AI assistance. The entire development process, including AI interactions and decision-making, is documented in the task logs located in the `cline` folder. These logs are organized into logical subfolders corresponding to different layers of the application (db-design, db-implementation, bff-design, bff-implementation, etc.), providing valuable insights into AI-assisted software development practices.
-
+>
 > Initial information provided to the AI:
 >
 > - Overview Diagram (docs/overview.jpeg)

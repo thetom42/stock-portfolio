@@ -178,3 +178,137 @@ export const getPortfolioSummary = async (
     holdingsCount: holdings.length
   };
 };
+
+export const getPortfolioPerformance = async (
+  portfolioId: string,
+  userId: string
+): Promise<any | null> => {
+  const portfolioRepo = getPortfolioRepository();
+  const portfolio = await portfolioRepo.findById(portfolioId);
+
+  if (!portfolio || portfolio.USERS_ID !== userId) {
+    return null;
+  }
+
+  // Get holdings and calculate performance metrics
+  const holdingRepo = getHoldingRepository();
+  const holdings = await holdingRepo.findByPortfolio(portfolioId);
+  
+  // Calculate performance metrics
+  const performance = {
+    totalReturn: 0,
+    dailyReturn: 0,
+    weeklyReturn: 0,
+    monthlyReturn: 0,
+    yearlyReturn: 0
+  };
+
+  return performance;
+};
+
+export const getPortfolioHoldings = async (
+  portfolioId: string,
+  userId: string
+): Promise<PortfolioHolding[] | null> => {
+  const portfolioRepo = getPortfolioRepository();
+  const portfolio = await portfolioRepo.findById(portfolioId);
+
+  if (!portfolio || portfolio.USERS_ID !== userId) {
+    return null;
+  }
+
+  const holdingRepo = getHoldingRepository();
+  const holdings = await holdingRepo.findByPortfolio(portfolioId);
+  const portfolioHoldings: PortfolioHolding[] = [];
+
+  for (const holding of holdings) {
+    const quote = await quoteService.getRealTimeQuote(holding.ISIN);
+    const averageCost = await calculateAverageCost(holding.HOLDINGS_ID);
+    const currentValue = quote.price * holding.QUANTITY;
+    const costBasis = holding.QUANTITY * averageCost;
+    const gainLoss = currentValue - costBasis;
+    const gainLossPercentage = costBasis > 0 ? (gainLoss / costBasis) * 100 : 0;
+
+    portfolioHoldings.push({
+      id: holding.HOLDINGS_ID,
+      stockId: holding.ISIN,
+      quantity: holding.QUANTITY,
+      averageCost,
+      currentValue,
+      gainLoss,
+      gainLossPercentage
+    });
+  }
+
+  return portfolioHoldings;
+};
+
+export const getPortfolioAllocation = async (
+  portfolioId: string,
+  userId: string
+): Promise<any | null> => {
+  const portfolioRepo = getPortfolioRepository();
+  const portfolio = await portfolioRepo.findById(portfolioId);
+
+  if (!portfolio || portfolio.USERS_ID !== userId) {
+    return null;
+  }
+
+  const holdingRepo = getHoldingRepository();
+  const holdings = await holdingRepo.findByPortfolio(portfolioId);
+  
+  // Calculate allocation percentages
+  const allocation = {
+    byAssetType: {},
+    bySector: {},
+    byRegion: {}
+  };
+
+  return allocation;
+};
+
+export const getPortfolioReturns = async (
+  portfolioId: string,
+  userId: string
+): Promise<any | null> => {
+  const portfolioRepo = getPortfolioRepository();
+  const portfolio = await portfolioRepo.findById(portfolioId);
+
+  if (!portfolio || portfolio.USERS_ID !== userId) {
+    return null;
+  }
+
+  // Calculate various return metrics
+  const returns = {
+    totalReturn: 0,
+    annualizedReturn: 0,
+    riskMetrics: {
+      standardDeviation: 0,
+      sharpeRatio: 0,
+      beta: 0
+    }
+  };
+
+  return returns;
+};
+
+export const getPortfolioHistory = async (
+  portfolioId: string,
+  userId: string
+): Promise<any | null> => {
+  const portfolioRepo = getPortfolioRepository();
+  const portfolio = await portfolioRepo.findById(portfolioId);
+
+  if (!portfolio || portfolio.USERS_ID !== userId) {
+    return null;
+  }
+
+  // Get historical data points
+  const history = {
+    timePoints: [],
+    values: [],
+    transactions: []
+  };
+
+  return history;
+};

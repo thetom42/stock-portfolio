@@ -1,14 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import { Portfolio, CreatePortfolioDTO, UpdatePortfolioDTO } from '../models/Portfolio';
 import * as portfolioService from '../services/portfolioService';
+import { AuthenticatedRequest } from '../types/express';
 
 export const createPortfolio = async (
-  req: Request<{}, {}, CreatePortfolioDTO>,
+  req: AuthenticatedRequest & { body: CreatePortfolioDTO },
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.user.id;
     const portfolioData = req.body;
     const portfolio = await portfolioService.createPortfolio(userId, portfolioData);
     res.status(201).json(portfolio);
@@ -18,12 +19,12 @@ export const createPortfolio = async (
 };
 
 export const getUserPortfolios = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.user.id;
     const portfolios = await portfolioService.getPortfoliosByUserId(userId);
     res.json(portfolios);
   } catch (error) {
@@ -32,13 +33,13 @@ export const getUserPortfolios = async (
 };
 
 export const getPortfolio = async (
-  req: Request<{ id: string }>,
+  req: AuthenticatedRequest & { params: { id: string } },
   res: Response,
   next: NextFunction
 ) => {
   try {
     const portfolioId = req.params.id;
-    const userId = req.user!.id;
+    const userId = req.user.id;
     const portfolio = await portfolioService.getPortfolioById(portfolioId, userId);
     
     if (!portfolio) {
@@ -52,13 +53,13 @@ export const getPortfolio = async (
 };
 
 export const updatePortfolio = async (
-  req: Request<{ id: string }, {}, UpdatePortfolioDTO>,
+  req: AuthenticatedRequest & { params: { id: string }, body: UpdatePortfolioDTO },
   res: Response,
   next: NextFunction
 ) => {
   try {
     const portfolioId = req.params.id;
-    const userId = req.user!.id;
+    const userId = req.user.id;
     const updateData = req.body;
     
     const updatedPortfolio = await portfolioService.updatePortfolio(
@@ -78,13 +79,13 @@ export const updatePortfolio = async (
 };
 
 export const deletePortfolio = async (
-  req: Request<{ id: string }>,
+  req: AuthenticatedRequest & { params: { id: string } },
   res: Response,
   next: NextFunction
 ) => {
   try {
     const portfolioId = req.params.id;
-    const userId = req.user!.id;
+    const userId = req.user.id;
     await portfolioService.deletePortfolio(portfolioId, userId);
     res.status(204).send();
   } catch (error) {
@@ -93,13 +94,13 @@ export const deletePortfolio = async (
 };
 
 export const getPortfolioSummary = async (
-  req: Request<{ id: string }>,
+  req: AuthenticatedRequest & { params: { id: string } },
   res: Response,
   next: NextFunction
 ) => {
   try {
     const portfolioId = req.params.id;
-    const userId = req.user!.id;
+    const userId = req.user.id;
     const summary = await portfolioService.getPortfolioSummary(portfolioId, userId);
     
     if (!summary) {
@@ -113,13 +114,13 @@ export const getPortfolioSummary = async (
 };
 
 export const getPortfolioPerformance = async (
-  req: Request<{ id: string }>,
+  req: AuthenticatedRequest & { params: { id: string } },
   res: Response,
   next: NextFunction
 ) => {
   try {
     const portfolioId = req.params.id;
-    const userId = req.user!.id;
+    const userId = req.user.id;
     const performance = await portfolioService.getPortfolioPerformance(portfolioId, userId);
     
     if (!performance) {
@@ -133,13 +134,13 @@ export const getPortfolioPerformance = async (
 };
 
 export const getPortfolioHoldings = async (
-  req: Request<{ id: string }>,
+  req: AuthenticatedRequest & { params: { id: string } },
   res: Response,
   next: NextFunction
 ) => {
   try {
     const portfolioId = req.params.id;
-    const userId = req.user!.id;
+    const userId = req.user.id;
     const holdings = await portfolioService.getPortfolioHoldings(portfolioId, userId);
     
     if (!holdings) {
@@ -153,13 +154,13 @@ export const getPortfolioHoldings = async (
 };
 
 export const getPortfolioAllocation = async (
-  req: Request<{ id: string }>,
+  req: AuthenticatedRequest & { params: { id: string } },
   res: Response,
   next: NextFunction
 ) => {
   try {
     const portfolioId = req.params.id;
-    const userId = req.user!.id;
+    const userId = req.user.id;
     const allocation = await portfolioService.getPortfolioAllocation(portfolioId, userId);
     
     if (!allocation) {
@@ -173,13 +174,13 @@ export const getPortfolioAllocation = async (
 };
 
 export const getPortfolioReturns = async (
-  req: Request<{ id: string }>,
+  req: AuthenticatedRequest & { params: { id: string } },
   res: Response,
   next: NextFunction
 ) => {
   try {
     const portfolioId = req.params.id;
-    const userId = req.user!.id;
+    const userId = req.user.id;
     const returns = await portfolioService.getPortfolioReturns(portfolioId, userId);
     
     if (!returns) {
@@ -193,13 +194,13 @@ export const getPortfolioReturns = async (
 };
 
 export const getPortfolioHistory = async (
-  req: Request<{ id: string }>,
+  req: AuthenticatedRequest & { params: { id: string } },
   res: Response,
   next: NextFunction
 ) => {
   try {
     const portfolioId = req.params.id;
-    const userId = req.user!.id;
+    const userId = req.user.id;
     const history = await portfolioService.getPortfolioHistory(portfolioId, userId);
     
     if (!history) {

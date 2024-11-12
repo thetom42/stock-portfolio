@@ -313,3 +313,93 @@ export const getHoldingHistory = async (
         broker: t.BROKER
     }));
 };
+
+export const deleteHolding = async (
+    userId: string,
+    holdingId: string
+): Promise<void> => {
+    const holdingRepo = getHoldingRepository();
+    const holding = await holdingRepo.findById(holdingId);
+    
+    if (!holding) {
+        throw new Error('Holding not found');
+    }
+
+    // Verify ownership through portfolio
+    const portfolioRepo = getPortfolioRepository();
+    const portfolio = await portfolioRepo.findById(holding.PORTFOLIOS_ID);
+    
+    if (!portfolio || portfolio.USERS_ID !== userId) {
+        throw new Error('Unauthorized');
+    }
+
+    await holdingRepo.delete(holdingId);
+};
+
+export const getHoldingTransactions = async (
+    userId: string,
+    holdingId: string
+): Promise<Transaction[]> => {
+    const holdingRepo = getHoldingRepository();
+    const holding = await holdingRepo.findById(holdingId);
+    
+    if (!holding) {
+        throw new Error('Holding not found');
+    }
+
+    // Verify ownership through portfolio
+    const portfolioRepo = getPortfolioRepository();
+    const portfolio = await portfolioRepo.findById(holding.PORTFOLIOS_ID);
+    
+    if (!portfolio || portfolio.USERS_ID !== userId) {
+        throw new Error('Unauthorized');
+    }
+
+    const transactionRepo = getTransactionRepository();
+    const transactions = await transactionRepo.findByHolding(holdingId);
+
+    return transactions.map(t => ({
+        ...t,
+        PRICE: Number(t.PRICE),
+        COMMISSION: Number(t.COMMISSION)
+    }));
+};
+
+export const getHoldingValue = async (
+    userId: string,
+    holdingId: string
+): Promise<HoldingValue> => {
+    const holdingRepo = getHoldingRepository();
+    const holding = await holdingRepo.findById(holdingId);
+    
+    if (!holding) {
+        throw new Error('Holding not found');
+    }
+
+    // Verify ownership through portfolio
+    const portfolioRepo = getPortfolioRepository();
+    const portfolio = await portfolioRepo.findById(holding.PORTFOLIOS_ID);
+    
+    if (!portfolio || portfolio.USERS_ID !== userId) {
+        throw new Error('Unauthorized');
+    }
+
+    // Get stock details
+    const stockRepo = getStockRepository();
+    const dbStock = await stockRepo.findByISIN(holding.ISIN);
+    
+    if (!dbStock) {
+        throw new Error('Stock not found');
+    }
+
+    const holdingWithStock: HoldingWithStock = {
+        ...holding,
+        stockInfo: {
+            symbol: dbStock.SYMBOL.toLowerCase(),
+            name: dbStock.NAME,
+            isin: dbStock.ISIN
+        }
+    };
+
+    return calculateHoldingValue(holdingWithStock);
+};

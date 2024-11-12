@@ -1,20 +1,38 @@
 import { Router } from 'express';
 import { protect } from '../config/keycloak';
 import * as userController from '../controllers/userController';
-import { validateUserCreation, validateUserUpdate } from '../middleware/validation';
+import { validateUserCreation, validateUserUpdate, validateUUID } from '../middleware/validation';
+import { Request, Response, NextFunction } from 'express';
+import { AuthenticatedRequest } from '../types/express';
+import { CreateUserDTO, UpdateUserDTO } from '../models/User';
 
 const router = Router();
 
 // Public routes
-router.post('/', validateUserCreation, userController.createUser);
+router.post('/', validateUserCreation, (req: Request, res: Response, next: NextFunction) => {
+  userController.createUser(req as Request<{}, {}, CreateUserDTO>, res, next);
+});
 
-// Protected routes
-router.get('/:id', protect(), userController.getUser);
-router.put('/:id', protect(), validateUserUpdate, userController.updateUser);
-router.delete('/:id', protect(), userController.deleteUser);
+// Profile routes (authenticated user's own profile)
+router.get('/profile/me', protect(), (req: Request, res: Response, next: NextFunction) => {
+  userController.getOwnProfile(req as AuthenticatedRequest, res, next);
+});
 
-// Get user's own profile
-router.get('/profile/me', protect(), userController.getOwnProfile);
-router.put('/profile/me', protect(), validateUserUpdate, userController.updateOwnProfile);
+router.put('/profile/me', protect(), validateUserUpdate, (req: Request, res: Response, next: NextFunction) => {
+  userController.updateOwnProfile(req as AuthenticatedRequest & { body: UpdateUserDTO }, res, next);
+});
+
+// Protected routes with ID parameter
+router.get('/:id', protect(), validateUUID('id'), (req: Request<{ id: string }>, res: Response, next: NextFunction) => {
+  userController.getUser(req as Request<{ id: string }>, res, next);
+});
+
+router.put('/:id', protect(), validateUUID('id'), validateUserUpdate, (req: Request<{ id: string }>, res: Response, next: NextFunction) => {
+  userController.updateUser(req as Request<{ id: string }, {}, UpdateUserDTO>, res, next);
+});
+
+router.delete('/:id', protect(), validateUUID('id'), (req: Request<{ id: string }>, res: Response, next: NextFunction) => {
+  userController.deleteUser(req as Request<{ id: string }>, res, next);
+});
 
 export default router;

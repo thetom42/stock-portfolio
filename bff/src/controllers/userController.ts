@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { User, CreateUserDTO, UpdateUserDTO } from '../models/User';
 import * as userService from '../services/userService';
+import { AuthenticatedRequest } from '../types/express';
 
 export const createUser = async (
   req: Request<{}, {}, CreateUserDTO>,
@@ -66,15 +67,12 @@ export const deleteUser = async (
 };
 
 export const getOwnProfile = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
+    const userId = req.user.id;
     const user = await userService.getUserById(userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -86,15 +84,12 @@ export const getOwnProfile = async (
 };
 
 export const updateOwnProfile = async (
-  req: Request<{}, {}, UpdateUserDTO>,
+  req: AuthenticatedRequest & { body: UpdateUserDTO },
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
+    const userId = req.user.id;
     const updateData = req.body;
     const updatedUser = await userService.updateUser(userId, updateData);
     if (!updatedUser) {
