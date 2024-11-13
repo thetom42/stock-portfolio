@@ -1,12 +1,12 @@
-import { Router } from 'express';
 import { protect } from '../config/keycloak';
 import * as userController from '../controllers/userController';
 import { validateUserCreation, validateUserUpdate, validateUUID } from '../middleware/validation';
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express-serve-static-core';
 import { AuthenticatedRequest } from '../types/express';
 import { CreateUserDTO, UpdateUserDTO } from '../models/User';
 
-const router = Router();
+import * as express from 'express';
+const router = express.Router();
 
 // Public routes
 router.post('/', validateUserCreation, (req: Request, res: Response, next: NextFunction) => {

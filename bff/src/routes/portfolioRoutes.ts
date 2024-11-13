@@ -1,12 +1,12 @@
-import { Router } from 'express';
 import { protect } from '../config/keycloak';
 import * as portfolioController from '../controllers/portfolioController';
 import { validatePortfolioCreation, validatePortfolioUpdate, validateUUID } from '../middleware/validation';
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express-serve-static-core';
 import { AuthenticatedRequest } from '../types/express';
 import { CreatePortfolioDTO, UpdatePortfolioDTO } from '../models/Portfolio';
 
-const router = Router();
+import express = require('express');
+const router = express.Router();
 
 // All portfolio routes require authentication
 router.use(protect());

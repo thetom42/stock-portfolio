@@ -1,10 +1,10 @@
-import { Router } from 'express';
 import { protect } from '../config/keycloak';
 import * as holdingController from '../controllers/holdingController';
 import { validateHoldingCreation, validateHoldingUpdate, validateUUID } from '../middleware/validation';
 import { assertAuthenticated, asAuthenticatedHandler } from '../middleware/auth';
 
-const router = Router();
+import express = require('express');
+const router = express.Router();
 
 // All holding routes require authentication
 router.use(protect());

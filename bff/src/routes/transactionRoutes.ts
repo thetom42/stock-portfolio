@@ -1,9 +1,9 @@
-import { Router } from 'express';
 import { protect } from '../config/keycloak';
 import * as transactionController from '../controllers/transactionController';
 import { validateTransactionCreation, validateUUID } from '../middleware/validation';
 
-const router = Router();
+import * as express from 'express';
+const router = express.Router();
 
 // All transaction routes require authentication
 router.use(protect());

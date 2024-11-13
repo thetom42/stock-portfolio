@@ -1,9 +1,9 @@
-import { Router } from 'express';
 import { protect } from '../config/keycloak';
 import * as quoteController from '../controllers/quoteController';
 import { validateUUID } from '../middleware/validation';
 
-const router = Router();
+import express = require('express');
+const router = express.Router();
 
 // All quote routes require authentication
 router.use(protect());

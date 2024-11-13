@@ -1,9 +1,9 @@
-import { Router } from 'express';
 import { protect } from '../config/keycloak';
 import * as categoryController from '../controllers/categoryController';
 import { validateCategoryCreation, validateCategoryUpdate, validateUUID } from '../middleware/validation';
 
-const router = Router();
+import express = require('express');
+const router = express.Router();
 
 // All category routes require authentication
 router.use(protect());

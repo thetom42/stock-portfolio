@@ -1,7 +1,7 @@
 import KeycloakConnect from 'keycloak-connect';
 import session from 'express-session';
 import { environment } from './environment';
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express-serve-static-core';
 
 // Session configuration
 const memoryStore = new session.MemoryStore();

@@ -1,4 +1,3 @@
-import { Router } from 'express';
 import { param } from 'express-validator';
 import { protect } from '../config/keycloak';
 import * as stockController from '../controllers/stockController';
@@ -12,7 +11,8 @@ import {
     handleValidationErrors
 } from '../middleware/validation';
 
-const router = Router();
+import express = require('express');
+const router = express.Router();
 
 // All stock routes require authentication
 router.use(protect());
