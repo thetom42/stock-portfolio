@@ -8,11 +8,12 @@
     "start": "node dist/app.js",
     "dev": "nodemon src/app.ts",
     "build": "tsc",
-    "test": "NODE_ENV=test mocha",
+    "test": "npm-run-all test:*",
     "test:config": "cd tests/unit/config && mocha --config .mocharc.js",
     "test:middleware": "cd tests/unit/middleware && mocha --config .mocharc.js",
     "test:services": "cd tests/unit/services && mocha --config .mocharc.js",
     "test:controller": "cd tests/unit/controllers && mocha --config .mocharc.js",
+    "test:utils": "cd tests/unit/utils && mocha --config .mocharc.js",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write \"src/**/*.ts\""
   },
