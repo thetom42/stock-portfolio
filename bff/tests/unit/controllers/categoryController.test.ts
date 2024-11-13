@@ -1,87 +1,130 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { Request as ExpressRequest, Response as ExpressResponse } from 'express-serve-static-core';
 import * as categoryService from '../../../src/services/categoryService';
 import * as categoryController from '../../../src/controllers/categoryController';
-import { Category, CreateCategoryDTO, UpdateCategoryDTO, CategoryResponse } from '../../../src/models/Category';
-
-type MockResponse = {
-  status: (code: number) => MockResponse;
-  json: (body: any) => void;
-  send: () => void;
-};
+import { Category, CreateCategoryDTO } from '../../../src/models/Category';
+import { createMockRequest, RequestWithUser } from '../../helpers/mockRequest';
+import { createMockResponse, MockResponse, verifyResponse } from '../../helpers/mockResponse';
+import { setupRepositoryMocks, resetRepositoryMocks, mockCategoryRepo } from '../../helpers/mockRepositories';
 
 describe('CategoryController', () => {
-  let req: Partial<ExpressRequest>;
+  let req: Partial<RequestWithUser>;
   let res: MockResponse;
   let next: sinon.SinonSpy;
-  let statusStub: sinon.SinonSpy;
-  let jsonStub: sinon.SinonSpy;
-  let sendStub: sinon.SinonSpy;
 
   beforeEach(() => {
-    statusStub = sinon.spy((code: number) => res);
-    jsonStub = sinon.spy();
-    sendStub = sinon.spy();
-    
-    res = {
-      status: statusStub,
-      json: jsonStub,
-      send: sendStub
-    };
+    setupRepositoryMocks();
+    res = createMockResponse();
     next = sinon.spy();
   });
 
   afterEach(() => {
+    resetRepositoryMocks();
     sinon.restore();
   });
 
   describe('createCategory', () => {
     const mockCreateData: CreateCategoryDTO = {
-      NAME: 'Test Category'
+      NAME: 'Technology'
     };
 
-    const mockCreatedCategory: CategoryResponse = {
+    const mockCreatedCategory: Category = {
       CATEGORIES_ID: '1',
-      NAME: 'Test Category'
+      NAME: mockCreateData.NAME
     };
 
     it('should create a category and return 201 status', async () => {
-      req = {
-        body: mockCreateData
-      } as ExpressRequest;
-
+      req = createMockRequest({ body: mockCreateData });
       sinon.stub(categoryService, 'createCategory').resolves(mockCreatedCategory);
 
-      await categoryController.createCategory(req as any, res as any, next);
+      await categoryController.createCategory(req as any, res, next);
 
-      expect(statusStub.calledWith(201)).to.be.true;
-      expect(jsonStub.calledWith(mockCreatedCategory)).to.be.true;
+      verifyResponse(res, 201, { category: mockCreatedCategory });
     });
 
     it('should return 409 if category name already exists', async () => {
-      req = {
-        body: mockCreateData
-      } as ExpressRequest;
-
-      const error = new Error('Category with this name already exists');
+      req = createMockRequest({ body: mockCreateData });
+      const error = new Error('Category name already exists');
       sinon.stub(categoryService, 'createCategory').rejects(error);
 
-      await categoryController.createCategory(req as any, res as any, next);
+      await categoryController.createCategory(req as any, res, next);
 
-      expect(statusStub.calledWith(409)).to.be.true;
-      expect(jsonStub.calledWith({ error: 'Category with this name already exists' })).to.be.true;
+      verifyResponse(res, 409, { error: 'Category name already exists' });
     });
 
     it('should call next with error for other errors', async () => {
-      req = {
-        body: mockCreateData
-      } as ExpressRequest;
-
+      req = createMockRequest({ body: mockCreateData });
       const error = new Error('Database error');
       sinon.stub(categoryService, 'createCategory').rejects(error);
 
-      await categoryController.createCategory(req as any, res as any, next);
+      await categoryController.createCategory(req as any, res, next);
+
+      expect(next.calledWith(error)).to.be.true;
+    });
+  });
+
+  describe('getAllCategories', () => {
+    const mockCategories: Category[] = [
+      {
+        CATEGORIES_ID: '1',
+        NAME: 'Technology'
+      },
+      {
+        CATEGORIES_ID: '2',
+        NAME: 'Healthcare'
+      }
+    ];
+
+    it('should return all categories', async () => {
+      req = createMockRequest();
+      sinon.stub(categoryService, 'getAllCategories').resolves(mockCategories);
+
+      await categoryController.getAllCategories(req as any, res, next);
+
+      verifyResponse(res, 200, { categories: mockCategories });
+    });
+
+    it('should handle errors gracefully', async () => {
+      req = createMockRequest();
+      const error = new Error('Database error');
+      sinon.stub(categoryService, 'getAllCategories').rejects(error);
+
+      await categoryController.getAllCategories(req as any, res, next);
+
+      expect(next.calledWith(error)).to.be.true;
+    });
+  });
+
+  describe('getCategoryById', () => {
+    const mockCategory: Category = {
+      CATEGORIES_ID: '1',
+      NAME: 'Technology'
+    };
+
+    it('should return category if found', async () => {
+      req = createMockRequest({ params: { id: '1' } });
+      sinon.stub(categoryService, 'getCategoryById').resolves(mockCategory);
+
+      await categoryController.getCategoryById(req as any, res, next);
+
+      verifyResponse(res, 200, { category: mockCategory });
+    });
+
+    it('should return 404 if category not found', async () => {
+      req = createMockRequest({ params: { id: '999' } });
+      sinon.stub(categoryService, 'getCategoryById').resolves(null);
+
+      await categoryController.getCategoryById(req as any, res, next);
+
+      verifyResponse(res, 404, { error: 'Category not found' });
+    });
+
+    it('should handle errors gracefully', async () => {
+      req = createMockRequest({ params: { id: '1' } });
+      const error = new Error('Database error');
+      sinon.stub(categoryService, 'getCategoryById').rejects(error);
+
+      await categoryController.getCategoryById(req as any, res, next);
 
       expect(next.calledWith(error)).to.be.true;
     });

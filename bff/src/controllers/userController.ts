@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express-serve-static-core';
 import { User, CreateUserDTO, UpdateUserDTO } from '../models/User';
 import * as userService from '../services/userService';
 import { AuthenticatedRequest } from '../types/express';
@@ -11,9 +11,13 @@ export const createUser = async (
   try {
     const userData = req.body;
     const user = await userService.createUser(userData);
-    res.status(201).json(user);
+    res.status(201).json({ user });
   } catch (error) {
-    next(error);
+    if (error instanceof Error && error.message.includes('already exists')) {
+      res.status(409).json({ error: error.message });
+    } else {
+      next(error);
+    }
   }
 };
 
@@ -26,9 +30,9 @@ export const getUser = async (
     const userId = req.params.id;
     const user = await userService.getUserById(userId);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ error: 'User not found' });
     }
-    res.json(user);
+    res.json({ user });
   } catch (error) {
     next(error);
   }
@@ -44,9 +48,9 @@ export const updateUser = async (
     const updateData = req.body;
     const updatedUser = await userService.updateUser(userId, updateData);
     if (!updatedUser) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ error: 'User not found' });
     }
-    res.json(updatedUser);
+    res.json({ user: updatedUser });
   } catch (error) {
     next(error);
   }
@@ -62,7 +66,11 @@ export const deleteUser = async (
     await userService.deleteUser(userId);
     res.status(204).send();
   } catch (error) {
-    next(error);
+    if (error instanceof Error && error.message === 'User not found') {
+      res.status(404).json({ error: error.message });
+    } else {
+      next(error);
+    }
   }
 };
 
@@ -75,9 +83,9 @@ export const getOwnProfile = async (
     const userId = req.user.id;
     const user = await userService.getUserById(userId);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ error: 'User not found' });
     }
-    res.json(user);
+    res.json({ user });
   } catch (error) {
     next(error);
   }
@@ -93,9 +101,9 @@ export const updateOwnProfile = async (
     const updateData = req.body;
     const updatedUser = await userService.updateUser(userId, updateData);
     if (!updatedUser) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ error: 'User not found' });
     }
-    res.json(updatedUser);
+    res.json({ user: updatedUser });
   } catch (error) {
     next(error);
   }

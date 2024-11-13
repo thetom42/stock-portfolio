@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express-serve-static-core';
 import { Category } from '../../../db/models/Category';
 import * as categoryService from '../services/categoryService';
 
@@ -9,9 +9,9 @@ export const createCategory = async (
 ) => {
     try {
         const category = await categoryService.createCategory(req.body);
-        res.status(201).json(category);
+        res.status(201).json({ category });
     } catch (error) {
-        if (error instanceof Error && error.message === 'Category with this name already exists') {
+        if (error instanceof Error && error.message === 'Category name already exists') {
             res.status(409).json({ error: error.message });
         } else {
             next(error);
@@ -29,7 +29,7 @@ export const getCategoryById = async (
         if (!category) {
             return res.status(404).json({ error: 'Category not found' });
         }
-        res.json(category);
+        res.json({ category });
     } catch (error) {
         next(error);
     }
@@ -42,7 +42,7 @@ export const getAllCategories = async (
 ) => {
     try {
         const categories = await categoryService.getAllCategories();
-        res.json(categories);
+        res.json({ categories });
     } catch (error) {
         next(error);
     }
@@ -55,12 +55,12 @@ export const updateCategory = async (
 ) => {
     try {
         const category = await categoryService.updateCategory(req.params.id, req.body);
-        res.json(category);
+        res.json({ category });
     } catch (error) {
         if (error instanceof Error) {
             if (error.message === 'Category not found') {
                 res.status(404).json({ error: error.message });
-            } else if (error.message === 'Category with this name already exists') {
+            } else if (error.message === 'Category name already exists') {
                 res.status(409).json({ error: error.message });
             } else {
                 next(error);

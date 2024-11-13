@@ -3,8 +3,14 @@ import { getPrismaClient } from '../utils/database';
 import { createHash } from 'crypto';
 import { UserRepository } from '../../../db/repositories/UserRepository';
 
-// Initialize repository
-const userRepository = new UserRepository(getPrismaClient());
+// Initialize repository with default implementation
+const prisma = getPrismaClient();
+let userRepository = new UserRepository(prisma);
+
+// For testing: allow repository injection
+export const setUserRepository = (repo: any) => {
+    userRepository = repo;
+};
 
 // Helper function to map DB User to BFF User
 const mapDBUserToBFF = (dbUser: any): User => ({

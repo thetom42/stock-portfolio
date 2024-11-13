@@ -1,195 +1,152 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import sinonChai from 'sinon-chai';
-import chai from 'chai';
-import { Request as ExpressRequest, Response as ExpressResponse } from 'express-serve-static-core';
+import * as quoteService from '../../../src/services/quoteService';
 import * as quoteController from '../../../src/controllers/quoteController';
-import * as database from '../../../src/utils/database';
-import * as yahooFinanceService from '../../../src/services/yahooFinanceService';
-import { createMockPrismaClient } from '../../helpers/mockPrisma';
-import { RealTimeQuote, QuoteHistory } from '../../../src/models/Quote';
-
-chai.use(sinonChai);
-
-type MockResponse = {
-  status: (code: number) => MockResponse;
-  json: (body: any) => void;
-  send: () => void;
-};
+import { Quote, HistoricalQuote } from '../../../src/models/Quote';
+import { createMockRequest, RequestWithUser } from '../../helpers/mockRequest';
+import { createMockResponse, MockResponse, verifyResponse } from '../../helpers/mockResponse';
+import { setupRepositoryMocks, resetRepositoryMocks, mockQuoteRepo } from '../../helpers/mockRepositories';
 
 describe('QuoteController', () => {
-  let req: Partial<ExpressRequest>;
+  let req: Partial<RequestWithUser>;
   let res: MockResponse;
   let next: sinon.SinonSpy;
-  let statusStub: sinon.SinonSpy;
-  let jsonStub: sinon.SinonSpy;
-  let sendStub: sinon.SinonSpy;
-  let mockPrismaClient: any;
-  let mockYahooFinanceService: any;
 
   beforeEach(() => {
-    statusStub = sinon.spy((code: number) => res);
-    jsonStub = sinon.spy();
-    sendStub = sinon.spy();
-    
-    res = {
-      status: statusStub,
-      json: jsonStub,
-      send: sendStub
-    };
+    setupRepositoryMocks();
+    res = createMockResponse();
     next = sinon.spy();
-
-    mockPrismaClient = createMockPrismaClient();
-    sinon.stub(database, 'getPrismaClient').returns(mockPrismaClient);
-
-    mockYahooFinanceService = {
-      getRealTimeQuote: sinon.stub(),
-      getHistoricalQuotes: sinon.stub(),
-      getIntradayQuotes: sinon.stub()
-    };
-    sinon.stub(yahooFinanceService, 'getYahooFinanceService').returns(mockYahooFinanceService);
   });
 
   afterEach(() => {
+    resetRepositoryMocks();
     sinon.restore();
   });
 
   describe('getLatestQuote', () => {
-    const mockQuote: RealTimeQuote = {
+    const mockQuote: Quote = {
+      id: '1',
+      stockId: '1',
       price: 150.50,
-      change: 1.50,
-      changePercent: 1.0,
+      currency: 'USD',
       timestamp: new Date()
     };
 
-    const mockDBQuote = {
-      QUOTES_ID: '1',
-      ISIN: 'US0378331005',
-      PRICE: mockQuote.price,
-      CURRENCY: 'USD',
-      MARKET_TIME: new Date(),
-      EXCHANGE: 'NASDAQ'
-    };
-
     it('should return cached quote if not stale', async () => {
-      req = {
-        params: { isin: 'US0378331005' }
-      } as any;
-
-      mockPrismaClient.quote.findFirst.resolves(mockDBQuote);
+      req = createMockRequest({ params: { isin: 'US0378331005' } });
+      sinon.stub(quoteService, 'getLatestQuotes').resolves([mockQuote]);
 
       await quoteController.getLatestQuote(req as any, res as any, next);
 
-      expect(jsonStub).to.have.been.called;
-      expect(jsonStub.firstCall.args[0]).to.deep.equal(mockDBQuote);
+      verifyResponse(res, 200, mockQuote);
     });
 
     it('should fetch new quote if cached quote is stale', async () => {
-      req = {
-        params: { isin: 'US0378331005' }
-      } as any;
-
-      mockPrismaClient.quote.findFirst.resolves(null);
-      mockYahooFinanceService.getRealTimeQuote.resolves(mockQuote);
-      mockPrismaClient.quote.create.resolves(mockDBQuote);
+      req = createMockRequest({ params: { isin: 'US0378331005' } });
+      // First stub getLatestQuotes to return an empty array (no cached quote)
+      sinon.stub(quoteService, 'getLatestQuotes').resolves([]);
+      
+      const realTimeQuote = {
+        price: mockQuote.price,
+        change: 1.5,
+        changePercent: 1.0,
+        timestamp: mockQuote.timestamp
+      };
+      sinon.stub(quoteService, 'getRealTimeQuote').resolves(realTimeQuote);
 
       await quoteController.getLatestQuote(req as any, res as any, next);
 
-      expect(mockYahooFinanceService.getRealTimeQuote).to.have.been.calledWith('US0378331005');
-      expect(mockPrismaClient.quote.create).to.have.been.called;
-      expect(jsonStub.firstCall.args[0]).to.deep.equal(mockDBQuote);
+      verifyResponse(res, 200, realTimeQuote);
     });
 
     it('should handle errors gracefully', async () => {
-      req = {
-        params: { isin: 'US0378331005' }
-      } as any;
-
+      req = createMockRequest({ params: { isin: 'US0378331005' } });
       const error = new Error('Failed to fetch quote');
-      mockPrismaClient.quote.findFirst.rejects(error);
+      sinon.stub(quoteService, 'getLatestQuotes').rejects(error);
 
       await quoteController.getLatestQuote(req as any, res as any, next);
 
-      expect(next).to.have.been.calledWith(error);
+      expect(next.calledWith(error)).to.be.true;
     });
   });
 
   describe('getQuoteHistory', () => {
-    const mockHistory: QuoteHistory = {
-      symbol: 'AAPL',
-      interval: '1d',
-      quotes: [
-        {
-          date: new Date(),
-          open: 150.00,
-          high: 151.00,
-          low: 149.00,
-          close: 150.50,
-          adjustedClose: 150.50,
-          volume: 1000000
-        }
-      ]
-    };
+    const mockHistoricalQuotes: HistoricalQuote[] = [
+      {
+        date: new Date(),
+        open: 150.00,
+        high: 151.00,
+        low: 149.50,
+        close: 150.50,
+        adjustedClose: 150.50,
+        volume: 1000000
+      }
+    ];
 
     it('should return quote history', async () => {
-      req = {
+      req = createMockRequest({
         params: { isin: 'US0378331005' },
-        query: { interval: '1d', range: '1mo' }
-      } as any;
-
-      mockYahooFinanceService.getHistoricalQuotes.resolves(mockHistory);
+        query: {
+          startDate: '2024-01-01',
+          endDate: '2024-01-31'
+        }
+      });
+      sinon.stub(quoteService, 'getHistoricalQuotes').resolves({
+        symbol: 'AAPL',
+        interval: '1d',
+        quotes: mockHistoricalQuotes
+      });
 
       await quoteController.getQuoteHistory(req as any, res as any, next);
 
-      expect(jsonStub).to.have.been.calledWith(mockHistory);
+      verifyResponse(res, 200, { quotes: mockHistoricalQuotes });
     });
 
     it('should handle errors gracefully', async () => {
-      req = {
+      req = createMockRequest({
         params: { isin: 'US0378331005' },
-        query: { interval: '1d', range: '1mo' }
-      } as any;
-
+        query: {
+          startDate: '2024-01-01',
+          endDate: '2024-01-31'
+        }
+      });
       const error = new Error('Failed to fetch quote history');
-      mockYahooFinanceService.getHistoricalQuotes.rejects(error);
+      sinon.stub(quoteService, 'getHistoricalQuotes').rejects(error);
 
       await quoteController.getQuoteHistory(req as any, res as any, next);
 
-      expect(next).to.have.been.calledWith(error);
+      expect(next.calledWith(error)).to.be.true;
     });
   });
 
   describe('getIntradayQuotes', () => {
-    const mockIntradayQuotes = [
+    const mockQuotes: Quote[] = [
       {
+        id: '1',
+        stockId: '1',
         price: 150.50,
+        currency: 'USD',
         timestamp: new Date()
       }
     ];
 
     it('should return intraday quotes', async () => {
-      req = {
-        params: { isin: 'US0378331005' }
-      } as any;
-
-      mockYahooFinanceService.getIntradayQuotes.resolves(mockIntradayQuotes);
+      req = createMockRequest({ params: { isin: 'US0378331005' } });
+      sinon.stub(quoteService, 'getIntradayQuotes').resolves(mockQuotes);
 
       await quoteController.getIntradayQuotes(req as any, res as any, next);
 
-      expect(jsonStub).to.have.been.calledWith(mockIntradayQuotes);
+      verifyResponse(res, 200, { quotes: mockQuotes });
     });
 
     it('should handle errors gracefully', async () => {
-      req = {
-        params: { isin: 'US0378331005' }
-      } as any;
-
+      req = createMockRequest({ params: { isin: 'US0378331005' } });
       const error = new Error('Failed to fetch intraday quotes');
-      mockYahooFinanceService.getIntradayQuotes.rejects(error);
+      sinon.stub(quoteService, 'getIntradayQuotes').rejects(error);
 
       await quoteController.getIntradayQuotes(req as any, res as any, next);
 
-      expect(next).to.have.been.calledWith(error);
+      expect(next.calledWith(error)).to.be.true;
     });
   });
 });

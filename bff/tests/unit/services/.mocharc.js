@@ -8,7 +8,7 @@ module.exports = {
     'quoteService.test.ts',
     'stockService.test.ts',
     'transactionService.test.ts',
-    //'userService.test.ts',
+    'userService.test.ts',
     'yahooFinanceService.test.ts'
   ],
   timeout: 0,

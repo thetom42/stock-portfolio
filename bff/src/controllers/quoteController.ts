@@ -1,6 +1,16 @@
-import { Request, Response, NextFunction } from 'express';
-import { getQuoteRepository, getHoldingRepository, getPortfolioRepository } from '../utils/database';
-import { getYahooFinanceService } from '../services/yahooFinanceService';
+import type { Request, Response, NextFunction } from 'express-serve-static-core';
+import { getPrismaClient } from '../utils/database';
+import { AuthenticatedRequest } from '../types/express';
+import { QuoteRepository } from '../../../db/repositories/QuoteRepository';
+import { HoldingRepository } from '../../../db/repositories/HoldingRepository';
+import { PortfolioRepository } from '../../../db/repositories/PortfolioRepository';
+import { QuoteInterval } from '../models/Quote';
+import * as quoteService from '../services/quoteService';
+
+const prisma = getPrismaClient();
+const quoteRepository = new QuoteRepository(prisma);
+const holdingRepository = new HoldingRepository(prisma);
+const portfolioRepository = new PortfolioRepository(prisma);
 
 export const getLatestQuote = async (
   req: Request<{ isin: string }>,
@@ -9,30 +19,25 @@ export const getLatestQuote = async (
 ) => {
   try {
     const { isin } = req.params;
-    const quoteRepo = getQuoteRepository();
     
-    // First try to get from local database
-    const latestQuote = await quoteRepo.findLatestByStock(isin);
+    // Get latest quotes using the service
+    const quotes = await quoteService.getLatestQuotes([isin]);
     
-    // If quote is older than 15 minutes, fetch new one from Yahoo Finance
-    if (!latestQuote || isQuoteStale(latestQuote.MARKET_TIME)) {
-      const yahooFinance = getYahooFinanceService();
-      const realTimeQuote = await yahooFinance.getRealTimeQuote(isin);
-      
-      // Save to database
-      const newQuote = await quoteRepo.create({
-        QUOTES_ID: '', // Will be generated
-        ISIN: isin,
-        PRICE: realTimeQuote.price,
-        CURRENCY: realTimeQuote.currency,
-        MARKET_TIME: new Date(),
-        EXCHANGE: realTimeQuote.exchange
-      });
-      
-      return res.json(newQuote);
+    // If we have a non-stale quote, return it
+    if (quotes.length > 0 && !isQuoteStale(quotes[0].timestamp)) {
+      return res.status(200).json(quotes[0]);
     }
     
-    res.json(latestQuote);
+    // If no quote or stale, get real-time quote
+    const realTimeQuote = await quoteService.getRealTimeQuote(isin);
+    
+    // Return the real-time quote data
+    return res.status(200).json({
+      price: realTimeQuote.price,
+      change: realTimeQuote.change,
+      changePercent: realTimeQuote.changePercent,
+      timestamp: realTimeQuote.timestamp
+    });
   } catch (error) {
     next(error);
   }
@@ -45,15 +50,14 @@ export const getQuoteHistory = async (
 ) => {
   try {
     const { isin } = req.params;
-    const { interval = '1d', range = '1mo' } = req.query;
+    const interval: QuoteInterval = {
+      interval: '1d',
+      range: '1mo'
+    };
     
-    const yahooFinance = getYahooFinanceService();
-    const history = await yahooFinance.getHistoricalQuotes(isin, {
-      interval: String(interval),
-      range: String(range)
-    });
+    const history = await quoteService.getHistoricalQuotes(isin, interval);
     
-    res.json(history);
+    res.status(200).json({ quotes: history.quotes });
   } catch (error) {
     next(error);
   }
@@ -67,109 +71,87 @@ export const getIntradayQuotes = async (
   try {
     const { isin } = req.params;
     
-    const yahooFinance = getYahooFinanceService();
-    const intraday = await yahooFinance.getIntradayQuotes(isin);
+    const intraday = await quoteService.getIntradayQuotes(isin);
     
-    res.json(intraday);
+    res.status(200).json({ quotes: intraday });
   } catch (error) {
     next(error);
   }
 };
 
 export const getPortfolioQuotes = async (
-  req: Request<{ portfolioId: string }>,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const userId = req.user!.id;
-    const { portfolioId } = req.params;
+    const userId = req.user.id;
+    const portfolioId = req.params.portfolioId;
     
     // Verify portfolio ownership
-    const portfolioRepo = getPortfolioRepository();
-    const portfolio = await portfolioRepo.findById(portfolioId);
+    const portfolio = await portfolioRepository.findById(portfolioId);
     
     if (!portfolio || portfolio.USERS_ID !== userId) {
-      return res.status(403).json({ message: 'Unauthorized' });
+      return res.status(403).json({ error: 'Unauthorized' });
     }
     
     // Get holdings
-    const holdingRepo = getHoldingRepository();
-    const holdings = await holdingRepo.findByPortfolio(portfolioId);
+    const holdings = await holdingRepository.findByPortfolio(portfolioId);
     
     // Get latest quotes for all holdings
-    const quoteRepo = getQuoteRepository();
     const quotes = await Promise.all(
-      holdings.map(holding => quoteRepo.findLatestByStock(holding.ISIN))
+      holdings.map(holding => quoteService.getLatestQuotes([holding.ISIN]))
     );
     
-    // Update stale quotes
-    const yahooFinance = getYahooFinanceService();
-    const updatedQuotes = await Promise.all(
-      quotes.map(async (quote, index) => {
-        if (!quote || isQuoteStale(quote.MARKET_TIME)) {
-          const isin = holdings[index].ISIN;
-          const realTimeQuote = await yahooFinance.getRealTimeQuote(isin);
-          
-          return quoteRepo.create({
-            QUOTES_ID: '', // Will be generated
-            ISIN: isin,
-            PRICE: realTimeQuote.price,
-            CURRENCY: realTimeQuote.currency,
-            MARKET_TIME: new Date(),
-            EXCHANGE: realTimeQuote.exchange
-          });
-        }
-        return quote;
-      })
-    );
+    // Flatten and filter out empty results
+    const flatQuotes = quotes
+      .map(quoteArr => quoteArr[0])
+      .filter(quote => quote !== undefined);
     
-    res.json(updatedQuotes);
+    res.status(200).json({ quotes: flatQuotes });
   } catch (error) {
     next(error);
   }
 };
 
 export const getHoldingQuotes = async (
-  req: Request<{ holdingId: string }>,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const userId = req.user!.id;
-    const { holdingId } = req.params;
-    const { range = '1mo' } = req.query;
+    const userId = req.user.id;
+    const holdingId = req.params.holdingId;
+    const range = req.query.range as QuoteInterval['range'] || '1mo';
     
     // Verify holding ownership
-    const holdingRepo = getHoldingRepository();
-    const holding = await holdingRepo.findById(holdingId);
+    const holding = await holdingRepository.findById(holdingId);
     
     if (!holding) {
-      return res.status(404).json({ message: 'Holding not found' });
+      return res.status(404).json({ error: 'Holding not found' });
     }
     
-    const portfolioRepo = getPortfolioRepository();
-    const portfolio = await portfolioRepo.findById(holding.PORTFOLIOS_ID);
+    const portfolio = await portfolioRepository.findById(holding.PORTFOLIOS_ID);
     
     if (!portfolio || portfolio.USERS_ID !== userId) {
-      return res.status(403).json({ message: 'Unauthorized' });
+      return res.status(403).json({ error: 'Unauthorized' });
     }
     
     // Get quote history
-    const yahooFinance = getYahooFinanceService();
-    const history = await yahooFinance.getHistoricalQuotes(holding.ISIN, {
+    const interval: QuoteInterval = {
       interval: '1d',
-      range: String(range)
-    });
+      range
+    };
+    const history = await quoteService.getHistoricalQuotes(holding.ISIN, interval);
     
-    res.json(history);
+    res.status(200).json({ quotes: history.quotes });
   } catch (error) {
     next(error);
   }
 };
 
 // Helper function to check if a quote is older than 15 minutes
-function isQuoteStale(marketTime: Date): boolean {
+function isQuoteStale(timestamp: Date): boolean {
   const fifteenMinutes = 15 * 60 * 1000;
-  return Date.now() - marketTime.getTime() > fifteenMinutes;
+  return Date.now() - timestamp.getTime() > fifteenMinutes;
 }

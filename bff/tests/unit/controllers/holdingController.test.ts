@@ -1,38 +1,25 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { Request as ExpressRequest, Response as ExpressResponse } from 'express-serve-static-core';
 import * as holdingService from '../../../src/services/holdingService';
 import * as holdingController from '../../../src/controllers/holdingController';
 import { CreateHoldingDTO, HoldingDetails } from '../../../src/models/Holding';
-
-type MockResponse = {
-  status: (code: number) => MockResponse;
-  json: (body: any) => void;
-  send: () => void;
-};
+import { createMockRequest, RequestWithUser } from '../../helpers/mockRequest';
+import { createMockResponse, MockResponse, verifyResponse } from '../../helpers/mockResponse';
+import { setupRepositoryMocks, resetRepositoryMocks, mockHoldingRepo } from '../../helpers/mockRepositories';
 
 describe('HoldingController', () => {
-  let req: Partial<ExpressRequest>;
+  let req: Partial<RequestWithUser>;
   let res: MockResponse;
   let next: sinon.SinonSpy;
-  let statusStub: sinon.SinonSpy;
-  let jsonStub: sinon.SinonSpy;
-  let sendStub: sinon.SinonSpy;
 
   beforeEach(() => {
-    statusStub = sinon.spy((code: number) => res);
-    jsonStub = sinon.spy();
-    sendStub = sinon.spy();
-    
-    res = {
-      status: statusStub,
-      json: jsonStub,
-      send: sendStub
-    };
+    setupRepositoryMocks();
+    res = createMockResponse();
     next = sinon.spy();
   });
 
   afterEach(() => {
+    resetRepositoryMocks();
     sinon.restore();
   });
 
@@ -63,44 +50,42 @@ describe('HoldingController', () => {
     };
 
     it('should create a holding and return 201 status', async () => {
-      req = {
+      req = createMockRequest({
         body: mockCreateData,
         user: { id: 'user1' }
-      } as ExpressRequest;
+      });
 
       sinon.stub(holdingService, 'createHolding').resolves(mockCreatedHolding);
 
-      await holdingController.createHolding(req as any, res as any, next);
+      await holdingController.createHolding(req as any, res, next);
 
-      expect(statusStub.calledWith(201)).to.be.true;
-      expect(jsonStub.calledWith(mockCreatedHolding)).to.be.true;
+      verifyResponse(res, 201, { holding: mockCreatedHolding });
     });
 
     it('should return 403 if user is not authorized', async () => {
-      req = {
+      req = createMockRequest({
         body: mockCreateData,
         user: { id: 'user2' }
-      } as ExpressRequest;
+      });
 
       const error = new Error('Unauthorized');
       sinon.stub(holdingService, 'createHolding').rejects(error);
 
-      await holdingController.createHolding(req as any, res as any, next);
+      await holdingController.createHolding(req as any, res, next);
 
-      expect(statusStub.calledWith(403)).to.be.true;
-      expect(jsonStub.calledWith({ error: 'Unauthorized' })).to.be.true;
+      verifyResponse(res, 403, { error: 'Unauthorized' });
     });
 
     it('should call next with error for other errors', async () => {
-      req = {
+      req = createMockRequest({
         body: mockCreateData,
         user: { id: 'user1' }
-      } as ExpressRequest;
+      });
 
       const error = new Error('Database error');
       sinon.stub(holdingService, 'createHolding').rejects(error);
 
-      await holdingController.createHolding(req as any, res as any, next);
+      await holdingController.createHolding(req as any, res, next);
 
       expect(next.calledWith(error)).to.be.true;
     });

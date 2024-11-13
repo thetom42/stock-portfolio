@@ -12,6 +12,7 @@
     "test:config": "cd tests/unit/config && mocha --config .mocharc.js",
     "test:middleware": "cd tests/unit/middleware && mocha --config .mocharc.js",
     "test:services": "cd tests/unit/services && mocha --config .mocharc.js",
+    "test:controller": "cd tests/unit/controllers && mocha --config .mocharc.js",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write \"src/**/*.ts\""
   },

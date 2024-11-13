@@ -1,195 +1,156 @@
+import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
 import * as userService from '../../../src/services/userService';
-import { CreateUserDTO, UpdateUserDTO, UserCredentials } from '../../../src/models/User';
-import { 
-  mockUserRepo,
-  setupRepositoryMocks, 
-  resetRepositoryMocks 
-} from '../../helpers/mockRepositories';
+import { User, CreateUserDTO, UpdateUserDTO, UserCredentials } from '../../../src/models/User';
+import { mockUserRepo, setupRepositoryMocks, resetRepositoryMocks } from '../../helpers/mockRepositories';
+import { createHash } from 'crypto';
 
 describe('UserService', () => {
   beforeEach(() => {
     setupRepositoryMocks();
-    // Replace the repository instance in the service
-    (userService as any).userRepository = mockUserRepo;
   });
 
   afterEach(() => {
     resetRepositoryMocks();
+    sinon.restore();
   });
 
+  const mockUser = {
+    USERS_ID: 'user123',
+    EMAIL: 'test@example.com',
+    NAME: 'John',
+    SURNAME: 'Doe',
+    NICKNAME: 'John',
+    PASSWORD: createHash('sha256').update('password123').digest('hex'),
+    JOIN_DATE: new Date()
+  };
+
+  const mockBFFUser: User = {
+    id: mockUser.USERS_ID,
+    email: mockUser.EMAIL,
+    firstName: mockUser.NAME,
+    lastName: mockUser.SURNAME,
+    createdAt: mockUser.JOIN_DATE,
+    updatedAt: mockUser.JOIN_DATE
+  };
+
   describe('createUser', () => {
-    const mockUserData: CreateUserDTO = {
+    const createUserDTO: CreateUserDTO = {
       email: 'test@example.com',
-      firstName: 'Test',
-      lastName: 'User',
+      firstName: 'John',
+      lastName: 'Doe',
       password: 'password123'
     };
 
-    const mockCreatedDBUser = {
-      USERS_ID: '1',
-      EMAIL: mockUserData.email,
-      NAME: mockUserData.firstName,
-      SURNAME: mockUserData.lastName,
-      NICKNAME: mockUserData.firstName,
-      PASSWORD: 'hashed_password',
-      JOIN_DATE: new Date()
-    };
-
     it('should create a user successfully', async () => {
-      mockUserRepo.create.resolves(mockCreatedDBUser);
+      mockUserRepo.create.resolves(mockUser);
 
-      const result = await userService.createUser(mockUserData);
+      const result = await userService.createUser(createUserDTO);
 
-      expect(result).to.deep.include({
-        id: mockCreatedDBUser.USERS_ID,
-        email: mockCreatedDBUser.EMAIL,
-        firstName: mockCreatedDBUser.NAME,
-        lastName: mockCreatedDBUser.SURNAME
-      });
-
-      const createCall = mockUserRepo.create.firstCall.args[0];
-      expect(createCall).to.deep.include({
-        USERS_ID: '',
-        EMAIL: mockUserData.email,
-        NAME: mockUserData.firstName,
-        SURNAME: mockUserData.lastName,
-        NICKNAME: mockUserData.firstName
-      });
-      expect(createCall.PASSWORD).to.be.a('string').and.not.empty;
-      expect(createCall.JOIN_DATE).to.be.instanceOf(Date);
+      expect(result).to.deep.equal(mockBFFUser);
+      sinon.assert.calledOnce(mockUserRepo.create);
     });
 
     it('should throw error if user already exists', async () => {
-      mockUserRepo.create.rejects(new Error('User with this email already exists'));
+      mockUserRepo.create.rejects(new Error('already exists'));
 
-      await expect(userService.createUser(mockUserData))
+      await expect(userService.createUser(createUserDTO))
         .to.be.rejectedWith('User with this email already exists');
     });
   });
 
   describe('getUserById', () => {
-    const mockDBUser = {
-      USERS_ID: '1',
-      EMAIL: 'test@example.com',
-      NAME: 'Test',
-      SURNAME: 'User',
-      NICKNAME: 'Test',
-      PASSWORD: 'hashed_password',
-      JOIN_DATE: new Date()
-    };
-
     it('should return user if found', async () => {
-      mockUserRepo.findById.resolves(mockDBUser);
+      mockUserRepo.findById.resolves(mockUser);
 
-      const result = await userService.getUserById('1');
+      const result = await userService.getUserById('user123');
 
-      expect(result).to.deep.include({
-        id: mockDBUser.USERS_ID,
-        email: mockDBUser.EMAIL,
-        firstName: mockDBUser.NAME,
-        lastName: mockDBUser.SURNAME
-      });
-      expect(mockUserRepo.findById.calledWith('1')).to.be.true;
+      expect(result).to.deep.equal(mockBFFUser);
+      sinon.assert.calledWith(mockUserRepo.findById, 'user123');
     });
 
     it('should return null if user not found', async () => {
       mockUserRepo.findById.resolves(null);
 
-      const result = await userService.getUserById('999');
+      const result = await userService.getUserById('nonexistent');
+
       expect(result).to.be.null;
+      sinon.assert.calledWith(mockUserRepo.findById, 'nonexistent');
     });
   });
 
   describe('getUserByEmail', () => {
-    const mockDBUser = {
-      USERS_ID: '1',
-      EMAIL: 'test@example.com',
-      NAME: 'Test',
-      SURNAME: 'User',
-      NICKNAME: 'Test',
-      PASSWORD: 'hashed_password',
-      JOIN_DATE: new Date()
-    };
-
     it('should return user if found', async () => {
-      mockUserRepo.findByEmail.resolves(mockDBUser);
+      mockUserRepo.findByEmail.resolves(mockUser);
 
       const result = await userService.getUserByEmail('test@example.com');
 
-      expect(result).to.deep.include({
-        id: mockDBUser.USERS_ID,
-        email: mockDBUser.EMAIL,
-        firstName: mockDBUser.NAME,
-        lastName: mockDBUser.SURNAME
-      });
-      expect(mockUserRepo.findByEmail.calledWith('test@example.com')).to.be.true;
+      expect(result).to.deep.equal(mockBFFUser);
+      sinon.assert.calledWith(mockUserRepo.findByEmail, 'test@example.com');
     });
 
     it('should return null if user not found', async () => {
       mockUserRepo.findByEmail.resolves(null);
 
       const result = await userService.getUserByEmail('nonexistent@example.com');
+
       expect(result).to.be.null;
+      sinon.assert.calledWith(mockUserRepo.findByEmail, 'nonexistent@example.com');
     });
   });
 
   describe('updateUser', () => {
-    const mockUpdateData: UpdateUserDTO = {
-      firstName: 'Updated',
-      lastName: 'Name'
-    };
-
-    const mockDBUser = {
-      USERS_ID: '1',
-      EMAIL: 'test@example.com',
-      NAME: 'Updated',
-      SURNAME: 'Name',
-      NICKNAME: 'Updated',
-      PASSWORD: 'hashed_password',
-      JOIN_DATE: new Date()
+    const updateData: UpdateUserDTO = {
+      firstName: 'Jane',
+      lastName: 'Smith',
+      email: 'jane@example.com'
     };
 
     it('should update user successfully', async () => {
-      mockUserRepo.update.resolves(mockDBUser);
+      const updatedUser = {
+        ...mockUser,
+        NAME: 'Jane',
+        SURNAME: 'Smith',
+        EMAIL: 'jane@example.com',
+        NICKNAME: 'Jane'
+      };
 
-      const result = await userService.updateUser('1', mockUpdateData);
+      mockUserRepo.update.resolves(updatedUser);
 
-      expect(result).to.deep.include({
-        id: mockDBUser.USERS_ID,
-        email: mockDBUser.EMAIL,
-        firstName: mockDBUser.NAME,
-        lastName: mockDBUser.SURNAME
+      const result = await userService.updateUser('user123', updateData);
+
+      expect(result).to.deep.equal({
+        ...mockBFFUser,
+        firstName: 'Jane',
+        lastName: 'Smith',
+        email: 'jane@example.com'
       });
-
-      expect(mockUserRepo.update.calledWith('1', {
-        NAME: mockUpdateData.firstName,
-        SURNAME: mockUpdateData.lastName,
-        NICKNAME: mockUpdateData.firstName
-      })).to.be.true;
+      sinon.assert.calledWith(mockUserRepo.update, 'user123');
     });
 
     it('should return null if user not found', async () => {
-      mockUserRepo.update.rejects(new Error('User not found'));
+      mockUserRepo.update.rejects(new Error('not found'));
 
-      const result = await userService.updateUser('999', mockUpdateData);
+      const result = await userService.updateUser('nonexistent', updateData);
+
       expect(result).to.be.null;
     });
   });
 
   describe('deleteUser', () => {
     it('should delete user successfully', async () => {
-      mockUserRepo.delete.resolves({} as any);
+      mockUserRepo.delete.resolves(mockUser);
 
-      await userService.deleteUser('1');
-      expect(mockUserRepo.delete.calledWith('1')).to.be.true;
+      await userService.deleteUser('user123');
+
+      sinon.assert.calledWith(mockUserRepo.delete, 'user123');
     });
 
     it('should throw error if user not found', async () => {
-      mockUserRepo.delete.rejects(new Error('User not found'));
+      mockUserRepo.delete.rejects(new Error('not found'));
 
-      await expect(userService.deleteUser('999'))
+      await expect(userService.deleteUser('nonexistent'))
         .to.be.rejectedWith('User not found');
     });
   });
@@ -200,53 +161,34 @@ describe('UserService', () => {
       password: 'password123'
     };
 
-    const mockDBUser = {
-      USERS_ID: '1',
-      EMAIL: credentials.email,
-      NAME: 'Test',
-      SURNAME: 'User',
-      NICKNAME: 'Test',
-      PASSWORD: '', // Will be set to match hashed password
-      JOIN_DATE: new Date()
-    };
-
-    beforeEach(() => {
-      // Set the password to match the hashed version of the test password
-      const crypto = require('crypto');
-      mockDBUser.PASSWORD = crypto.createHash('sha256').update(credentials.password).digest('hex');
-    });
-
     it('should return user if credentials are valid', async () => {
-      mockUserRepo.findByEmail.resolves(mockDBUser);
+      mockUserRepo.findByEmail.resolves(mockUser);
 
       const result = await userService.validateUserCredentials(credentials);
 
-      expect(result).to.deep.include({
-        id: mockDBUser.USERS_ID,
-        email: mockDBUser.EMAIL,
-        firstName: mockDBUser.NAME,
-        lastName: mockDBUser.SURNAME
-      });
+      expect(result).to.deep.equal(mockBFFUser);
+      sinon.assert.calledWith(mockUserRepo.findByEmail, credentials.email);
     });
 
     it('should return null if user not found', async () => {
       mockUserRepo.findByEmail.resolves(null);
 
-      const result = await userService.validateUserCredentials({
-        email: 'nonexistent@example.com',
-        password: 'password123'
-      });
+      const result = await userService.validateUserCredentials(credentials);
+
       expect(result).to.be.null;
+      sinon.assert.calledWith(mockUserRepo.findByEmail, credentials.email);
     });
 
     it('should return null if password is incorrect', async () => {
-      mockUserRepo.findByEmail.resolves(mockDBUser);
+      mockUserRepo.findByEmail.resolves(mockUser);
 
       const result = await userService.validateUserCredentials({
-        email: credentials.email,
+        ...credentials,
         password: 'wrongpassword'
       });
+
       expect(result).to.be.null;
+      sinon.assert.calledWith(mockUserRepo.findByEmail, credentials.email);
     });
   });
 });

@@ -1,4 +1,4 @@
-import { Request } from 'express';
+import { Request } from 'express-serve-static-core';
 
 export interface AuthUser {
   id: string;

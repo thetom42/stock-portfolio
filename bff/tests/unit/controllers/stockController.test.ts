@@ -1,155 +1,122 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import sinonChai from 'sinon-chai';
-import chai from 'chai';
-import { Request as ExpressRequest, Response as ExpressResponse } from 'express-serve-static-core';
+import * as stockService from '../../../src/services/stockService';
 import * as stockController from '../../../src/controllers/stockController';
-import * as database from '../../../src/utils/database';
-import { createMockPrismaClient } from '../../helpers/mockPrisma';
-
-chai.use(sinonChai);
-
-type MockResponse = {
-  status: (code: number) => MockResponse;
-  json: (body: any) => void;
-  send: () => void;
-};
+import { Stock } from '../../../src/models/Stock';
+import { createMockRequest, RequestWithUser } from '../../helpers/mockRequest';
+import { createMockResponse, MockResponse, verifyResponse } from '../../helpers/mockResponse';
+import { setupRepositoryMocks, resetRepositoryMocks, mockStockRepo } from '../../helpers/mockRepositories';
 
 describe('StockController', () => {
-  let req: Partial<ExpressRequest>;
+  let req: Partial<RequestWithUser>;
   let res: MockResponse;
   let next: sinon.SinonSpy;
-  let statusStub: sinon.SinonSpy;
-  let jsonStub: sinon.SinonSpy;
-  let sendStub: sinon.SinonSpy;
-  let mockPrismaClient: any;
 
   beforeEach(() => {
-    statusStub = sinon.spy((code: number) => res);
-    jsonStub = sinon.spy();
-    sendStub = sinon.spy();
-    
-    res = {
-      status: statusStub,
-      json: jsonStub,
-      send: sendStub
-    };
+    setupRepositoryMocks();
+    res = createMockResponse();
     next = sinon.spy();
-
-    mockPrismaClient = createMockPrismaClient();
-    sinon.stub(database, 'getPrismaClient').returns(mockPrismaClient);
   });
 
   afterEach(() => {
+    resetRepositoryMocks();
     sinon.restore();
   });
 
   describe('getStockByISIN', () => {
-    const mockStock = {
-      STOCKS_ID: '1',
-      ISIN: 'US0378331005',
-      SYMBOL: 'AAPL',
-      NAME: 'Apple Inc.',
-      CURRENCY: 'USD',
-      EXCHANGE: 'NASDAQ',
-      COUNTRY: 'USA',
-      CREATED_AT: new Date(),
-      UPDATED_AT: new Date()
+    const mockStock: Stock = {
+      id: '1',
+      isin: 'US0378331005',
+      symbol: 'AAPL',
+      name: 'Apple Inc.',
+      currency: 'USD',
+      exchange: 'NASDAQ',
+      country: 'USA',
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
 
     it('should return stock if found', async () => {
-      req = {
-        params: { isin: 'US0378331005' }
-      } as any;
+      req = createMockRequest({ params: { isin: 'US0378331005' } });
+      sinon.stub(stockService, 'getStockByISIN').resolves(mockStock);
 
-      mockPrismaClient.stock.findUnique.resolves(mockStock);
+      await stockController.getStockByISIN(req as any, res, next);
 
-      await stockController.getStockByISIN(req as any, res as any, next);
-
-      expect(mockPrismaClient.stock.findUnique).to.have.been.calledWith({
-        where: { ISIN: 'US0378331005' }
-      });
-      expect(jsonStub).to.have.been.calledWith(mockStock);
+      verifyResponse(res, 200, { stock: mockStock });
     });
 
     it('should return 404 if stock not found', async () => {
-      req = {
-        params: { isin: 'US0378331005' }
-      } as any;
+      req = createMockRequest({ params: { isin: 'INVALID' } });
+      sinon.stub(stockService, 'getStockByISIN').resolves(null);
 
-      mockPrismaClient.stock.findUnique.resolves(null);
+      await stockController.getStockByISIN(req as any, res, next);
 
-      await stockController.getStockByISIN(req as any, res as any, next);
-
-      expect(statusStub).to.have.been.calledWith(404);
-      expect(jsonStub).to.have.been.calledWith({ error: 'Stock not found' });
+      verifyResponse(res, 404, { error: 'Stock not found' });
     });
 
     it('should handle errors gracefully', async () => {
-      req = {
-        params: { isin: 'US0378331005' }
-      } as any;
-
+      req = createMockRequest({ params: { isin: 'US0378331005' } });
       const error = new Error('Database error');
-      mockPrismaClient.stock.findUnique.rejects(error);
+      sinon.stub(stockService, 'getStockByISIN').rejects(error);
 
-      await stockController.getStockByISIN(req as any, res as any, next);
+      await stockController.getStockByISIN(req as any, res, next);
 
-      expect(next).to.have.been.calledWith(error);
+      expect(next.calledWith(error)).to.be.true;
     });
   });
 
   describe('searchStocks', () => {
-    const mockStocks = [
+    const mockStocks: Stock[] = [
       {
-        STOCKS_ID: '1',
-        ISIN: 'US0378331005',
-        SYMBOL: 'AAPL',
-        NAME: 'Apple Inc.',
-        CURRENCY: 'USD',
-        EXCHANGE: 'NASDAQ',
-        COUNTRY: 'USA',
-        CREATED_AT: new Date(),
-        UPDATED_AT: new Date()
+        id: '1',
+        isin: 'US0378331005',
+        symbol: 'AAPL',
+        name: 'Apple Inc.',
+        currency: 'USD',
+        exchange: 'NASDAQ',
+        country: 'USA',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        id: '2',
+        isin: 'US5949181045',
+        symbol: 'MSFT',
+        name: 'Microsoft Corporation',
+        currency: 'USD',
+        exchange: 'NASDAQ',
+        country: 'USA',
+        createdAt: new Date(),
+        updatedAt: new Date()
       }
     ];
 
     it('should return matching stocks', async () => {
-      req = {
-        query: { q: 'Apple' }
-      } as any;
+      req = createMockRequest({ query: { query: 'Apple' } });
+      sinon.stub(stockService, 'searchStocks').resolves(mockStocks);
 
-      mockPrismaClient.stock.findMany.resolves(mockStocks);
+      await stockController.searchStocks(req as any, res, next);
 
-      await stockController.searchStocks(req as any, res as any, next);
-
-      expect(mockPrismaClient.stock.findMany).to.have.been.called;
-      expect(jsonStub).to.have.been.calledWith(mockStocks);
+      verifyResponse(res, 200, { stocks: mockStocks });
     });
 
     it('should return empty array if no matches found', async () => {
-      req = {
-        query: { q: 'NonexistentStock' }
-      } as any;
+      req = createMockRequest({ query: { query: 'NonExistent' } });
+      sinon.stub(stockService, 'searchStocks').resolves([]);
 
-      mockPrismaClient.stock.findMany.resolves([]);
+      await stockController.searchStocks(req as any, res, next);
 
-      await stockController.searchStocks(req as any, res as any, next);
-
-      expect(jsonStub).to.have.been.calledWith([]);
+      verifyResponse(res, 200, { stocks: [] });
     });
 
     it('should handle errors gracefully', async () => {
-      req = {
-        query: { q: 'Apple' }
-      } as any;
-
+      req = createMockRequest({ query: { query: 'Apple' } });
       const error = new Error('Database error');
-      mockPrismaClient.stock.findMany.rejects(error);
+      sinon.stub(stockService, 'searchStocks').rejects(error);
 
-      await stockController.searchStocks(req as any, res as any, next);
+      await stockController.searchStocks(req as any, res, next);
 
-      expect(next).to.have.been.calledWith(error);
+      expect(next.calledWith(error)).to.be.true;
     });
   });
 });

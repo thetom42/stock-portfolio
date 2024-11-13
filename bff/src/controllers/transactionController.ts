@@ -1,16 +1,17 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Response, NextFunction } from 'express-serve-static-core';
 import { CreateTransactionDTO, TransactionQueryParams } from '../models/Transaction';
 import * as transactionService from '../services/transactionService';
+import { AuthenticatedRequest } from '../types/express';
 
 export const createTransaction = async (
-  req: Request<{ holdingId: string }, {}, CreateTransactionDTO>,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.user.id;
     const holdingId = req.params.holdingId;
-    const transactionData = req.body;
+    const transactionData = req.body as CreateTransactionDTO;
 
     const transaction = await transactionService.createTransaction(
       userId,
@@ -18,15 +19,15 @@ export const createTransaction = async (
       transactionData
     );
 
-    res.status(201).json(transaction);
+    res.status(201).json({ transaction });
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'Holding not found') {
-        res.status(404).json({ message: error.message });
+        res.status(404).json({ error: error.message });
       } else if (error.message === 'Unauthorized') {
-        res.status(403).json({ message: error.message });
+        res.status(403).json({ error: error.message });
       } else if (error.message === 'Insufficient holding quantity for sell transaction') {
-        res.status(400).json({ message: error.message });
+        res.status(400).json({ error: error.message });
       } else {
         next(error);
       }
@@ -37,12 +38,12 @@ export const createTransaction = async (
 };
 
 export const getTransaction = async (
-  req: Request<{ id: string }>,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.user.id;
     const transactionId = req.params.id;
 
     const transaction = await transactionService.getTransactionById(
@@ -50,13 +51,13 @@ export const getTransaction = async (
       transactionId
     );
 
-    res.json(transaction);
+    res.json({ transaction });
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'Transaction not found' || error.message === 'Holding not found') {
-        res.status(404).json({ message: error.message });
+        res.status(404).json({ error: error.message });
       } else if (error.message === 'Unauthorized') {
-        res.status(403).json({ message: error.message });
+        res.status(403).json({ error: error.message });
       } else {
         next(error);
       }
@@ -77,16 +78,16 @@ type TransactionQueryString = {
 };
 
 export const getTransactionsByHolding = async (
-  req: Request<{ holdingId: string }, {}, {}, TransactionQueryString>,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.user.id;
     const holdingId = req.params.holdingId;
     const queryParams: TransactionQueryParams = {
-      startDate: req.query.startDate,
-      endDate: req.query.endDate,
+      startDate: req.query.startDate as string | undefined,
+      endDate: req.query.endDate as string | undefined,
       type: req.query.type as 'BUY' | 'SELL' | undefined,
       sort: req.query.sort as 'date' | 'amount' | 'price' | undefined,
       order: req.query.order as 'asc' | 'desc' | undefined,
@@ -94,19 +95,19 @@ export const getTransactionsByHolding = async (
       limit: req.query.limit ? Number(req.query.limit) : undefined
     };
 
-    const transactions = await transactionService.getTransactionsByHolding(
+    const paginatedTransactions = await transactionService.getTransactionsByHolding(
       userId,
       holdingId,
       queryParams
     );
 
-    res.json(transactions);
+    res.status(200).json(paginatedTransactions);
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'Holding not found') {
-        res.status(404).json({ message: error.message });
+        res.status(404).json({ error: error.message });
       } else if (error.message === 'Unauthorized') {
-        res.status(403).json({ message: error.message });
+        res.status(403).json({ error: error.message });
       } else {
         next(error);
       }
@@ -117,16 +118,16 @@ export const getTransactionsByHolding = async (
 };
 
 export const getTransactionsByPortfolio = async (
-  req: Request<{ portfolioId: string }, {}, {}, TransactionQueryString>,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const userId = req.user!.id;
+    const userId = req.user.id;
     const portfolioId = req.params.portfolioId;
     const queryParams: TransactionQueryParams = {
-      startDate: req.query.startDate,
-      endDate: req.query.endDate,
+      startDate: req.query.startDate as string | undefined,
+      endDate: req.query.endDate as string | undefined,
       type: req.query.type as 'BUY' | 'SELL' | undefined,
       sort: req.query.sort as 'date' | 'amount' | 'price' | undefined,
       order: req.query.order as 'asc' | 'desc' | undefined,
@@ -134,17 +135,17 @@ export const getTransactionsByPortfolio = async (
       limit: req.query.limit ? Number(req.query.limit) : undefined
     };
 
-    const transactions = await transactionService.getTransactionsByPortfolio(
+    const paginatedTransactions = await transactionService.getTransactionsByPortfolio(
       userId,
       portfolioId,
       queryParams
     );
 
-    res.json(transactions);
+    res.status(200).json(paginatedTransactions);
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'Unauthorized') {
-        res.status(403).json({ message: error.message });
+        res.status(403).json({ error: error.message });
       } else {
         next(error);
       }

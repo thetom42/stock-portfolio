@@ -1,4 +1,4 @@
-import { Response, NextFunction } from 'express';
+import type { Response, NextFunction } from 'express-serve-static-core';
 import { CreateHoldingDTO, UpdateHoldingDTO } from '../models/Holding';
 import * as holdingService from '../services/holdingService';
 import { AuthenticatedRequest } from '../types/express';
@@ -9,12 +9,19 @@ export const createHolding = async (
   next: NextFunction
 ) => {
   try {
-    const userId = req.user.id;
-    const holdingData = req.body;
-    const holding = await holdingService.createHolding(userId, holdingData);
-    res.status(201).json(holding);
+    const holdingData = req.body as CreateHoldingDTO;
+    const holding = await holdingService.createHolding(holdingData);
+    res.status(201).json({ holding });
   } catch (error) {
-    next(error);
+    if (error instanceof Error) {
+      if (error.message === 'Unauthorized') {
+        res.status(403).json({ error: error.message });
+      } else {
+        next(error);
+      }
+    } else {
+      next(error);
+    }
   }
 };
 
@@ -25,14 +32,13 @@ export const getHolding = async (
 ) => {
   try {
     const holdingId = req.params.id;
-    const userId = req.user.id;
-    const holding = await holdingService.getHoldingById(holdingId, userId);
+    const holding = await holdingService.getHoldingById(holdingId);
     
     if (!holding) {
-      return res.status(404).json({ message: 'Holding not found' });
+      return res.status(404).json({ error: 'Holding not found' });
     }
     
-    res.json(holding);
+    res.json({ holding });
   } catch (error) {
     next(error);
   }
@@ -45,22 +51,20 @@ export const updateHolding = async (
 ) => {
   try {
     const holdingId = req.params.id;
-    const userId = req.user.id;
-    const updateData = req.body;
+    const updateData = req.body as UpdateHoldingDTO;
     
-    const updatedHolding = await holdingService.updateHolding(
-      holdingId,
-      userId,
-      updateData
-    );
-    
-    if (!updatedHolding) {
-      return res.status(404).json({ message: 'Holding not found' });
-    }
-    
-    res.json(updatedHolding);
+    const updatedHolding = await holdingService.updateHolding(holdingId, updateData);
+    res.json({ holding: updatedHolding });
   } catch (error) {
-    next(error);
+    if (error instanceof Error) {
+      if (error.message === 'Holding not found') {
+        res.status(404).json({ error: error.message });
+      } else {
+        next(error);
+      }
+    } else {
+      next(error);
+    }
   }
 };
 
@@ -71,90 +75,17 @@ export const deleteHolding = async (
 ) => {
   try {
     const holdingId = req.params.id;
-    const userId = req.user.id;
-    await holdingService.deleteHolding(holdingId, userId);
+    await holdingService.closeHolding(holdingId);
     res.status(204).send();
   } catch (error) {
-    next(error);
-  }
-};
-
-export const getHoldingPerformance = async (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const holdingId = req.params.id;
-    const userId = req.user.id;
-    const performance = await holdingService.getHoldingPerformance(holdingId, userId);
-    
-    if (!performance) {
-      return res.status(404).json({ message: 'Holding not found' });
+    if (error instanceof Error) {
+      if (error.message === 'Holding not found') {
+        res.status(404).json({ error: error.message });
+      } else {
+        next(error);
+      }
+    } else {
+      next(error);
     }
-    
-    res.json(performance);
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getHoldingTransactions = async (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const holdingId = req.params.id;
-    const userId = req.user.id;
-    const transactions = await holdingService.getHoldingTransactions(holdingId, userId);
-    
-    if (!transactions) {
-      return res.status(404).json({ message: 'Holding not found' });
-    }
-    
-    res.json(transactions);
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getHoldingValue = async (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const holdingId = req.params.id;
-    const userId = req.user.id;
-    const value = await holdingService.getHoldingValue(holdingId, userId);
-    
-    if (!value) {
-      return res.status(404).json({ message: 'Holding not found' });
-    }
-    
-    res.json(value);
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getHoldingHistory = async (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const holdingId = req.params.id;
-    const userId = req.user.id;
-    const history = await holdingService.getHoldingHistory(holdingId, userId);
-    
-    if (!history) {
-      return res.status(404).json({ message: 'Holding not found' });
-    }
-    
-    res.json(history);
-  } catch (error) {
-    next(error);
   }
 };

@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express-serve-static-core';
 import * as stockService from '../services/stockService';
 
 export const getStockByISIN = async (
@@ -9,9 +9,9 @@ export const getStockByISIN = async (
   try {
     const stock = await stockService.getStockByISIN(req.params.isin);
     if (!stock) {
-      return res.status(404).json({ message: 'Stock not found' });
+      return res.status(404).json({ error: 'Stock not found' });
     }
-    res.json(stock);
+    res.json({ stock });
   } catch (error) {
     next(error);
   }
@@ -25,9 +25,9 @@ export const getStockBySymbol = async (
   try {
     const stock = await stockService.getStockBySymbol(req.params.symbol);
     if (!stock) {
-      return res.status(404).json({ message: 'Stock not found' });
+      return res.status(404).json({ error: 'Stock not found' });
     }
-    res.json(stock);
+    res.json({ stock });
   } catch (error) {
     next(error);
   }
@@ -41,9 +41,9 @@ export const getStockByWKN = async (
   try {
     const stock = await stockService.getStockByWKN(req.params.wkn);
     if (!stock) {
-      return res.status(404).json({ message: 'Stock not found' });
+      return res.status(404).json({ error: 'Stock not found' });
     }
-    res.json(stock);
+    res.json({ stock });
   } catch (error) {
     next(error);
   }
@@ -56,7 +56,7 @@ export const getAllStocks = async (
 ) => {
   try {
     const stocks = await stockService.getAllStocks();
-    res.json(stocks);
+    res.json({ stocks });
   } catch (error) {
     next(error);
   }
@@ -69,7 +69,7 @@ export const getStocksByCategory = async (
 ) => {
   try {
     const stocks = await stockService.getStocksByCategory(req.params.categoryId);
-    res.json(stocks);
+    res.json({ stocks });
   } catch (error) {
     next(error);
   }
@@ -81,8 +81,8 @@ export const searchStocks = async (
   next: NextFunction
 ) => {
   try {
-    const results = await stockService.searchStocks(req.query.query);
-    res.json(results);
+    const stocks = await stockService.searchStocks(req.query.query);
+    res.json({ stocks });
   } catch (error) {
     next(error);
   }
@@ -96,9 +96,9 @@ export const getStockDetails = async (
   try {
     const details = await stockService.getStockDetails(req.params.isin);
     if (!details) {
-      return res.status(404).json({ message: 'Stock not found' });
+      return res.status(404).json({ error: 'Stock not found' });
     }
-    res.json(details);
+    res.json({ details });
   } catch (error) {
     next(error);
   }
@@ -129,7 +129,7 @@ export const createStock = async (
         symbol: req.body.symbol
       }
     );
-    res.status(201).json(stock);
+    res.status(201).json({ stock });
   } catch (error) {
     next(error);
   }
@@ -152,9 +152,9 @@ export const updateStock = async (
   try {
     const stock = await stockService.updateStock(req.params.isin, req.body);
     if (!stock) {
-      return res.status(404).json({ message: 'Stock not found' });
+      return res.status(404).json({ error: 'Stock not found' });
     }
-    res.json(stock);
+    res.json({ stock });
   } catch (error) {
     next(error);
   }
@@ -169,6 +169,9 @@ export const deleteStock = async (
     await stockService.deleteStock(req.params.isin);
     res.status(204).send();
   } catch (error) {
+    if (error instanceof Error && error.message === 'Stock not found') {
+      return res.status(404).json({ error: error.message });
+    }
     next(error);
   }
 };

@@ -8,6 +8,7 @@ import { UserRepository } from '../../../db/repositories/UserRepository';
 import { CategoryRepository } from '../../../db/repositories/CategoryRepository';
 import { setStockRepository } from '../../src/services/stockService';
 import { setTransactionRepository, setHoldingRepository, setPortfolioRepository } from '../../src/services/transactionService';
+import { setUserRepository } from '../../src/services/userService';
 
 // Create stub repositories with proper method stubs
 export const mockHoldingRepo = {
@@ -83,6 +84,7 @@ export const setupRepositoryMocks = () => {
   setTransactionRepository(mockTransactionRepo);
   setHoldingRepository(mockHoldingRepo);
   setPortfolioRepository(mockPortfolioRepo);
+  setUserRepository(mockUserRepo);
 };
 
 export const resetRepositoryMocks = () => {

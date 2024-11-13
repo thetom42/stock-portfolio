@@ -1,245 +1,195 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import sinonChai from 'sinon-chai';
-import chai from 'chai';
-import { Request as ExpressRequest, Response as ExpressResponse } from 'express-serve-static-core';
+import * as transactionService from '../../../src/services/transactionService';
 import * as transactionController from '../../../src/controllers/transactionController';
-import * as database from '../../../src/utils/database';
-import { createMockPrismaClient } from '../../helpers/mockPrisma';
-
-chai.use(sinonChai);
-
-type MockResponse = {
-  status: (code: number) => MockResponse;
-  json: (body: any) => void;
-  send: () => void;
-};
+import { Transaction, CreateTransactionDTO, PaginatedTransactions } from '../../../src/models/Transaction';
+import { createMockRequest, RequestWithUser } from '../../helpers/mockRequest';
+import { createMockResponse, MockResponse, verifyResponse } from '../../helpers/mockResponse';
+import { setupRepositoryMocks, resetRepositoryMocks, mockTransactionRepo } from '../../helpers/mockRepositories';
 
 describe('TransactionController', () => {
-  let req: Partial<ExpressRequest>;
+  let req: Partial<RequestWithUser>;
   let res: MockResponse;
   let next: sinon.SinonSpy;
-  let statusStub: sinon.SinonSpy;
-  let jsonStub: sinon.SinonSpy;
-  let sendStub: sinon.SinonSpy;
-  let mockPrismaClient: any;
 
   beforeEach(() => {
-    statusStub = sinon.spy((code: number) => res);
-    jsonStub = sinon.spy();
-    sendStub = sinon.spy();
-    
-    res = {
-      status: statusStub,
-      json: jsonStub,
-      send: sendStub
-    };
+    setupRepositoryMocks();
+    res = createMockResponse();
     next = sinon.spy();
-
-    mockPrismaClient = createMockPrismaClient();
-    sinon.stub(database, 'getPrismaClient').returns(mockPrismaClient);
   });
 
   afterEach(() => {
+    resetRepositoryMocks();
     sinon.restore();
   });
 
   describe('createTransaction', () => {
-    const mockTransaction = {
+    const mockCreateData: CreateTransactionDTO = {
+      AMOUNT: 10,
+      PRICE: 150.50,
+      BUY: true,
+      COMMISSION: 9.99,
+      BROKER: 'Test Broker'
+    };
+
+    const mockCreatedTransaction: Transaction = {
+      TRANSACTIONS_ID: '1',
+      HOLDINGS_ID: '1',
+      BUY: mockCreateData.BUY,
+      AMOUNT: mockCreateData.AMOUNT,
+      PRICE: mockCreateData.PRICE,
+      COMMISSION: mockCreateData.COMMISSION!,
+      BROKER: mockCreateData.BROKER!,
+      TRANSACTION_TIME: new Date()
+    };
+
+    it('should create a buy transaction successfully', async () => {
+      req = createMockRequest({
+        body: mockCreateData,
+        user: { id: 'user1' }
+      });
+
+      sinon.stub(transactionService, 'createTransaction').resolves(mockCreatedTransaction);
+
+      await transactionController.createTransaction(req as any, res, next);
+
+      verifyResponse(res, 201, { transaction: mockCreatedTransaction });
+    });
+
+    it('should return 404 if holding not found', async () => {
+      req = createMockRequest({
+        body: mockCreateData,
+        user: { id: 'user1' }
+      });
+
+      const error = new Error('Holding not found');
+      sinon.stub(transactionService, 'createTransaction').rejects(error);
+
+      await transactionController.createTransaction(req as any, res, next);
+
+      verifyResponse(res, 404, { error: 'Holding not found' });
+    });
+
+    it('should return 403 if user is not authorized', async () => {
+      req = createMockRequest({
+        body: mockCreateData,
+        user: { id: 'user2' }
+      });
+
+      const error = new Error('Unauthorized');
+      sinon.stub(transactionService, 'createTransaction').rejects(error);
+
+      await transactionController.createTransaction(req as any, res, next);
+
+      verifyResponse(res, 403, { error: 'Unauthorized' });
+    });
+
+    it('should handle errors gracefully', async () => {
+      req = createMockRequest({
+        body: mockCreateData,
+        user: { id: 'user1' }
+      });
+
+      const error = new Error('Database error');
+      sinon.stub(transactionService, 'createTransaction').rejects(error);
+
+      await transactionController.createTransaction(req as any, res, next);
+
+      expect(next.calledWith(error)).to.be.true;
+    });
+  });
+
+  describe('getTransactionsByHolding', () => {
+    const mockTransaction: Transaction = {
       TRANSACTIONS_ID: '1',
       HOLDINGS_ID: '1',
       BUY: true,
       AMOUNT: 10,
       PRICE: 150.50,
-      TRANSACTION_TIME: new Date(),
       COMMISSION: 9.99,
-      BROKER: 'Test Broker'
+      BROKER: 'Test Broker',
+      TRANSACTION_TIME: new Date()
     };
 
-    const mockHolding = {
-      HOLDINGS_ID: '1',
-      PORTFOLIOS_ID: '1',
-      ISIN: 'US0378331005',
-      QUANTITY: 10,
-      START_DATE: new Date(),
-      END_DATE: null
-    };
-
-    const mockPortfolio = {
-      PORTFOLIOS_ID: '1',
-      USERS_ID: 'user1',
-      NAME: 'Test Portfolio',
-      CREATED_AT: new Date()
-    };
-
-    it('should create a buy transaction successfully', async () => {
-      req = {
-        params: { holdingId: '1' },
-        body: {
-          BUY: true,
-          AMOUNT: 10,
-          PRICE: 150.50,
-          COMMISSION: 9.99,
-          BROKER: 'Test Broker'
-        },
-        user: { id: 'user1' }
-      } as any;
-
-      mockPrismaClient.holding.findUnique.resolves(mockHolding);
-      mockPrismaClient.portfolio.findUnique.resolves(mockPortfolio);
-      mockPrismaClient.transaction.create.resolves(mockTransaction);
-
-      await transactionController.createTransaction(req as any, res as any, next);
-
-      expect(statusStub).to.have.been.calledWith(201);
-      expect(jsonStub).to.have.been.calledWith(mockTransaction);
-    });
-
-    it('should return 404 if holding not found', async () => {
-      req = {
-        params: { holdingId: '999' },
-        body: {
-          BUY: true,
-          AMOUNT: 10,
-          PRICE: 150.50
-        },
-        user: { id: 'user1' }
-      } as any;
-
-      mockPrismaClient.holding.findUnique.resolves(null);
-
-      await transactionController.createTransaction(req as any, res as any, next);
-
-      expect(statusStub).to.have.been.calledWith(404);
-      expect(jsonStub).to.have.been.calledWith({ error: 'Holding not found' });
-    });
-
-    it('should return 403 if user is not authorized', async () => {
-      req = {
-        params: { holdingId: '1' },
-        body: {
-          BUY: true,
-          AMOUNT: 10,
-          PRICE: 150.50
-        },
-        user: { id: 'user2' }
-      } as any;
-
-      mockPrismaClient.holding.findUnique.resolves(mockHolding);
-      mockPrismaClient.portfolio.findUnique.resolves(mockPortfolio);
-
-      await transactionController.createTransaction(req as any, res as any, next);
-
-      expect(statusStub).to.have.been.calledWith(403);
-      expect(jsonStub).to.have.been.calledWith({ error: 'Unauthorized' });
-    });
-
-    it('should handle errors gracefully', async () => {
-      req = {
-        params: { holdingId: '1' },
-        body: {
-          BUY: true,
-          AMOUNT: 10,
-          PRICE: 150.50
-        },
-        user: { id: 'user1' }
-      } as any;
-
-      const error = new Error('Database error');
-      mockPrismaClient.holding.findUnique.rejects(error);
-
-      await transactionController.createTransaction(req as any, res as any, next);
-
-      expect(next).to.have.been.calledWith(error);
-    });
-  });
-
-  describe('getTransactionsByHolding', () => {
-    const mockTransactions = [
-      {
-        TRANSACTIONS_ID: '1',
-        HOLDINGS_ID: '1',
-        BUY: true,
-        AMOUNT: 10,
-        PRICE: 150.50,
-        TRANSACTION_TIME: new Date(),
-        COMMISSION: 9.99,
-        BROKER: 'Test Broker'
-      }
-    ];
-
-    const mockHolding = {
-      HOLDINGS_ID: '1',
-      PORTFOLIOS_ID: '1',
-      ISIN: 'US0378331005',
-      QUANTITY: 10,
-      START_DATE: new Date(),
-      END_DATE: null
-    };
-
-    const mockPortfolio = {
-      PORTFOLIOS_ID: '1',
-      USERS_ID: 'user1',
-      NAME: 'Test Portfolio',
-      CREATED_AT: new Date()
+    const mockPaginatedTransactions: PaginatedTransactions = {
+      transactions: [mockTransaction],
+      total: 1,
+      page: 1,
+      limit: 10,
+      totalPages: 1
     };
 
     it('should return transactions for authorized user', async () => {
-      req = {
+      req = createMockRequest({
         params: { holdingId: '1' },
+        query: {
+          startDate: '2024-01-01',
+          endDate: '2024-01-31',
+          page: '1',
+          limit: '10'
+        },
         user: { id: 'user1' }
-      } as any;
+      });
 
-      mockPrismaClient.holding.findUnique.resolves(mockHolding);
-      mockPrismaClient.portfolio.findUnique.resolves(mockPortfolio);
-      mockPrismaClient.transaction.findMany.resolves(mockTransactions);
+      sinon.stub(transactionService, 'getTransactionsByHolding').resolves(mockPaginatedTransactions);
 
-      await transactionController.getTransactionsByHolding(req as any, res as any, next);
+      await transactionController.getTransactionsByHolding(req as any, res, next);
 
-      expect(jsonStub).to.have.been.calledWith(mockTransactions);
+      verifyResponse(res, 200, mockPaginatedTransactions);
     });
 
     it('should return 404 if holding not found', async () => {
-      req = {
+      req = createMockRequest({
         params: { holdingId: '999' },
+        query: {
+          startDate: '2024-01-01',
+          endDate: '2024-01-31'
+        },
         user: { id: 'user1' }
-      } as any;
+      });
 
-      mockPrismaClient.holding.findUnique.resolves(null);
+      const error = new Error('Holding not found');
+      sinon.stub(transactionService, 'getTransactionsByHolding').rejects(error);
 
-      await transactionController.getTransactionsByHolding(req as any, res as any, next);
+      await transactionController.getTransactionsByHolding(req as any, res, next);
 
-      expect(statusStub).to.have.been.calledWith(404);
-      expect(jsonStub).to.have.been.calledWith({ error: 'Holding not found' });
+      verifyResponse(res, 404, { error: 'Holding not found' });
     });
 
     it('should return 403 if user is not authorized', async () => {
-      req = {
+      req = createMockRequest({
         params: { holdingId: '1' },
+        query: {
+          startDate: '2024-01-01',
+          endDate: '2024-01-31'
+        },
         user: { id: 'user2' }
-      } as any;
+      });
 
-      mockPrismaClient.holding.findUnique.resolves(mockHolding);
-      mockPrismaClient.portfolio.findUnique.resolves(mockPortfolio);
+      const error = new Error('Unauthorized');
+      sinon.stub(transactionService, 'getTransactionsByHolding').rejects(error);
 
-      await transactionController.getTransactionsByHolding(req as any, res as any, next);
+      await transactionController.getTransactionsByHolding(req as any, res, next);
 
-      expect(statusStub).to.have.been.calledWith(403);
-      expect(jsonStub).to.have.been.calledWith({ error: 'Unauthorized' });
+      verifyResponse(res, 403, { error: 'Unauthorized' });
     });
 
     it('should handle errors gracefully', async () => {
-      req = {
+      req = createMockRequest({
         params: { holdingId: '1' },
+        query: {
+          startDate: '2024-01-01',
+          endDate: '2024-01-31'
+        },
         user: { id: 'user1' }
-      } as any;
+      });
 
       const error = new Error('Database error');
-      mockPrismaClient.holding.findUnique.rejects(error);
+      sinon.stub(transactionService, 'getTransactionsByHolding').rejects(error);
 
-      await transactionController.getTransactionsByHolding(req as any, res as any, next);
+      await transactionController.getTransactionsByHolding(req as any, res, next);
 
-      expect(next).to.have.been.calledWith(error);
+      expect(next.calledWith(error)).to.be.true;
     });
   });
 });
