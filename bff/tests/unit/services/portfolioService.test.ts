@@ -248,4 +248,244 @@ describe('PortfolioService', () => {
         .to.be.rejectedWith('Failed to delete portfolio');
     });
   });
+
+  describe('getPortfolioSummary', () => {
+    const mockDBPortfolio = {
+      PORTFOLIOS_ID: '1',
+      USERS_ID: 'user1',
+      NAME: 'Test Portfolio',
+      CREATED_AT: new Date()
+    };
+
+    const mockHoldings = [
+      {
+        HOLDINGS_ID: 'h1',
+        ISIN: 'AAPL',
+        QUANTITY: 10,
+        currentPrice: 150
+      },
+      {
+        HOLDINGS_ID: 'h2',
+        ISIN: 'MSFT',
+        QUANTITY: 5,
+        currentPrice: 200
+      }
+    ];
+
+    it('should return portfolio summary if found', async () => {
+      mockPortfolioRepo.findById.resolves(mockDBPortfolio);
+      holdingServiceStub.resolves(mockHoldings);
+
+      const result = await portfolioService.getPortfolioSummary('1');
+      expect(result).to.not.be.null;
+      if (result) {
+        expect(result).to.have.all.keys([
+          'totalValue',
+          'totalGainLoss',
+          'totalGainLossPercentage',
+          'numberOfHoldings',
+          'topPerformers'
+        ]);
+        expect(result.numberOfHoldings).to.equal(2);
+        expect(result.topPerformers).to.be.an('array');
+      }
+    });
+
+    it('should return null if portfolio not found', async () => {
+      mockPortfolioRepo.findById.resolves(null);
+
+      const result = await portfolioService.getPortfolioSummary('999');
+      expect(result).to.be.null;
+    });
+  });
+
+  describe('getPortfolioPerformance', () => {
+    const mockDBPortfolio = {
+      PORTFOLIOS_ID: '1',
+      USERS_ID: 'user1',
+      NAME: 'Test Portfolio',
+      CREATED_AT: new Date()
+    };
+
+    it('should return portfolio performance if found', async () => {
+      mockPortfolioRepo.findById.resolves(mockDBPortfolio);
+      holdingServiceStub.resolves([]);
+
+      const result = await portfolioService.getPortfolioPerformance('1');
+      expect(result).to.not.be.null;
+      if (result) {
+        expect(result).to.have.all.keys(['daily', 'weekly', 'monthly']);
+        expect(result.daily).to.be.an('array');
+        expect(result.weekly).to.be.an('array');
+        expect(result.monthly).to.be.an('array');
+        expect(result.daily).to.have.lengthOf(7);
+        expect(result.weekly).to.have.lengthOf(4);
+        expect(result.monthly).to.have.lengthOf(12);
+      }
+    });
+
+    it('should return null if portfolio not found', async () => {
+      mockPortfolioRepo.findById.resolves(null);
+
+      const result = await portfolioService.getPortfolioPerformance('999');
+      expect(result).to.be.null;
+    });
+  });
+
+  describe('getPortfolioHoldings', () => {
+    const mockDBPortfolio = {
+      PORTFOLIOS_ID: '1',
+      USERS_ID: 'user1',
+      NAME: 'Test Portfolio',
+      CREATED_AT: new Date()
+    };
+
+    const mockHoldings = [
+      {
+        HOLDINGS_ID: 'h1',
+        ISIN: 'AAPL',
+        QUANTITY: 10,
+        currentPrice: 150
+      }
+    ];
+
+    it('should return portfolio holdings if found', async () => {
+      mockPortfolioRepo.findById.resolves(mockDBPortfolio);
+      holdingServiceStub.resolves(mockHoldings);
+
+      const result = await portfolioService.getPortfolioHoldings('1');
+      expect(result).to.not.be.null;
+      if (result) {
+        expect(result).to.be.an('array');
+        expect(result[0]).to.have.all.keys([
+          'id',
+          'stockId',
+          'quantity',
+          'averageCost',
+          'currentValue',
+          'gainLoss',
+          'gainLossPercentage'
+        ]);
+      }
+    });
+
+    it('should return null if portfolio not found', async () => {
+      mockPortfolioRepo.findById.resolves(null);
+
+      const result = await portfolioService.getPortfolioHoldings('999');
+      expect(result).to.be.null;
+    });
+  });
+
+  describe('getPortfolioAllocation', () => {
+    const mockDBPortfolio = {
+      PORTFOLIOS_ID: '1',
+      USERS_ID: 'user1',
+      NAME: 'Test Portfolio',
+      CREATED_AT: new Date()
+    };
+
+    it('should return portfolio allocation if found', async () => {
+      mockPortfolioRepo.findById.resolves(mockDBPortfolio);
+
+      const result = await portfolioService.getPortfolioAllocation('1');
+      expect(result).to.not.be.null;
+      if (result) {
+        expect(result).to.have.all.keys(['bySector', 'byAssetType']);
+        expect(result.bySector).to.be.an('array');
+        expect(result.byAssetType).to.be.an('array');
+        
+        // Check if percentages sum up to 100
+        const sectorTotal = result.bySector.reduce((sum, item) => sum + item.percentage, 0);
+        const assetTypeTotal = result.byAssetType.reduce((sum, item) => sum + item.percentage, 0);
+        
+        expect(Math.round(sectorTotal)).to.equal(100);
+        expect(Math.round(assetTypeTotal)).to.equal(100);
+      }
+    });
+
+    it('should return null if portfolio not found', async () => {
+      mockPortfolioRepo.findById.resolves(null);
+
+      const result = await portfolioService.getPortfolioAllocation('999');
+      expect(result).to.be.null;
+    });
+  });
+
+  describe('getPortfolioReturns', () => {
+    const mockDBPortfolio = {
+      PORTFOLIOS_ID: '1',
+      USERS_ID: 'user1',
+      NAME: 'Test Portfolio',
+      CREATED_AT: new Date()
+    };
+
+    it('should return portfolio returns if found', async () => {
+      mockPortfolioRepo.findById.resolves(mockDBPortfolio);
+
+      const result = await portfolioService.getPortfolioReturns('1');
+      expect(result).to.not.be.null;
+      if (result) {
+        expect(result).to.have.all.keys([
+          'totalReturn',
+          'totalReturnPercentage',
+          'annualizedReturn',
+          'periodReturns'
+        ]);
+        expect(result.periodReturns).to.have.all.keys([
+          '1d', '1w', '1m', '3m', '6m', '1y', 'ytd'
+        ]);
+      }
+    });
+
+    it('should return null if portfolio not found', async () => {
+      mockPortfolioRepo.findById.resolves(null);
+
+      const result = await portfolioService.getPortfolioReturns('999');
+      expect(result).to.be.null;
+    });
+  });
+
+  describe('getPortfolioHistory', () => {
+    const mockDBPortfolio = {
+      PORTFOLIOS_ID: '1',
+      USERS_ID: 'user1',
+      NAME: 'Test Portfolio',
+      CREATED_AT: new Date()
+    };
+
+    it('should return portfolio history if found', async () => {
+      mockPortfolioRepo.findById.resolves(mockDBPortfolio);
+
+      const result = await portfolioService.getPortfolioHistory('1');
+      expect(result).to.not.be.null;
+      if (result) {
+        expect(result).to.have.all.keys(['transactions', 'valueHistory']);
+        expect(result.transactions).to.be.an('array');
+        expect(result.valueHistory).to.be.an('array');
+        if (result.transactions.length > 0) {
+          expect(result.transactions[0]).to.have.all.keys([
+            'date',
+            'type',
+            'symbol',
+            'quantity',
+            'price'
+          ]);
+        }
+        if (result.valueHistory.length > 0) {
+          expect(result.valueHistory[0]).to.have.all.keys([
+            'date',
+            'value'
+          ]);
+        }
+      }
+    });
+
+    it('should return null if portfolio not found', async () => {
+      mockPortfolioRepo.findById.resolves(null);
+
+      const result = await portfolioService.getPortfolioHistory('999');
+      expect(result).to.be.null;
+    });
+  });
 });

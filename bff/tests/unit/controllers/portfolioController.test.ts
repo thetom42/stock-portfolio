@@ -197,4 +197,269 @@ describe('PortfolioController', () => {
       verifyResponse(res, 404, { error: 'Portfolio not found' });
     });
   });
+
+  describe('getPortfolioSummary', () => {
+    const mockSummary = {
+      totalValue: 10000,
+      totalGainLoss: 500,
+      totalGainLossPercentage: 5,
+      numberOfHoldings: 3,
+      topPerformers: [
+        { symbol: 'AAPL', gainLossPercentage: 15 },
+        { symbol: 'MSFT', gainLossPercentage: 10 }
+      ]
+    };
+
+    it('should return portfolio summary if found', async () => {
+      req = createMockRequest({
+        params: { id: '1' },
+        user: { id: 'user1' }
+      });
+
+      sinon.stub(portfolioService, 'getPortfolioSummary').resolves(mockSummary);
+
+      await portfolioController.getPortfolioSummary(req as any, res as any, next);
+
+      verifyResponse(res, 200, { summary: mockSummary });
+    });
+
+    it('should return 404 if portfolio not found', async () => {
+      req = createMockRequest({
+        params: { id: '999' },
+        user: { id: 'user1' }
+      });
+
+      sinon.stub(portfolioService, 'getPortfolioSummary').resolves(null);
+
+      await portfolioController.getPortfolioSummary(req as any, res as any, next);
+
+      verifyResponse(res, 404, { error: 'Portfolio not found' });
+    });
+  });
+
+  describe('getPortfolioPerformance', () => {
+    const mockPerformance = {
+      daily: [
+        { date: '2023-01-01', value: 10000 },
+        { date: '2023-01-02', value: 10500 }
+      ],
+      weekly: [
+        { date: '2023-W1', value: 10000 },
+        { date: '2023-W2', value: 11000 }
+      ],
+      monthly: [
+        { date: '2023-01', value: 10000 },
+        { date: '2023-02', value: 12000 }
+      ]
+    };
+
+    it('should return portfolio performance if found', async () => {
+      req = createMockRequest({
+        params: { id: '1' },
+        user: { id: 'user1' }
+      });
+
+      sinon.stub(portfolioService, 'getPortfolioPerformance').resolves(mockPerformance);
+
+      await portfolioController.getPortfolioPerformance(req as any, res as any, next);
+
+      verifyResponse(res, 200, { performance: mockPerformance });
+    });
+
+    it('should return 404 if portfolio not found', async () => {
+      req = createMockRequest({
+        params: { id: '999' },
+        user: { id: 'user1' }
+      });
+
+      sinon.stub(portfolioService, 'getPortfolioPerformance').resolves(null);
+
+      await portfolioController.getPortfolioPerformance(req as any, res as any, next);
+
+      verifyResponse(res, 404, { error: 'Portfolio not found' });
+    });
+  });
+
+  describe('getPortfolioHoldings', () => {
+    const mockHoldings = [
+      {
+        id: '1',
+        stockId: 'AAPL',
+        quantity: 10,
+        averageCost: 150,
+        currentValue: 1600,
+        gainLoss: 100,
+        gainLossPercentage: 6.67
+      },
+      {
+        id: '2',
+        stockId: 'MSFT',
+        quantity: 5,
+        averageCost: 200,
+        currentValue: 1100,
+        gainLoss: 100,
+        gainLossPercentage: 10
+      }
+    ];
+
+    it('should return portfolio holdings if found', async () => {
+      req = createMockRequest({
+        params: { id: '1' },
+        user: { id: 'user1' }
+      });
+
+      sinon.stub(portfolioService, 'getPortfolioHoldings').resolves(mockHoldings);
+
+      await portfolioController.getPortfolioHoldings(req as any, res as any, next);
+
+      verifyResponse(res, 200, { holdings: mockHoldings });
+    });
+
+    it('should return 404 if portfolio not found', async () => {
+      req = createMockRequest({
+        params: { id: '999' },
+        user: { id: 'user1' }
+      });
+
+      sinon.stub(portfolioService, 'getPortfolioHoldings').resolves(null);
+
+      await portfolioController.getPortfolioHoldings(req as any, res as any, next);
+
+      verifyResponse(res, 404, { error: 'Portfolio not found' });
+    });
+  });
+
+  describe('getPortfolioAllocation', () => {
+    const mockAllocation = {
+      bySector: [
+        { sector: 'Technology', percentage: 45 },
+        { sector: 'Healthcare', percentage: 30 },
+        { sector: 'Finance', percentage: 25 }
+      ],
+      byAssetType: [
+        { type: 'Stocks', percentage: 80 },
+        { type: 'ETFs', percentage: 20 }
+      ]
+    };
+
+    it('should return portfolio allocation if found', async () => {
+      req = createMockRequest({
+        params: { id: '1' },
+        user: { id: 'user1' }
+      });
+
+      sinon.stub(portfolioService, 'getPortfolioAllocation').resolves(mockAllocation);
+
+      await portfolioController.getPortfolioAllocation(req as any, res as any, next);
+
+      verifyResponse(res, 200, { allocation: mockAllocation });
+    });
+
+    it('should return 404 if portfolio not found', async () => {
+      req = createMockRequest({
+        params: { id: '999' },
+        user: { id: 'user1' }
+      });
+
+      sinon.stub(portfolioService, 'getPortfolioAllocation').resolves(null);
+
+      await portfolioController.getPortfolioAllocation(req as any, res as any, next);
+
+      verifyResponse(res, 404, { error: 'Portfolio not found' });
+    });
+  });
+
+  describe('getPortfolioReturns', () => {
+    const mockReturns = {
+      totalReturn: 1500,
+      totalReturnPercentage: 15,
+      annualizedReturn: 12,
+      periodReturns: {
+        '1d': 0.5,
+        '1w': 2.5,
+        '1m': 5,
+        '3m': 8,
+        '6m': 10,
+        '1y': 15,
+        'ytd': 12
+      }
+    };
+
+    it('should return portfolio returns if found', async () => {
+      req = createMockRequest({
+        params: { id: '1' },
+        user: { id: 'user1' }
+      });
+
+      sinon.stub(portfolioService, 'getPortfolioReturns').resolves(mockReturns);
+
+      await portfolioController.getPortfolioReturns(req as any, res as any, next);
+
+      verifyResponse(res, 200, { returns: mockReturns });
+    });
+
+    it('should return 404 if portfolio not found', async () => {
+      req = createMockRequest({
+        params: { id: '999' },
+        user: { id: 'user1' }
+      });
+
+      sinon.stub(portfolioService, 'getPortfolioReturns').resolves(null);
+
+      await portfolioController.getPortfolioReturns(req as any, res as any, next);
+
+      verifyResponse(res, 404, { error: 'Portfolio not found' });
+    });
+  });
+
+  describe('getPortfolioHistory', () => {
+    const mockHistory = {
+      transactions: [
+        {
+          date: '2023-01-01',
+          type: 'BUY',
+          symbol: 'AAPL',
+          quantity: 10,
+          price: 150
+        },
+        {
+          date: '2023-02-01',
+          type: 'SELL',
+          symbol: 'MSFT',
+          quantity: 5,
+          price: 200
+        }
+      ],
+      valueHistory: [
+        { date: '2023-01-01', value: 10000 },
+        { date: '2023-02-01', value: 11000 }
+      ]
+    };
+
+    it('should return portfolio history if found', async () => {
+      req = createMockRequest({
+        params: { id: '1' },
+        user: { id: 'user1' }
+      });
+
+      sinon.stub(portfolioService, 'getPortfolioHistory').resolves(mockHistory);
+
+      await portfolioController.getPortfolioHistory(req as any, res as any, next);
+
+      verifyResponse(res, 200, { history: mockHistory });
+    });
+
+    it('should return 404 if portfolio not found', async () => {
+      req = createMockRequest({
+        params: { id: '999' },
+        user: { id: 'user1' }
+      });
+
+      sinon.stub(portfolioService, 'getPortfolioHistory').resolves(null);
+
+      await portfolioController.getPortfolioHistory(req as any, res as any, next);
+
+      verifyResponse(res, 404, { error: 'Portfolio not found' });
+    });
+  });
 });

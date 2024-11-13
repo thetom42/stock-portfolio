@@ -88,3 +88,117 @@ export const deletePortfolio = async (
     next(error);
   }
 };
+
+export const getPortfolioSummary = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const portfolioId = req.params.id;
+    const summary = await portfolioService.getPortfolioSummary(portfolioId);
+
+    if (!summary) {
+      return res.status(404).json({ error: 'Portfolio not found' });
+    }
+
+    res.json({ summary });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPortfolioPerformance = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const portfolioId = req.params.id;
+    const performance = await portfolioService.getPortfolioPerformance(portfolioId);
+
+    if (!performance) {
+      return res.status(404).json({ error: 'Portfolio not found' });
+    }
+
+    res.json({ performance });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPortfolioHoldings = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const portfolioId = req.params.id;
+    const holdings = await portfolioService.getPortfolioHoldings(portfolioId);
+
+    if (!holdings) {
+      return res.status(404).json({ error: 'Portfolio not found' });
+    }
+
+    res.json({ holdings });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPortfolioAllocation = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const portfolioId = req.params.id;
+    const allocation = await portfolioService.getPortfolioAllocation(portfolioId);
+
+    if (!allocation) {
+      return res.status(404).json({ error: 'Portfolio not found' });
+    }
+
+    res.json({ allocation });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPortfolioReturns = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const portfolioId = req.params.id;
+    const returns = await portfolioService.getPortfolioReturns(portfolioId);
+
+    if (!returns) {
+      return res.status(404).json({ error: 'Portfolio not found' });
+    }
+
+    res.json({ returns });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPortfolioHistory = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const portfolioId = req.params.id;
+    const history = await portfolioService.getPortfolioHistory(portfolioId);
+
+    if (!history) {
+      return res.status(404).json({ error: 'Portfolio not found' });
+    }
+
+    res.json({ history });
+  } catch (error) {
+    next(error);
+  }
+};
