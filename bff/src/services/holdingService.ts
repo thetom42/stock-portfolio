@@ -4,6 +4,8 @@ import * as stockService from './stockService';
 import * as quoteService from './quoteService';
 import { HoldingRepository } from '../../../db/repositories/HoldingRepository';
 import { TransactionRepository } from '../../../db/repositories/TransactionRepository';
+import { QuoteInterval } from '../models/Quote';
+import { Decimal } from '@prisma/client/runtime/library';
 
 // Initialize repositories
 const prisma = getPrismaClient();
@@ -78,9 +80,9 @@ export const createHolding = async (
       HOLDINGS_ID: dbHolding.HOLDINGS_ID,
       BUY: true, // Initial transaction is always a buy
       AMOUNT: holdingData.QUANTITY,
-      PRICE: holdingData.PRICE,
+      PRICE: new Decimal(holdingData.PRICE),
       TRANSACTION_TIME: new Date(),
-      COMMISSION: 0,
+      COMMISSION: new Decimal(0),
       BROKER: 'SYSTEM'
     });
 
@@ -139,4 +141,84 @@ export const closeHolding = async (holdingId: string): Promise<void> => {
     }
     throw new Error('Failed to close holding');
   }
+};
+
+export const getHoldingPerformance = async (holdingId: string) => {
+  const holding = await holdingRepository.findById(holdingId);
+  if (!holding) {
+    throw new Error('Holding not found');
+  }
+
+  const transactions = await transactionRepository.findByHolding(holdingId);
+  const totalCost = await transactionRepository.getTotalValue(holdingId);
+  const holdingDetails = await mapDBHoldingToDetails(holding);
+
+  const totalReturn = holdingDetails.gainLoss;
+  const percentageReturn = holdingDetails.gainLossPercentage;
+
+  // Calculate holding period in days
+  const holdingPeriod = Math.floor(
+    (new Date().getTime() - holding.START_DATE.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  // Calculate annualized return
+  const annualizedReturn = 
+    holdingPeriod > 0 
+      ? (Math.pow(1 + percentageReturn / 100, 365 / holdingPeriod) - 1) * 100
+      : 0;
+
+  return {
+    totalReturn,
+    percentageReturn,
+    annualizedReturn,
+    holdingPeriod
+  };
+};
+
+export const getHoldingTransactions = async (holdingId: string) => {
+  const holding = await holdingRepository.findById(holdingId);
+  if (!holding) {
+    throw new Error('Holding not found');
+  }
+
+  return await transactionRepository.findByHolding(holdingId);
+};
+
+export const getHoldingValue = async (holdingId: string) => {
+  const holding = await holdingRepository.findById(holdingId);
+  if (!holding) {
+    throw new Error('Holding not found');
+  }
+
+  const holdingDetails = await mapDBHoldingToDetails(holding);
+  const totalCost = await transactionRepository.getTotalValue(holdingId);
+
+  return {
+    currentValue: holdingDetails.totalValue,
+    costBasis: Number(totalCost),
+    unrealizedGainLoss: holdingDetails.gainLoss,
+    unrealizedGainLossPercentage: holdingDetails.gainLossPercentage
+  };
+};
+
+export const getHoldingHistory = async (holdingId: string) => {
+  const holding = await holdingRepository.findById(holdingId);
+  if (!holding) {
+    throw new Error('Holding not found');
+  }
+
+  // Get historical quotes for the holding's stock
+  const interval: QuoteInterval = {
+    interval: '1d',
+    range: '1y'
+  };
+  
+  const quoteHistory = await quoteService.getHistoricalQuotes(holding.ISIN, interval);
+
+  // Map quotes to holding history entries
+  return quoteHistory.quotes.map(quote => ({
+    date: quote.date,
+    price: quote.close,
+    value: quote.close * holding.QUANTITY
+  }));
 };

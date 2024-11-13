@@ -89,3 +89,91 @@ export const deleteHolding = async (
     }
   }
 };
+
+export const getHoldingPerformance = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const holdingId = req.params.id;
+    const performance = await holdingService.getHoldingPerformance(holdingId);
+    res.json({ performance });
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'Holding not found') {
+        res.status(404).json({ error: error.message });
+      } else {
+        next(error);
+      }
+    } else {
+      next(error);
+    }
+  }
+};
+
+export const getHoldingTransactions = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const holdingId = req.params.id;
+    const transactions = await holdingService.getHoldingTransactions(holdingId);
+    res.json({ transactions });
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'Holding not found') {
+        res.status(404).json({ error: error.message });
+      } else {
+        next(error);
+      }
+    } else {
+      next(error);
+    }
+  }
+};
+
+export const getHoldingValue = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const holdingId = req.params.id;
+    const value = await holdingService.getHoldingValue(holdingId);
+    res.json({ value });
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'Holding not found') {
+        res.status(404).json({ error: error.message });
+      } else {
+        next(error);
+      }
+    } else {
+      next(error);
+    }
+  }
+};
+
+export const getHoldingHistory = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const holdingId = req.params.id;
+    const history = await holdingService.getHoldingHistory(holdingId);
+    res.json({ history });
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'Holding not found') {
+        res.status(404).json({ error: error.message });
+      } else {
+        next(error);
+      }
+    } else {
+      next(error);
+    }
+  }
+};

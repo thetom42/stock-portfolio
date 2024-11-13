@@ -37,6 +37,35 @@ describe('HoldingService', () => {
     sinon.restore();
   });
 
+  const mockHolding = {
+    HOLDINGS_ID: '1',
+    PORTFOLIOS_ID: '1',
+    ISIN: 'US0378331005',
+    QUANTITY: 10,
+    START_DATE: new Date('2023-01-01'),
+    END_DATE: null
+  };
+
+  const mockStock = {
+    id: '1',
+    symbol: 'AAPL',
+    isin: 'US0378331005',
+    name: 'Apple Inc.',
+    currency: 'USD',
+    exchange: 'NASDAQ',
+    country: 'USA',
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
+
+  const mockQuote = {
+    id: '1',
+    stockId: '1',
+    price: 150.50,
+    currency: 'USD',
+    timestamp: new Date()
+  };
+
   describe('createHolding', () => {
     const mockCreateData: CreateHoldingDTO = {
       PORTFOLIOS_ID: '1',
@@ -45,39 +74,10 @@ describe('HoldingService', () => {
       PRICE: 150.50
     };
 
-    const mockStock = {
-      id: '1',
-      symbol: 'AAPL',
-      isin: 'US0378331005',
-      name: 'Apple Inc.',
-      currency: 'USD',
-      exchange: 'NASDAQ',
-      country: 'USA',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    const mockQuote = {
-      id: '1',
-      stockId: '1',
-      price: 150.50,
-      currency: 'USD',
-      timestamp: new Date()
-    };
-
-    const mockCreatedHolding = {
-      HOLDINGS_ID: '1',
-      PORTFOLIOS_ID: '1',
-      ISIN: 'US0378331005',
-      QUANTITY: 10,
-      START_DATE: new Date(),
-      END_DATE: null
-    };
-
     it('should create a holding with initial transaction', async () => {
       stockServiceStub.resolves(mockStock);
       quoteServiceStub.resolves([mockQuote]);
-      mockHoldingRepo.create.resolves(mockCreatedHolding);
+      mockHoldingRepo.create.resolves(mockHolding);
       
       const mockTransaction: Transaction = {
         TRANSACTIONS_ID: '1',
@@ -96,17 +96,17 @@ describe('HoldingService', () => {
       const result = await holdingService.createHolding(mockCreateData);
 
       expect(result).to.deep.include({
-        HOLDINGS_ID: mockCreatedHolding.HOLDINGS_ID,
-        PORTFOLIOS_ID: mockCreatedHolding.PORTFOLIOS_ID,
-        ISIN: mockCreatedHolding.ISIN,
-        QUANTITY: mockCreatedHolding.QUANTITY,
+        HOLDINGS_ID: mockHolding.HOLDINGS_ID,
+        PORTFOLIOS_ID: mockHolding.PORTFOLIOS_ID,
+        ISIN: mockHolding.ISIN,
+        QUANTITY: mockHolding.QUANTITY,
         stock: {
           symbol: mockStock.symbol,
           name: mockStock.name,
           currency: mockStock.currency
         },
         currentPrice: mockQuote.price,
-        totalValue: mockQuote.price * mockCreatedHolding.QUANTITY
+        totalValue: mockQuote.price * mockHolding.QUANTITY
       });
 
       expect(mockHoldingRepo.create.firstCall.args[0]).to.deep.include({
@@ -120,7 +120,7 @@ describe('HoldingService', () => {
       const createTransactionCall = mockTransactionRepo.create.firstCall.args[0];
       expect(createTransactionCall).to.deep.include({
         TRANSACTIONS_ID: '',
-        HOLDINGS_ID: mockCreatedHolding.HOLDINGS_ID,
+        HOLDINGS_ID: mockHolding.HOLDINGS_ID,
         BUY: true,
         AMOUNT: mockCreateData.QUANTITY,
         BROKER: 'SYSTEM'
@@ -138,35 +138,6 @@ describe('HoldingService', () => {
   });
 
   describe('getHoldingById', () => {
-    const mockHolding = {
-      HOLDINGS_ID: '1',
-      PORTFOLIOS_ID: '1',
-      ISIN: 'US0378331005',
-      QUANTITY: 10,
-      START_DATE: new Date(),
-      END_DATE: null
-    };
-
-    const mockStock = {
-      id: '1',
-      symbol: 'AAPL',
-      isin: 'US0378331005',
-      name: 'Apple Inc.',
-      currency: 'USD',
-      exchange: 'NASDAQ',
-      country: 'USA',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    const mockQuote = {
-      id: '1',
-      stockId: '1',
-      price: 150.50,
-      currency: 'USD',
-      timestamp: new Date()
-    };
-
     it('should return holding if found', async () => {
       mockHoldingRepo.findById.resolves(mockHolding);
       stockServiceStub.resolves(mockStock);
@@ -204,37 +175,13 @@ describe('HoldingService', () => {
       QUANTITY: 15
     };
 
-    const mockHolding = {
-      HOLDINGS_ID: '1',
-      PORTFOLIOS_ID: '1',
-      ISIN: 'US0378331005',
-      QUANTITY: 15,
-      START_DATE: new Date(),
-      END_DATE: null
-    };
-
-    const mockStock = {
-      id: '1',
-      symbol: 'AAPL',
-      isin: 'US0378331005',
-      name: 'Apple Inc.',
-      currency: 'USD',
-      exchange: 'NASDAQ',
-      country: 'USA',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    const mockQuote = {
-      id: '1',
-      stockId: '1',
-      price: 150.50,
-      currency: 'USD',
-      timestamp: new Date()
+    const updatedMockHolding = {
+      ...mockHolding,
+      QUANTITY: 15
     };
 
     it('should update holding successfully', async () => {
-      mockHoldingRepo.updateQuantity.resolves(mockHolding);
+      mockHoldingRepo.updateQuantity.resolves(updatedMockHolding);
       stockServiceStub.resolves(mockStock);
       quoteServiceStub.resolves([mockQuote]);
       mockTransactionRepo.getTotalValue.resolves(createDecimal(2257.50));
@@ -276,6 +223,142 @@ describe('HoldingService', () => {
 
       await expect(holdingService.closeHolding('1'))
         .to.be.rejectedWith('Holding is already closed');
+    });
+  });
+
+  describe('getHoldingPerformance', () => {
+    it('should return performance metrics for a holding', async () => {
+      mockHoldingRepo.findById.resolves(mockHolding);
+      stockServiceStub.resolves(mockStock);
+      quoteServiceStub.resolves([mockQuote]);
+      mockTransactionRepo.getTotalValue.resolves(createDecimal(1505.00));
+      mockTransactionRepo.findByHolding.resolves([]);
+
+      const result = await holdingService.getHoldingPerformance('1');
+
+      expect(result).to.have.all.keys([
+        'totalReturn',
+        'percentageReturn',
+        'annualizedReturn',
+        'holdingPeriod'
+      ]);
+      expect(result.holdingPeriod).to.be.a('number');
+      expect(result.totalReturn).to.be.a('number');
+      expect(result.percentageReturn).to.be.a('number');
+      expect(result.annualizedReturn).to.be.a('number');
+    });
+
+    it('should throw error if holding not found', async () => {
+      mockHoldingRepo.findById.resolves(null);
+
+      await expect(holdingService.getHoldingPerformance('999'))
+        .to.be.rejectedWith('Holding not found');
+    });
+  });
+
+  describe('getHoldingTransactions', () => {
+    const mockTransactions = [{
+      TRANSACTIONS_ID: '1',
+      HOLDINGS_ID: '1',
+      BUY: true,
+      AMOUNT: 10,
+      PRICE: createDecimal(150.50),
+      TRANSACTION_TIME: new Date(),
+      COMMISSION: createDecimal(5.00),
+      BROKER: 'Example Broker'
+    }];
+
+    it('should return transactions for a holding', async () => {
+      mockHoldingRepo.findById.resolves(mockHolding);
+      mockTransactionRepo.findByHolding.resolves(mockTransactions);
+
+      const result = await holdingService.getHoldingTransactions('1');
+
+      expect(result).to.deep.equal(mockTransactions);
+      expect(mockTransactionRepo.findByHolding.calledWith('1')).to.be.true;
+    });
+
+    it('should throw error if holding not found', async () => {
+      mockHoldingRepo.findById.resolves(null);
+
+      await expect(holdingService.getHoldingTransactions('999'))
+        .to.be.rejectedWith('Holding not found');
+    });
+  });
+
+  describe('getHoldingValue', () => {
+    it('should return value metrics for a holding', async () => {
+      mockHoldingRepo.findById.resolves(mockHolding);
+      stockServiceStub.resolves(mockStock);
+      quoteServiceStub.resolves([mockQuote]);
+      mockTransactionRepo.getTotalValue.resolves(createDecimal(1505.00));
+      mockTransactionRepo.findByHolding.resolves([]);
+
+      const result = await holdingService.getHoldingValue('1');
+
+      expect(result).to.have.all.keys([
+        'currentValue',
+        'costBasis',
+        'unrealizedGainLoss',
+        'unrealizedGainLossPercentage'
+      ]);
+      expect(result.currentValue).to.equal(mockQuote.price * mockHolding.QUANTITY);
+      expect(result.costBasis).to.equal(1505.00);
+    });
+
+    it('should throw error if holding not found', async () => {
+      mockHoldingRepo.findById.resolves(null);
+
+      await expect(holdingService.getHoldingValue('999'))
+        .to.be.rejectedWith('Holding not found');
+    });
+  });
+
+  describe('getHoldingHistory', () => {
+    const mockHistoricalQuotes = {
+      symbol: 'AAPL',
+      interval: '1d',
+      quotes: [
+        {
+          date: new Date('2023-01-01'),
+          open: 150.00,
+          high: 151.00,
+          low: 149.00,
+          close: 150.50,
+          adjustedClose: 150.50,
+          volume: 1000000
+        },
+        {
+          date: new Date('2023-01-02'),
+          open: 150.50,
+          high: 152.00,
+          low: 150.00,
+          close: 151.50,
+          adjustedClose: 151.50,
+          volume: 1100000
+        }
+      ]
+    };
+
+    beforeEach(() => {
+      sinon.stub(quoteService, 'getHistoricalQuotes').resolves(mockHistoricalQuotes);
+    });
+
+    it('should return historical data for a holding', async () => {
+      mockHoldingRepo.findById.resolves(mockHolding);
+
+      const result = await holdingService.getHoldingHistory('1');
+
+      expect(result).to.be.an('array');
+      expect(result[0]).to.have.all.keys(['date', 'price', 'value']);
+      expect(result[0].value).to.equal(mockHistoricalQuotes.quotes[0].close * mockHolding.QUANTITY);
+    });
+
+    it('should throw error if holding not found', async () => {
+      mockHoldingRepo.findById.resolves(null);
+
+      await expect(holdingService.getHoldingHistory('999'))
+        .to.be.rejectedWith('Holding not found');
     });
   });
 });
