@@ -1,9 +1,20 @@
 import { protect } from '../config/keycloak';
 import * as portfolioController from '../controllers/portfolioController';
 import { validatePortfolioCreation, validatePortfolioUpdate, validateUUID } from '../middleware/validation';
-import type { Request, Response, NextFunction } from 'express-serve-static-core';
-import { AuthenticatedRequest } from '../types/express';
-import { CreatePortfolioDTO, UpdatePortfolioDTO } from '../models/Portfolio';
+import type { TypedRequest, TypedResponse, NextFunction, AuthenticatedRequest } from '../types/express';
+import { 
+  CreatePortfolioDTO, 
+  UpdatePortfolioDTO,
+  PortfolioResponse,
+  PortfoliosResponse,
+  SummaryResponse,
+  PerformanceResponse,
+  HoldingsResponse,
+  AllocationResponse,
+  ReturnsResponse,
+  HistoryResponse,
+  ErrorResponse
+} from '../models/Portfolio';
 
 import express = require('express');
 const router = express.Router();
@@ -12,50 +23,127 @@ const router = express.Router();
 router.use(protect());
 
 // Portfolio routes
-router.post('/', validatePortfolioCreation, (req: Request, res: Response, next: NextFunction) => {
-  portfolioController.createPortfolio(req as AuthenticatedRequest & { body: CreatePortfolioDTO }, res, next);
-});
+router.post('/',
+  validatePortfolioCreation,
+  (
+    req: AuthenticatedRequest<{}, {}, CreatePortfolioDTO>,
+    res: TypedResponse<PortfolioResponse | ErrorResponse>,
+    next: NextFunction
+  ) => {
+    portfolioController.createPortfolio(req, res, next);
+  }
+);
 
-router.get('/', (req: Request, res: Response, next: NextFunction) => {
-  portfolioController.getUserPortfolios(req as AuthenticatedRequest, res, next);
-});
+router.get('/',
+  (
+    req: AuthenticatedRequest,
+    res: TypedResponse<PortfoliosResponse>,
+    next: NextFunction
+  ) => {
+    portfolioController.getUserPortfolios(req, res, next);
+  }
+);
 
-router.get('/:id', validateUUID('id'), (req: Request<{ id: string }>, res: Response, next: NextFunction) => {
-  portfolioController.getPortfolio(req as AuthenticatedRequest & { params: { id: string } }, res, next);
-});
+router.get('/:id',
+  validateUUID('id'),
+  (
+    req: AuthenticatedRequest<{ id: string }>,
+    res: TypedResponse<PortfolioResponse | ErrorResponse>,
+    next: NextFunction
+  ) => {
+    portfolioController.getPortfolio(req, res, next);
+  }
+);
 
-router.put('/:id', validateUUID('id'), validatePortfolioUpdate, (req: Request<{ id: string }>, res: Response, next: NextFunction) => {
-  portfolioController.updatePortfolio(req as AuthenticatedRequest & { params: { id: string }, body: UpdatePortfolioDTO }, res, next);
-});
+router.put('/:id',
+  validateUUID('id'),
+  validatePortfolioUpdate,
+  (
+    req: AuthenticatedRequest<{ id: string }, {}, UpdatePortfolioDTO>,
+    res: TypedResponse<PortfolioResponse | ErrorResponse>,
+    next: NextFunction
+  ) => {
+    portfolioController.updatePortfolio(req, res, next);
+  }
+);
 
-router.delete('/:id', validateUUID('id'), (req: Request<{ id: string }>, res: Response, next: NextFunction) => {
-  portfolioController.deletePortfolio(req as AuthenticatedRequest & { params: { id: string } }, res, next);
-});
+router.delete('/:id',
+  validateUUID('id'),
+  (
+    req: AuthenticatedRequest<{ id: string }>,
+    res: TypedResponse<void | ErrorResponse>,
+    next: NextFunction
+  ) => {
+    portfolioController.deletePortfolio(req, res, next);
+  }
+);
 
 // Portfolio summary and analysis
-router.get('/:id/summary', validateUUID('id'), (req: Request<{ id: string }>, res: Response, next: NextFunction) => {
-  portfolioController.getPortfolioSummary(req as AuthenticatedRequest & { params: { id: string } }, res, next);
-});
+router.get('/:id/summary',
+  validateUUID('id'),
+  (
+    req: AuthenticatedRequest<{ id: string }>,
+    res: TypedResponse<SummaryResponse | ErrorResponse>,
+    next: NextFunction
+  ) => {
+    portfolioController.getPortfolioSummary(req, res, next);
+  }
+);
 
-router.get('/:id/performance', validateUUID('id'), (req: Request<{ id: string }>, res: Response, next: NextFunction) => {
-  portfolioController.getPortfolioPerformance(req as AuthenticatedRequest & { params: { id: string } }, res, next);
-});
+router.get('/:id/performance',
+  validateUUID('id'),
+  (
+    req: AuthenticatedRequest<{ id: string }>,
+    res: TypedResponse<PerformanceResponse | ErrorResponse>,
+    next: NextFunction
+  ) => {
+    portfolioController.getPortfolioPerformance(req, res, next);
+  }
+);
 
-router.get('/:id/holdings', validateUUID('id'), (req: Request<{ id: string }>, res: Response, next: NextFunction) => {
-  portfolioController.getPortfolioHoldings(req as AuthenticatedRequest & { params: { id: string } }, res, next);
-});
+router.get('/:id/holdings',
+  validateUUID('id'),
+  (
+    req: AuthenticatedRequest<{ id: string }>,
+    res: TypedResponse<HoldingsResponse | ErrorResponse>,
+    next: NextFunction
+  ) => {
+    portfolioController.getPortfolioHoldings(req, res, next);
+  }
+);
 
 // Portfolio statistics
-router.get('/:id/allocation', validateUUID('id'), (req: Request<{ id: string }>, res: Response, next: NextFunction) => {
-  portfolioController.getPortfolioAllocation(req as AuthenticatedRequest & { params: { id: string } }, res, next);
-});
+router.get('/:id/allocation',
+  validateUUID('id'),
+  (
+    req: AuthenticatedRequest<{ id: string }>,
+    res: TypedResponse<AllocationResponse | ErrorResponse>,
+    next: NextFunction
+  ) => {
+    portfolioController.getPortfolioAllocation(req, res, next);
+  }
+);
 
-router.get('/:id/returns', validateUUID('id'), (req: Request<{ id: string }>, res: Response, next: NextFunction) => {
-  portfolioController.getPortfolioReturns(req as AuthenticatedRequest & { params: { id: string } }, res, next);
-});
+router.get('/:id/returns',
+  validateUUID('id'),
+  (
+    req: AuthenticatedRequest<{ id: string }>,
+    res: TypedResponse<ReturnsResponse | ErrorResponse>,
+    next: NextFunction
+  ) => {
+    portfolioController.getPortfolioReturns(req, res, next);
+  }
+);
 
-router.get('/:id/history', validateUUID('id'), (req: Request<{ id: string }>, res: Response, next: NextFunction) => {
-  portfolioController.getPortfolioHistory(req as AuthenticatedRequest & { params: { id: string } }, res, next);
-});
+router.get('/:id/history',
+  validateUUID('id'),
+  (
+    req: AuthenticatedRequest<{ id: string }>,
+    res: TypedResponse<HistoryResponse | ErrorResponse>,
+    next: NextFunction
+  ) => {
+    portfolioController.getPortfolioHistory(req, res, next);
+  }
+);
 
 export default router;

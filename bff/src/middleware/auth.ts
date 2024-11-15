@@ -1,19 +1,33 @@
-import type { Request, Response, NextFunction } from 'express-serve-static-core';
+import type { TypedRequest, TypedResponse, NextFunction, AuthenticatedRequest } from '../types/express';
 import { protect } from '../config/keycloak';
-import { AuthenticatedRequest } from '../types/express';
 
-// Type assertion helper for routes
-export const asAuthenticatedHandler = <T extends (...args: any[]) => any>(
-  handler: (req: AuthenticatedRequest, ...args: Parameters<T>) => ReturnType<T>
+// Define response types
+type ErrorResponse = { message: string };
+
+// Type assertion helper for routes with proper generic support
+export const asAuthenticatedHandler = <
+  T extends (...args: any[]) => any,
+  P = any,
+  ResBody = any,
+  ReqBody = any,
+  ReqQuery = any
+>(
+  handler: (
+    req: AuthenticatedRequest<P, ResBody, ReqBody, ReqQuery>,
+    ...args: Parameters<T>
+  ) => ReturnType<T>
 ) => {
-  return (req: Request, ...args: Parameters<T>) => {
-    return handler(req as AuthenticatedRequest, ...args);
+  return (
+    req: TypedRequest<P, ResBody, ReqBody, ReqQuery>,
+    ...args: Parameters<T>
+  ) => {
+    return handler(req as AuthenticatedRequest<P, ResBody, ReqBody, ReqQuery>, ...args);
   };
 };
 
 export const assertAuthenticated = (
-  req: Request,
-  res: Response,
+  req: TypedRequest,
+  res: TypedResponse<ErrorResponse>,
   next: NextFunction
 ) => {
   if (!req.user) {
@@ -23,8 +37,8 @@ export const assertAuthenticated = (
 };
 
 export const verifyOwnership = (
-  req: Request,
-  res: Response,
+  req: TypedRequest<{ userId?: string }, any, { userId?: string }>,
+  res: TypedResponse<ErrorResponse>,
   next: NextFunction
 ) => {
   const user = (req as AuthenticatedRequest).user;
@@ -43,7 +57,11 @@ export const verifyOwnership = (
 export const requireRole = (role: string) => {
   return [
     protect(),
-    (req: Request, res: Response, next: NextFunction) => {
+    (
+      req: TypedRequest,
+      res: TypedResponse<ErrorResponse>,
+      next: NextFunction
+    ) => {
       const user = (req as AuthenticatedRequest).user;
       if (user.roles?.includes(role)) {
         next();
@@ -56,7 +74,11 @@ export const requireRole = (role: string) => {
 
 export const requireAdmin = [
   protect(),
-  (req: Request, res: Response, next: NextFunction) => {
+  (
+    req: TypedRequest,
+    res: TypedResponse<ErrorResponse>,
+    next: NextFunction
+  ) => {
     const user = (req as AuthenticatedRequest).user;
     if (user.roles?.includes('admin')) {
       next();
@@ -67,8 +89,8 @@ export const requireAdmin = [
 ];
 
 export const attachUser = (
-  req: Request,
-  res: Response,
+  req: TypedRequest,
+  res: TypedResponse,
   next: NextFunction
 ) => {
   // This middleware would typically extract user info from the token
@@ -76,10 +98,14 @@ export const attachUser = (
   next();
 };
 
+interface AuthError extends Error {
+  name: 'TokenExpiredError' | 'JsonWebTokenError' | string;
+}
+
 export const authErrorHandler = (
-  err: Error,
-  req: Request,
-  res: Response,
+  err: AuthError,
+  req: TypedRequest,
+  res: TypedResponse<ErrorResponse>,
   next: NextFunction
 ) => {
   if (err.name === 'TokenExpiredError') {

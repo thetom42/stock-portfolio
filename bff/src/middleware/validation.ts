@@ -1,8 +1,17 @@
-import type { Request, Response, NextFunction } from 'express-serve-static-core';
-import { body, param, query, validationResult } from 'express-validator';
+import type { TypedRequest, TypedResponse, NextFunction } from '../types/express';
+import { body, param, query, validationResult, ValidationError } from 'express-validator';
 
-// Helper function to handle validation errors
-export const handleValidationErrors = (req: Request, res: Response, next: NextFunction) => {
+// Define validation error response type
+interface ValidationErrorResponse {
+  errors: ValidationError[];
+}
+
+// Helper function to handle validation errors with proper typing
+export const handleValidationErrors = (
+  req: TypedRequest,
+  res: TypedResponse<ValidationErrorResponse>,
+  next: NextFunction
+) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -30,7 +39,7 @@ export const validateUserCreation = [
     .matches(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/)
     .withMessage('Password must contain at least one letter and one number'),
   handleValidationErrors
-];
+] as const;
 
 export const validateUserUpdate = [
   body('firstName')
@@ -49,7 +58,7 @@ export const validateUserUpdate = [
     .normalizeEmail()
     .withMessage('Invalid email address'),
   handleValidationErrors
-];
+] as const;
 
 // Portfolio validation rules
 export const validatePortfolioCreation = [
@@ -61,7 +70,7 @@ export const validatePortfolioCreation = [
     .optional()
     .trim(),
   handleValidationErrors
-];
+] as const;
 
 export const validatePortfolioUpdate = [
   body('name')
@@ -73,7 +82,7 @@ export const validatePortfolioUpdate = [
     .optional()
     .trim(),
   handleValidationErrors
-];
+] as const;
 
 // Holding validation rules
 export const validateHoldingCreation = [
@@ -87,7 +96,7 @@ export const validateHoldingCreation = [
     .isFloat({ min: 0 })
     .withMessage('Purchase price must be greater than or equal to 0'),
   handleValidationErrors
-];
+] as const;
 
 export const validateHoldingUpdate = [
   body('quantity')
@@ -95,7 +104,7 @@ export const validateHoldingUpdate = [
     .isFloat({ min: 0.000001 })
     .withMessage('Quantity must be greater than 0'),
   handleValidationErrors
-];
+] as const;
 
 // Transaction validation rules
 export const validateTransactionCreation = [
@@ -116,7 +125,7 @@ export const validateTransactionCreation = [
     .optional()
     .trim(),
   handleValidationErrors
-];
+] as const;
 
 // Category validation rules
 export const validateCategoryCreation = [
@@ -125,7 +134,7 @@ export const validateCategoryCreation = [
     .isLength({ min: 1 })
     .withMessage('Category name is required'),
   handleValidationErrors
-];
+] as const;
 
 export const validateCategoryUpdate = [
   body('NAME')
@@ -133,7 +142,7 @@ export const validateCategoryUpdate = [
     .isLength({ min: 1 })
     .withMessage('Category name is required'),
   handleValidationErrors
-];
+] as const;
 
 // Stock validation rules
 export const validateStockCreation = [
@@ -162,7 +171,7 @@ export const validateStockCreation = [
     .isUUID()
     .withMessage('Invalid category ID'),
   handleValidationErrors
-];
+] as const;
 
 export const validateStockUpdate = [
   body('name')
@@ -189,7 +198,7 @@ export const validateStockUpdate = [
     .isUUID()
     .withMessage('Invalid category ID'),
   handleValidationErrors
-];
+] as const;
 
 export const validateStockSearch = [
   query('query')
@@ -197,7 +206,7 @@ export const validateStockSearch = [
     .isLength({ min: 1 })
     .withMessage('Search query is required'),
   handleValidationErrors
-];
+] as const;
 
 // Parameter validation
 export const validateUUID = (paramName: string) => [
@@ -205,7 +214,7 @@ export const validateUUID = (paramName: string) => [
     .isUUID()
     .withMessage(`Invalid ${paramName} format`),
   handleValidationErrors
-];
+] as const;
 
 export const validateISIN = (paramName: string) => [
   param(paramName)
@@ -214,7 +223,7 @@ export const validateISIN = (paramName: string) => [
     .matches(/^[A-Z]{2}[A-Z0-9]{9}\d$/)
     .withMessage(`Invalid ISIN format`),
   handleValidationErrors
-];
+] as const;
 
 export const validateWKN = (paramName: string) => [
   param(paramName)
@@ -226,4 +235,4 @@ export const validateWKN = (paramName: string) => [
       return true;
     }),
   handleValidationErrors
-];
+] as const;

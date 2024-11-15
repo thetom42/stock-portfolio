@@ -1,7 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction, AuthUser } from '../../src/types/express';
 import { PrismaClient } from '@prisma/client';
 import sinon, { SinonStub } from 'sinon';
-import { AuthenticatedRequest, AuthUser } from '../../src/types/express';
 
 interface MockRepository {
   findUnique: SinonStub;
@@ -16,44 +15,6 @@ interface MockRepository {
   findByHolding?: SinonStub;
   findByEmail?: SinonStub;
 }
-
-type MockRequest = Pick<Request, 'params' | 'body' | 'query' | 'headers'>;
-type MockAuthenticatedRequest = MockRequest & { user: AuthUser };
-
-export const createMockRequest = (overrides: Partial<MockRequest> = {}): MockRequest => ({
-  params: {},
-  body: {},
-  query: {},
-  headers: {},
-  ...overrides
-});
-
-export const createMockAuthenticatedRequest = (
-  overrides: Partial<MockAuthenticatedRequest> = {}
-): MockAuthenticatedRequest => {
-  const mockUser: AuthUser = {
-    id: 'test-user-id',
-    email: 'test@example.com',
-    firstName: 'Test',
-    lastName: 'User',
-    roles: ['user']
-  };
-
-  return {
-    ...createMockRequest(),
-    user: mockUser,
-    ...overrides
-  } as MockAuthenticatedRequest;
-};
-
-export const createMockResponse = () => {
-  const res: Partial<Response> = {
-    status: sinon.stub().returnsThis(),
-    json: sinon.stub().returnsThis(),
-    send: sinon.stub().returnsThis()
-  };
-  return res;
-};
 
 export const createMockNext = (): NextFunction => 
   sinon.stub().callsFake((error?: any) => {

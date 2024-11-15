@@ -1,10 +1,14 @@
-import type { Request, Response, NextFunction } from 'express-serve-static-core';
+import type { TypedRequest, TypedResponse, NextFunction } from '../types/express';
 import { Category } from '../../../db/models/Category';
 import * as categoryService from '../services/categoryService';
 
+type CategoryResponse = { category: Category };
+type CategoriesResponse = { categories: Category[] };
+type ErrorResponse = { error: string };
+
 export const createCategory = async (
-    req: Request<{}, {}, Category>,
-    res: Response,
+    req: TypedRequest<{}, {}, Category>,
+    res: TypedResponse<CategoryResponse | ErrorResponse>,
     next: NextFunction
 ) => {
     try {
@@ -20,8 +24,8 @@ export const createCategory = async (
 };
 
 export const getCategoryById = async (
-    req: Request<{ id: string }>,
-    res: Response,
+    req: TypedRequest<{ id: string }>,
+    res: TypedResponse<CategoryResponse | ErrorResponse>,
     next: NextFunction
 ) => {
     try {
@@ -36,8 +40,8 @@ export const getCategoryById = async (
 };
 
 export const getAllCategories = async (
-    req: Request,
-    res: Response,
+    req: TypedRequest,
+    res: TypedResponse<CategoriesResponse>,
     next: NextFunction
 ) => {
     try {
@@ -49,8 +53,8 @@ export const getAllCategories = async (
 };
 
 export const updateCategory = async (
-    req: Request<{ id: string }, {}, Partial<Category>>,
-    res: Response,
+    req: TypedRequest<{ id: string }, {}, Partial<Category>>,
+    res: TypedResponse<CategoryResponse | ErrorResponse>,
     next: NextFunction
 ) => {
     try {
@@ -70,8 +74,8 @@ export const updateCategory = async (
 };
 
 export const deleteCategory = async (
-    req: Request<{ id: string }>,
-    res: Response,
+    req: TypedRequest<{ id: string }>,
+    res: TypedResponse<void | ErrorResponse>,
     next: NextFunction
 ) => {
     try {

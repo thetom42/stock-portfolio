@@ -6,6 +6,7 @@ import { Stock } from '../../../src/models/Stock';
 import { createMockRequest, RequestWithUser } from '../../helpers/mockRequest';
 import { createMockResponse, MockResponse, verifyResponse } from '../../helpers/mockResponse';
 import { setupRepositoryMocks, resetRepositoryMocks, mockStockRepo } from '../../helpers/mockRepositories';
+import type { Response } from '../../../src/types/express';
 
 describe('StockController', () => {
   let req: Partial<RequestWithUser>;
@@ -40,7 +41,7 @@ describe('StockController', () => {
       req = createMockRequest({ params: { isin: 'US0378331005' } });
       sinon.stub(stockService, 'getStockByISIN').resolves(mockStock);
 
-      await stockController.getStockByISIN(req as any, res, next);
+      await stockController.getStockByISIN(req as any, res as unknown as Response, next);
 
       verifyResponse(res, 200, { stock: mockStock });
     });
@@ -49,7 +50,7 @@ describe('StockController', () => {
       req = createMockRequest({ params: { isin: 'INVALID' } });
       sinon.stub(stockService, 'getStockByISIN').resolves(null);
 
-      await stockController.getStockByISIN(req as any, res, next);
+      await stockController.getStockByISIN(req as any, res as unknown as Response, next);
 
       verifyResponse(res, 404, { error: 'Stock not found' });
     });
@@ -59,7 +60,7 @@ describe('StockController', () => {
       const error = new Error('Database error');
       sinon.stub(stockService, 'getStockByISIN').rejects(error);
 
-      await stockController.getStockByISIN(req as any, res, next);
+      await stockController.getStockByISIN(req as any, res as unknown as Response, next);
 
       expect(next.calledWith(error)).to.be.true;
     });
@@ -95,7 +96,7 @@ describe('StockController', () => {
       req = createMockRequest({ query: { query: 'Apple' } });
       sinon.stub(stockService, 'searchStocks').resolves(mockStocks);
 
-      await stockController.searchStocks(req as any, res, next);
+      await stockController.searchStocks(req as any, res as unknown as Response, next);
 
       verifyResponse(res, 200, { stocks: mockStocks });
     });
@@ -104,7 +105,7 @@ describe('StockController', () => {
       req = createMockRequest({ query: { query: 'NonExistent' } });
       sinon.stub(stockService, 'searchStocks').resolves([]);
 
-      await stockController.searchStocks(req as any, res, next);
+      await stockController.searchStocks(req as any, res as unknown as Response, next);
 
       verifyResponse(res, 200, { stocks: [] });
     });
@@ -114,7 +115,7 @@ describe('StockController', () => {
       const error = new Error('Database error');
       sinon.stub(stockService, 'searchStocks').rejects(error);
 
-      await stockController.searchStocks(req as any, res, next);
+      await stockController.searchStocks(req as any, res as unknown as Response, next);
 
       expect(next.calledWith(error)).to.be.true;
     });

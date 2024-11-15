@@ -1,7 +1,7 @@
 import sinon from 'sinon';
-import { NextFunction } from 'express';
-import { RequestWithUser } from './mockRequest';
-import { MockResponse } from './mockResponse';
+import type { NextFunction, Request, Response, AuthUser } from '../../src/types/express';
+import type { RequestWithUser } from './mockRequest';
+import type { MockResponse } from './mockResponse';
 
 export interface MockToken {
   sub?: string;

@@ -1,14 +1,8 @@
-import { Request } from 'express';
+import type { Request, AuthUser } from '../../src/types/express';
 
-// Extend Express Request type
+// Extend Request type with Keycloak auth
 export interface RequestWithUser extends Request {
-  user?: {
-    id: string;
-    email?: string;
-    firstName?: string;
-    lastName?: string;
-    roles?: string[];
-  };
+  user?: AuthUser;
   kauth?: {
     grant?: {
       access_token?: {
@@ -22,14 +16,8 @@ interface MockRequestOptions {
   params?: Record<string, string>;
   query?: Record<string, string>;
   body?: any;
-  headers?: Record<string, string>;
-  user?: {
-    id: string;
-    email?: string;
-    firstName?: string;
-    lastName?: string;
-    roles?: string[];
-  };
+  headers?: { [key: string]: string | undefined };
+  user?: AuthUser;
   kauth?: {
     grant?: {
       access_token?: {
@@ -40,12 +28,17 @@ interface MockRequestOptions {
 }
 
 export const createMockRequest = (options: MockRequestOptions = {}): Partial<RequestWithUser> => {
-  return {
+  const mockRequest: Partial<RequestWithUser> = {
     params: options.params || {},
     query: options.query || {},
     body: options.body || {},
     headers: options.headers || {},
     user: options.user,
-    kauth: options.kauth
+    kauth: options.kauth,
+    path: '',
+    method: 'GET',
+    url: ''
   };
+
+  return mockRequest;
 };

@@ -1,11 +1,14 @@
-import type { Request, Response, NextFunction } from 'express-serve-static-core';
+import type { TypedRequest, TypedResponse, NextFunction, AuthenticatedRequest } from '../types/express';
 import { User, CreateUserDTO, UpdateUserDTO } from '../models/User';
 import * as userService from '../services/userService';
-import { AuthenticatedRequest } from '../types/express';
+
+// Define response types
+type UserResponse = { user: User };
+type ErrorResponse = { error: string };
 
 export const createUser = async (
-  req: Request<{}, {}, CreateUserDTO>,
-  res: Response,
+  req: TypedRequest<{}, {}, CreateUserDTO>,
+  res: TypedResponse<UserResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
@@ -22,8 +25,8 @@ export const createUser = async (
 };
 
 export const getUser = async (
-  req: Request<{ id: string }>,
-  res: Response,
+  req: TypedRequest<{ id: string }>,
+  res: TypedResponse<UserResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
@@ -39,8 +42,8 @@ export const getUser = async (
 };
 
 export const updateUser = async (
-  req: Request<{ id: string }, {}, UpdateUserDTO>,
-  res: Response,
+  req: TypedRequest<{ id: string }, {}, UpdateUserDTO>,
+  res: TypedResponse<UserResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
@@ -57,8 +60,8 @@ export const updateUser = async (
 };
 
 export const deleteUser = async (
-  req: Request<{ id: string }>,
-  res: Response,
+  req: TypedRequest<{ id: string }>,
+  res: TypedResponse<void | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
@@ -76,7 +79,7 @@ export const deleteUser = async (
 
 export const getOwnProfile = async (
   req: AuthenticatedRequest,
-  res: Response,
+  res: TypedResponse<UserResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
@@ -92,8 +95,8 @@ export const getOwnProfile = async (
 };
 
 export const updateOwnProfile = async (
-  req: AuthenticatedRequest & { body: UpdateUserDTO },
-  res: Response,
+  req: AuthenticatedRequest<{}, {}, UpdateUserDTO>,
+  res: TypedResponse<UserResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {

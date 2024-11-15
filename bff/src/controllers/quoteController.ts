@@ -1,11 +1,22 @@
-import type { Request, Response, NextFunction } from 'express-serve-static-core';
+import type { TypedRequest, TypedResponse, NextFunction, AuthenticatedRequest } from '../types/express';
 import { getPrismaClient } from '../utils/database';
-import { AuthenticatedRequest } from '../types/express';
 import { QuoteRepository } from '../../../db/repositories/QuoteRepository';
 import { HoldingRepository } from '../../../db/repositories/HoldingRepository';
 import { PortfolioRepository } from '../../../db/repositories/PortfolioRepository';
-import { QuoteInterval } from '../models/Quote';
+import { 
+  QuoteInterval, 
+  Quote, 
+  RealTimeQuote, 
+  HistoricalQuote,
+  QuoteHistory 
+} from '../models/Quote';
 import * as quoteService from '../services/quoteService';
+
+// Define response types
+type QuoteResponse = RealTimeQuote;
+type QuotesResponse = { quotes: RealTimeQuote[] };
+type HistoricalQuotesResponse = { quotes: HistoricalQuote[] };
+type ErrorResponse = { error: string };
 
 const prisma = getPrismaClient();
 const quoteRepository = new QuoteRepository(prisma);
@@ -13,8 +24,8 @@ const holdingRepository = new HoldingRepository(prisma);
 const portfolioRepository = new PortfolioRepository(prisma);
 
 export const getLatestQuote = async (
-  req: Request<{ isin: string }>,
-  res: Response,
+  req: TypedRequest<{ isin: string }>,
+  res: TypedResponse<QuoteResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
@@ -25,27 +36,28 @@ export const getLatestQuote = async (
     
     // If we have a non-stale quote, return it
     if (quotes.length > 0 && !isQuoteStale(quotes[0].timestamp)) {
-      return res.status(200).json(quotes[0]);
+      const storedQuote = quotes[0];
+      // Convert stored quote to real-time quote format
+      const quote: RealTimeQuote = {
+        price: storedQuote.price,
+        change: 0, // These would need to be calculated if needed
+        changePercent: 0,
+        timestamp: storedQuote.timestamp
+      };
+      return res.status(200).json(quote);
     }
     
     // If no quote or stale, get real-time quote
     const realTimeQuote = await quoteService.getRealTimeQuote(isin);
-    
-    // Return the real-time quote data
-    return res.status(200).json({
-      price: realTimeQuote.price,
-      change: realTimeQuote.change,
-      changePercent: realTimeQuote.changePercent,
-      timestamp: realTimeQuote.timestamp
-    });
+    return res.status(200).json(realTimeQuote);
   } catch (error) {
     next(error);
   }
 };
 
 export const getQuoteHistory = async (
-  req: Request<{ isin: string }>,
-  res: Response,
+  req: TypedRequest<{ isin: string }>,
+  res: TypedResponse<HistoricalQuotesResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
@@ -64,8 +76,8 @@ export const getQuoteHistory = async (
 };
 
 export const getIntradayQuotes = async (
-  req: Request<{ isin: string }>,
-  res: Response,
+  req: TypedRequest<{ isin: string }>,
+  res: TypedResponse<QuotesResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
@@ -73,15 +85,23 @@ export const getIntradayQuotes = async (
     
     const intraday = await quoteService.getIntradayQuotes(isin);
     
-    res.status(200).json({ quotes: intraday });
+    // Convert stored quotes to real-time quote format
+    const quotes: RealTimeQuote[] = intraday.map(quote => ({
+      price: quote.price,
+      change: 0, // These would need to be calculated if needed
+      changePercent: 0,
+      timestamp: quote.timestamp
+    }));
+    
+    res.status(200).json({ quotes });
   } catch (error) {
     next(error);
   }
 };
 
 export const getPortfolioQuotes = async (
-  req: AuthenticatedRequest,
-  res: Response,
+  req: AuthenticatedRequest<{ portfolioId: string }>,
+  res: TypedResponse<QuotesResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
@@ -103,10 +123,16 @@ export const getPortfolioQuotes = async (
       holdings.map(holding => quoteService.getLatestQuotes([holding.ISIN]))
     );
     
-    // Flatten and filter out empty results
-    const flatQuotes = quotes
+    // Flatten and filter out empty results, then convert to real-time quote format
+    const flatQuotes: RealTimeQuote[] = quotes
       .map(quoteArr => quoteArr[0])
-      .filter(quote => quote !== undefined);
+      .filter(quote => quote !== undefined)
+      .map(quote => ({
+        price: quote.price,
+        change: 0, // These would need to be calculated if needed
+        changePercent: 0,
+        timestamp: quote.timestamp
+      }));
     
     res.status(200).json({ quotes: flatQuotes });
   } catch (error) {
@@ -115,14 +141,19 @@ export const getPortfolioQuotes = async (
 };
 
 export const getHoldingQuotes = async (
-  req: AuthenticatedRequest,
-  res: Response,
+  req: AuthenticatedRequest<
+    { holdingId: string },
+    {},
+    {},
+    { range?: QuoteInterval['range'] }
+  >,
+  res: TypedResponse<HistoricalQuotesResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
     const userId = req.user.id;
     const holdingId = req.params.holdingId;
-    const range = req.query.range as QuoteInterval['range'] || '1mo';
+    const range = req.query.range || '1mo';
     
     // Verify holding ownership
     const holding = await holdingRepository.findById(holdingId);

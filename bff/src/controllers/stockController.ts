@@ -1,9 +1,31 @@
-import type { Request, Response, NextFunction } from 'express-serve-static-core';
+import type { TypedRequest, TypedResponse, NextFunction } from '../types/express';
 import * as stockService from '../services/stockService';
+import { Stock, StockDetails, StockSearchResult } from '../models/Stock';
+
+// Define response types
+type StockResponse = { stock: Stock };
+type StocksResponse = { stocks: Stock[] };
+type StockDetailsResponse = { details: StockDetails };
+type ErrorResponse = { error: string };
+
+interface CreateStockBody {
+  isin: string;
+  name: string;
+  wkn: string;
+  symbol: string;
+  categoryId: string;
+}
+
+interface UpdateStockBody {
+  name?: string;
+  wkn?: string;
+  symbol?: string;
+  categoryId?: string;
+}
 
 export const getStockByISIN = async (
-  req: Request<{ isin: string }>,
-  res: Response,
+  req: TypedRequest<{ isin: string }>,
+  res: TypedResponse<StockResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
@@ -18,8 +40,8 @@ export const getStockByISIN = async (
 };
 
 export const getStockBySymbol = async (
-  req: Request<{ symbol: string }>,
-  res: Response,
+  req: TypedRequest<{ symbol: string }>,
+  res: TypedResponse<StockResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
@@ -34,8 +56,8 @@ export const getStockBySymbol = async (
 };
 
 export const getStockByWKN = async (
-  req: Request<{ wkn: string }>,
-  res: Response,
+  req: TypedRequest<{ wkn: string }>,
+  res: TypedResponse<StockResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
@@ -50,8 +72,8 @@ export const getStockByWKN = async (
 };
 
 export const getAllStocks = async (
-  req: Request,
-  res: Response,
+  req: TypedRequest,
+  res: TypedResponse<StocksResponse>,
   next: NextFunction
 ) => {
   try {
@@ -63,8 +85,8 @@ export const getAllStocks = async (
 };
 
 export const getStocksByCategory = async (
-  req: Request<{ categoryId: string }>,
-  res: Response,
+  req: TypedRequest<{ categoryId: string }>,
+  res: TypedResponse<StocksResponse>,
   next: NextFunction
 ) => {
   try {
@@ -76,8 +98,8 @@ export const getStocksByCategory = async (
 };
 
 export const searchStocks = async (
-  req: Request<{}, {}, {}, { query: string }>,
-  res: Response,
+  req: TypedRequest<{}, {}, {}, { query: string }>,
+  res: TypedResponse<{ stocks: StockSearchResult[] }>,
   next: NextFunction
 ) => {
   try {
@@ -89,8 +111,8 @@ export const searchStocks = async (
 };
 
 export const getStockDetails = async (
-  req: Request<{ isin: string }>,
-  res: Response,
+  req: TypedRequest<{ isin: string }>,
+  res: TypedResponse<StockDetailsResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
@@ -105,18 +127,8 @@ export const getStockDetails = async (
 };
 
 export const createStock = async (
-  req: Request<
-    {},
-    {},
-    {
-      isin: string;
-      name: string;
-      wkn: string;
-      symbol: string;
-      categoryId: string;
-    }
-  >,
-  res: Response,
+  req: TypedRequest<{}, {}, CreateStockBody>,
+  res: TypedResponse<StockResponse>,
   next: NextFunction
 ) => {
   try {
@@ -136,17 +148,8 @@ export const createStock = async (
 };
 
 export const updateStock = async (
-  req: Request<
-    { isin: string },
-    {},
-    {
-      name?: string;
-      wkn?: string;
-      symbol?: string;
-      categoryId?: string;
-    }
-  >,
-  res: Response,
+  req: TypedRequest<{ isin: string }, {}, UpdateStockBody>,
+  res: TypedResponse<StockResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
@@ -161,8 +164,8 @@ export const updateStock = async (
 };
 
 export const deleteStock = async (
-  req: Request<{ isin: string }>,
-  res: Response,
+  req: TypedRequest<{ isin: string }>,
+  res: TypedResponse<void | ErrorResponse>,
   next: NextFunction
 ) => {
   try {

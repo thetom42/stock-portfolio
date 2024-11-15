@@ -1,8 +1,9 @@
-import { Response } from 'express-serve-static-core';
+import type { Response, Request } from '../../src/types/express';
 import sinon from 'sinon';
 import { expect } from 'chai';
 
-export type MockResponse = Partial<Response> & {
+// Create a type that matches the Express Response interface
+export interface MockResponse extends Partial<Response> {
   status: sinon.SinonStub;
   json: sinon.SinonStub;
   send: sinon.SinonStub;
@@ -10,22 +11,73 @@ export type MockResponse = Partial<Response> & {
   setHeader: sinon.SinonStub;
   getHeader: sinon.SinonStub;
   sendStatus: sinon.SinonStub;
-};
+  locals: any;
+  headersSent: boolean;
+  app: any;
+  req: Request;
+  statusCode: number;
+  statusMessage: string;
+  charset: string;
+  links: sinon.SinonStub;
+  jsonp: sinon.SinonStub;
+  sendFile: sinon.SinonStub;
+  sendfile: sinon.SinonStub;
+  download: sinon.SinonStub;
+  contentType: sinon.SinonStub;
+  type: sinon.SinonStub;
+  format: sinon.SinonStub;
+  attachment: sinon.SinonStub;
+  set: sinon.SinonStub;
+  header: sinon.SinonStub;
+  get: sinon.SinonStub;
+  clearCookie: sinon.SinonStub;
+  cookie: sinon.SinonStub;
+  location: sinon.SinonStub;
+  redirect: sinon.SinonStub;
+  render: sinon.SinonStub;
+  vary: sinon.SinonStub;
+  append: sinon.SinonStub;
+}
 
 export const createMockResponse = (): MockResponse => {
-  // Create a base object to hold all methods
-  const res: any = {};
+  // Create a base object with all required properties
+  const res: MockResponse = {
+    status: sinon.stub().returnsThis(),
+    json: sinon.stub().returnsThis(),
+    send: sinon.stub().returnsThis(),
+    end: sinon.stub().returnsThis(),
+    setHeader: sinon.stub().returnsThis(),
+    getHeader: sinon.stub().returnsThis(),
+    sendStatus: sinon.stub().returnsThis(),
+    locals: {},
+    headersSent: false,
+    app: {},
+    req: {} as Request,
+    statusCode: 200,
+    statusMessage: 'OK',
+    charset: 'utf-8',
+    links: sinon.stub().returnsThis(),
+    jsonp: sinon.stub().returnsThis(),
+    sendFile: sinon.stub().returnsThis(),
+    sendfile: sinon.stub().returnsThis(),
+    download: sinon.stub().returnsThis(),
+    contentType: sinon.stub().returnsThis(),
+    type: sinon.stub().returnsThis(),
+    format: sinon.stub().returnsThis(),
+    attachment: sinon.stub().returnsThis(),
+    set: sinon.stub().returnsThis(),
+    header: sinon.stub().returnsThis(),
+    get: sinon.stub().returnsThis(),
+    clearCookie: sinon.stub().returnsThis(),
+    cookie: sinon.stub().returnsThis(),
+    location: sinon.stub().returnsThis(),
+    redirect: sinon.stub().returnsThis(),
+    render: sinon.stub().returnsThis(),
+    vary: sinon.stub().returnsThis(),
+    append: sinon.stub().returnsThis()
+  };
 
-  // Create stubs with proper chaining
-  res.status = sinon.stub().callsFake(() => res);
-  res.json = sinon.stub().callsFake(() => res);
-  res.send = sinon.stub().callsFake(() => res);
-  res.end = sinon.stub().callsFake(() => res);
-  res.setHeader = sinon.stub().callsFake(() => res);
-  res.getHeader = sinon.stub().callsFake(() => res);
-  res.sendStatus = sinon.stub().callsFake(() => res);
-
-  return res as MockResponse;
+  return res;
 };
 
 // Helper function to verify response status and data

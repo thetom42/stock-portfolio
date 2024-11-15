@@ -1,4 +1,5 @@
 import express from 'express';
+import type { Request, Response, NextFunction } from './types/express';
 import cors from 'cors';
 import helmet from 'helmet';
 import session from 'express-session';
@@ -47,7 +48,7 @@ app.use(session(sessionConfig));
 
 // Custom auth middleware for testing
 if (environment.NODE_ENV === 'test') {
-  app.use((req, res, next) => {
+  app.use((req: Request, res: Response, next: NextFunction) => {
     if (req.path === '/test-error') {
       throw new Error('Test error');
     }
@@ -75,7 +76,7 @@ if (environment.NODE_ENV === 'test') {
 const router = express.Router();
 
 // Health check endpoint
-router.get('/health', (req, res) => {
+router.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
@@ -85,7 +86,7 @@ router.get('/health', (req, res) => {
 
 // Test validation error endpoint
 if (environment.NODE_ENV === 'test') {
-  router.post('/users', (req, res, next) => {
+  router.post('/users', (req: Request, res: Response, next: NextFunction) => {
     const err: any = new Error('Validation Error');
     err.name = 'ValidationError';
     err.details = ['Invalid email format', 'Password too short'];
@@ -108,7 +109,7 @@ app.use(environment.API_PREFIX, router);
 app.use(handleAuthError);
 
 // Validation error handler
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   if (err.name === 'ValidationError') {
     return res.status(400).json({
       error: {
@@ -121,7 +122,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 });
 
 // Global error handler
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.error(err.stack);
 
   if (err.message === 'Test error') {
@@ -153,7 +154,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 });
 
 // Handle 404 errors
-app.use((req, res) => {
+app.use((req: Request, res: Response) => {
   res.status(404).json({
     error: {
       message: 'Not Found',

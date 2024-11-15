@@ -1,16 +1,31 @@
-import type { Response, NextFunction } from 'express-serve-static-core';
-import { CreatePortfolioDTO, UpdatePortfolioDTO } from '../models/Portfolio';
+import type { TypedResponse, NextFunction, AuthenticatedRequest } from '../types/express';
+import { 
+  CreatePortfolioDTO, 
+  UpdatePortfolioDTO,
+  PortfolioResponse,
+  PortfoliosResponse,
+  SummaryResponse,
+  PerformanceResponse,
+  HoldingsResponse,
+  AllocationResponse,
+  ReturnsResponse,
+  HistoryResponse,
+  ErrorResponse,
+  PerformanceData,
+  AllocationData,
+  ReturnsData,
+  HistoryData
+} from '../models/Portfolio';
 import * as portfolioService from '../services/portfolioService';
-import { AuthenticatedRequest } from '../types/express';
 
 export const createPortfolio = async (
-  req: AuthenticatedRequest,
-  res: Response,
+  req: AuthenticatedRequest<{}, {}, CreatePortfolioDTO>,
+  res: TypedResponse<PortfolioResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
     const userId = req.user.id;
-    const portfolioData = req.body as CreatePortfolioDTO;
+    const portfolioData = req.body;
     const portfolio = await portfolioService.createPortfolio(userId, portfolioData);
     res.status(201).json({ portfolio });
   } catch (error) {
@@ -20,7 +35,7 @@ export const createPortfolio = async (
 
 export const getUserPortfolios = async (
   req: AuthenticatedRequest,
-  res: Response,
+  res: TypedResponse<PortfoliosResponse>,
   next: NextFunction
 ) => {
   try {
@@ -33,8 +48,8 @@ export const getUserPortfolios = async (
 };
 
 export const getPortfolio = async (
-  req: AuthenticatedRequest,
-  res: Response,
+  req: AuthenticatedRequest<{ id: string }>,
+  res: TypedResponse<PortfolioResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
@@ -52,13 +67,13 @@ export const getPortfolio = async (
 };
 
 export const updatePortfolio = async (
-  req: AuthenticatedRequest,
-  res: Response,
+  req: AuthenticatedRequest<{ id: string }, {}, UpdatePortfolioDTO>,
+  res: TypedResponse<PortfolioResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
     const portfolioId = req.params.id;
-    const updateData = req.body as UpdatePortfolioDTO;
+    const updateData = req.body;
     
     const updatedPortfolio = await portfolioService.updatePortfolio(portfolioId, updateData);
     
@@ -73,8 +88,8 @@ export const updatePortfolio = async (
 };
 
 export const deletePortfolio = async (
-  req: AuthenticatedRequest,
-  res: Response,
+  req: AuthenticatedRequest<{ id: string }>,
+  res: TypedResponse<void | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
@@ -90,8 +105,8 @@ export const deletePortfolio = async (
 };
 
 export const getPortfolioSummary = async (
-  req: AuthenticatedRequest,
-  res: Response,
+  req: AuthenticatedRequest<{ id: string }>,
+  res: TypedResponse<SummaryResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
@@ -109,13 +124,13 @@ export const getPortfolioSummary = async (
 };
 
 export const getPortfolioPerformance = async (
-  req: AuthenticatedRequest,
-  res: Response,
+  req: AuthenticatedRequest<{ id: string }>,
+  res: TypedResponse<PerformanceResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
     const portfolioId = req.params.id;
-    const performance = await portfolioService.getPortfolioPerformance(portfolioId);
+    const performance = await portfolioService.getPortfolioPerformance(portfolioId) as PerformanceData;
 
     if (!performance) {
       return res.status(404).json({ error: 'Portfolio not found' });
@@ -128,8 +143,8 @@ export const getPortfolioPerformance = async (
 };
 
 export const getPortfolioHoldings = async (
-  req: AuthenticatedRequest,
-  res: Response,
+  req: AuthenticatedRequest<{ id: string }>,
+  res: TypedResponse<HoldingsResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
@@ -147,13 +162,13 @@ export const getPortfolioHoldings = async (
 };
 
 export const getPortfolioAllocation = async (
-  req: AuthenticatedRequest,
-  res: Response,
+  req: AuthenticatedRequest<{ id: string }>,
+  res: TypedResponse<AllocationResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
     const portfolioId = req.params.id;
-    const allocation = await portfolioService.getPortfolioAllocation(portfolioId);
+    const allocation = await portfolioService.getPortfolioAllocation(portfolioId) as AllocationData;
 
     if (!allocation) {
       return res.status(404).json({ error: 'Portfolio not found' });
@@ -166,13 +181,13 @@ export const getPortfolioAllocation = async (
 };
 
 export const getPortfolioReturns = async (
-  req: AuthenticatedRequest,
-  res: Response,
+  req: AuthenticatedRequest<{ id: string }>,
+  res: TypedResponse<ReturnsResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
     const portfolioId = req.params.id;
-    const returns = await portfolioService.getPortfolioReturns(portfolioId);
+    const returns = await portfolioService.getPortfolioReturns(portfolioId) as ReturnsData;
 
     if (!returns) {
       return res.status(404).json({ error: 'Portfolio not found' });
@@ -185,13 +200,13 @@ export const getPortfolioReturns = async (
 };
 
 export const getPortfolioHistory = async (
-  req: AuthenticatedRequest,
-  res: Response,
+  req: AuthenticatedRequest<{ id: string }>,
+  res: TypedResponse<HistoryResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
     const portfolioId = req.params.id;
-    const history = await portfolioService.getPortfolioHistory(portfolioId);
+    const history = await portfolioService.getPortfolioHistory(portfolioId) as HistoryData;
 
     if (!history) {
       return res.status(404).json({ error: 'Portfolio not found' });

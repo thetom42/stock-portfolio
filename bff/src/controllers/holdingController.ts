@@ -1,15 +1,28 @@
-import type { Response, NextFunction } from 'express-serve-static-core';
+import type { TypedResponse, NextFunction, AuthenticatedRequest } from '../types/express';
 import { CreateHoldingDTO, UpdateHoldingDTO } from '../models/Holding';
 import * as holdingService from '../services/holdingService';
-import { AuthenticatedRequest } from '../types/express';
+
+// Define response types
+type HoldingResponse = { holding: any }; // TODO: Replace 'any' with proper Holding type
+type ErrorResponse = { error: string };
+type PerformanceResponse = { performance: any }; // TODO: Replace 'any' with proper Performance type
+type TransactionsResponse = { transactions: any[] }; // TODO: Replace 'any' with proper Transaction type
+interface HoldingValue {
+  currentValue: number;
+  costBasis: number;
+  unrealizedGainLoss: number;
+  unrealizedGainLossPercentage: number;
+}
+type ValueResponse = { value: HoldingValue };
+type HistoryResponse = { history: any[] }; // TODO: Replace 'any' with proper History type
 
 export const createHolding = async (
-  req: AuthenticatedRequest,
-  res: Response,
+  req: AuthenticatedRequest<{}, {}, CreateHoldingDTO>,
+  res: TypedResponse<HoldingResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
-    const holdingData = req.body as CreateHoldingDTO;
+    const holdingData = req.body;
     const holding = await holdingService.createHolding(holdingData);
     res.status(201).json({ holding });
   } catch (error) {
@@ -26,8 +39,8 @@ export const createHolding = async (
 };
 
 export const getHolding = async (
-  req: AuthenticatedRequest,
-  res: Response,
+  req: AuthenticatedRequest<{ id: string }>,
+  res: TypedResponse<HoldingResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
@@ -45,13 +58,13 @@ export const getHolding = async (
 };
 
 export const updateHolding = async (
-  req: AuthenticatedRequest,
-  res: Response,
+  req: AuthenticatedRequest<{ id: string }, {}, UpdateHoldingDTO>,
+  res: TypedResponse<HoldingResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
     const holdingId = req.params.id;
-    const updateData = req.body as UpdateHoldingDTO;
+    const updateData = req.body;
     
     const updatedHolding = await holdingService.updateHolding(holdingId, updateData);
     res.json({ holding: updatedHolding });
@@ -69,8 +82,8 @@ export const updateHolding = async (
 };
 
 export const deleteHolding = async (
-  req: AuthenticatedRequest,
-  res: Response,
+  req: AuthenticatedRequest<{ id: string }>,
+  res: TypedResponse<void | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
@@ -91,8 +104,8 @@ export const deleteHolding = async (
 };
 
 export const getHoldingPerformance = async (
-  req: AuthenticatedRequest,
-  res: Response,
+  req: AuthenticatedRequest<{ id: string }>,
+  res: TypedResponse<PerformanceResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
@@ -113,8 +126,8 @@ export const getHoldingPerformance = async (
 };
 
 export const getHoldingTransactions = async (
-  req: AuthenticatedRequest,
-  res: Response,
+  req: AuthenticatedRequest<{ id: string }>,
+  res: TypedResponse<TransactionsResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
@@ -135,8 +148,8 @@ export const getHoldingTransactions = async (
 };
 
 export const getHoldingValue = async (
-  req: AuthenticatedRequest,
-  res: Response,
+  req: AuthenticatedRequest<{ id: string }>,
+  res: TypedResponse<ValueResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
@@ -157,8 +170,8 @@ export const getHoldingValue = async (
 };
 
 export const getHoldingHistory = async (
-  req: AuthenticatedRequest,
-  res: Response,
+  req: AuthenticatedRequest<{ id: string }>,
+  res: TypedResponse<HistoryResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
