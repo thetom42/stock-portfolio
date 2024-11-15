@@ -18,19 +18,21 @@ services:
 
   bff:
     build:
-      context: ./bff
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: bff/Dockerfile
     ports:
       - "3000:3000"
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/stock_portfolio
-      - NODE_ENV=development
+    env_file:
+      - ./bff/.env.sample
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
-      - ./bff:/app
-      - /app/node_modules
+      # Mount files exactly where the imports expect them
+      - ./bff/src:/app/src
+      - ./db/models:/app/../../../db/models
+      - ./db/repositories:/app/../../../db/repositories
+      - ./db/prisma:/app/prisma
 
 volumes:
   postgres_data:
