@@ -1,0 +1,361 @@
+{
+  "info": {
+    "name": "Stock Portfolio BFF - Portfolios",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Portfolio",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 201', function() {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Response has correct portfolio data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.have.property('id');",
+              "    pm.expect(response.name).to.eql('Test Portfolio');",
+              "    pm.variables.set('portfolioId', response.id);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"Test Portfolio\",\n    \"description\": \"Test Description\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/portfolios",
+          "host": ["{{baseUrl}}"],
+          "path": ["portfolios"]
+        }
+      }
+    },
+    {
+      "name": "Get User Portfolios",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is an array of portfolios', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.be.an('array');",
+              "    if (response.length > 0) {",
+              "        pm.expect(response[0]).to.have.property('id');",
+              "        pm.expect(response[0]).to.have.property('name');",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/portfolios",
+          "host": ["{{baseUrl}}"],
+          "path": ["portfolios"]
+        }
+      }
+    },
+    {
+      "name": "Get Portfolio",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has correct portfolio data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response.id).to.eql(pm.variables.get('portfolioId'));",
+              "    pm.expect(response).to.have.property('name');",
+              "    pm.expect(response).to.have.property('description');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/portfolios/{{portfolioId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["portfolios", "{{portfolioId}}"]
+        }
+      }
+    },
+    {
+      "name": "Update Portfolio",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has updated portfolio data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response.id).to.eql(pm.variables.get('portfolioId'));",
+              "    pm.expect(response.name).to.eql('Updated Portfolio');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"Updated Portfolio\",\n    \"description\": \"Updated Description\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/portfolios/{{portfolioId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["portfolios", "{{portfolioId}}"]
+        }
+      }
+    },
+    {
+      "name": "Get Portfolio Summary",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has summary data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.have.property('totalValue');",
+              "    pm.expect(response).to.have.property('totalHoldings');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/portfolios/{{portfolioId}}/summary",
+          "host": ["{{baseUrl}}"],
+          "path": ["portfolios", "{{portfolioId}}", "summary"]
+        }
+      }
+    },
+    {
+      "name": "Get Portfolio Performance",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has performance data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.have.property('totalReturn');",
+              "    pm.expect(response).to.have.property('returnPercentage');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/portfolios/{{portfolioId}}/performance",
+          "host": ["{{baseUrl}}"],
+          "path": ["portfolios", "{{portfolioId}}", "performance"]
+        }
+      }
+    },
+    {
+      "name": "Get Portfolio Holdings",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is an array of holdings', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.be.an('array');",
+              "    if (response.length > 0) {",
+              "        pm.expect(response[0]).to.have.property('id');",
+              "        pm.expect(response[0]).to.have.property('quantity');",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/portfolios/{{portfolioId}}/holdings",
+          "host": ["{{baseUrl}}"],
+          "path": ["portfolios", "{{portfolioId}}", "holdings"]
+        }
+      }
+    },
+    {
+      "name": "Get Portfolio Allocation",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has allocation data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.be.an('array');",
+              "    if (response.length > 0) {",
+              "        pm.expect(response[0]).to.have.property('category');",
+              "        pm.expect(response[0]).to.have.property('percentage');",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/portfolios/{{portfolioId}}/allocation",
+          "host": ["{{baseUrl}}"],
+          "path": ["portfolios", "{{portfolioId}}", "allocation"]
+        }
+      }
+    },
+    {
+      "name": "Get Portfolio Returns",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has returns data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.have.property('totalReturn');",
+              "    pm.expect(response).to.have.property('annualizedReturn');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/portfolios/{{portfolioId}}/returns",
+          "host": ["{{baseUrl}}"],
+          "path": ["portfolios", "{{portfolioId}}", "returns"]
+        }
+      }
+    },
+    {
+      "name": "Get Portfolio History",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has history data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.be.an('array');",
+              "    if (response.length > 0) {",
+              "        pm.expect(response[0]).to.have.property('date');",
+              "        pm.expect(response[0]).to.have.property('value');",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/portfolios/{{portfolioId}}/history",
+          "host": ["{{baseUrl}}"],
+          "path": ["portfolios", "{{portfolioId}}", "history"]
+        }
+      }
+    },
+    {
+      "name": "Delete Portfolio",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 204', function() {",
+              "    pm.response.to.have.status(204);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{baseUrl}}/portfolios/{{portfolioId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["portfolios", "{{portfolioId}}"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
+    }
+  ]
+}

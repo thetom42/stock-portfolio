@@ -1,0 +1,344 @@
+{
+  "info": {
+    "name": "Stock Portfolio BFF - Stocks",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Search Stocks",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is an array of stocks', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.be.an('array');",
+              "    if (response.length > 0) {",
+              "        pm.expect(response[0]).to.have.property('isin');",
+              "        pm.expect(response[0]).to.have.property('name');",
+              "        pm.expect(response[0]).to.have.property('symbol');",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/stocks/search?query=Apple",
+          "host": ["{{baseUrl}}"],
+          "path": ["stocks", "search"],
+          "query": [
+            {
+              "key": "query",
+              "value": "Apple"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get All Stocks",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is an array of stocks', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.be.an('array');",
+              "    if (response.length > 0) {",
+              "        pm.expect(response[0]).to.have.property('isin');",
+              "        pm.expect(response[0]).to.have.property('name');",
+              "        pm.expect(response[0]).to.have.property('symbol');",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/stocks",
+          "host": ["{{baseUrl}}"],
+          "path": ["stocks"]
+        }
+      }
+    },
+    {
+      "name": "Get Stocks by Category",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is an array of stocks in category', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.be.an('array');",
+              "    if (response.length > 0) {",
+              "        pm.expect(response[0]).to.have.property('isin');",
+              "        pm.expect(response[0]).to.have.property('name');",
+              "        pm.expect(response[0]).to.have.property('categoryId');",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/stocks/category/{{categoryId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["stocks", "category", "{{categoryId}}"]
+        }
+      }
+    },
+    {
+      "name": "Create Stock",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 201', function() {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Response has correct stock data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.have.property('isin');",
+              "    pm.expect(response).to.have.property('name');",
+              "    pm.expect(response).to.have.property('symbol');",
+              "    pm.expect(response).to.have.property('wkn');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"isin\": \"US0378331005\",\n    \"name\": \"Apple Inc.\",\n    \"symbol\": \"AAPL\",\n    \"wkn\": \"865985\",\n    \"categoryId\": \"{{categoryId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/stocks",
+          "host": ["{{baseUrl}}"],
+          "path": ["stocks"]
+        }
+      }
+    },
+    {
+      "name": "Get Stock by ISIN",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has correct stock data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response.isin).to.eql('US0378331005');",
+              "    pm.expect(response).to.have.property('name');",
+              "    pm.expect(response).to.have.property('symbol');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/stocks/isin/US0378331005",
+          "host": ["{{baseUrl}}"],
+          "path": ["stocks", "isin", "US0378331005"]
+        }
+      }
+    },
+    {
+      "name": "Get Stock by Symbol",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has correct stock data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response.symbol).to.eql('AAPL');",
+              "    pm.expect(response).to.have.property('isin');",
+              "    pm.expect(response).to.have.property('name');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/stocks/symbol/AAPL",
+          "host": ["{{baseUrl}}"],
+          "path": ["stocks", "symbol", "AAPL"]
+        }
+      }
+    },
+    {
+      "name": "Get Stock by WKN",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has correct stock data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response.wkn).to.eql('865985');",
+              "    pm.expect(response).to.have.property('isin');",
+              "    pm.expect(response).to.have.property('name');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/stocks/wkn/865985",
+          "host": ["{{baseUrl}}"],
+          "path": ["stocks", "wkn", "865985"]
+        }
+      }
+    },
+    {
+      "name": "Get Stock Details",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has detailed stock data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response.isin).to.eql('US0378331005');",
+              "    pm.expect(response).to.have.property('name');",
+              "    pm.expect(response).to.have.property('description');",
+              "    pm.expect(response).to.have.property('sector');",
+              "    pm.expect(response).to.have.property('marketCap');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/stocks/details/US0378331005",
+          "host": ["{{baseUrl}}"],
+          "path": ["stocks", "details", "US0378331005"]
+        }
+      }
+    },
+    {
+      "name": "Update Stock",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has updated stock data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response.isin).to.eql('US0378331005');",
+              "    pm.expect(response.name).to.eql('Updated Apple Inc.');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"Updated Apple Inc.\",\n    \"description\": \"Updated description\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/stocks/US0378331005",
+          "host": ["{{baseUrl}}"],
+          "path": ["stocks", "US0378331005"]
+        }
+      }
+    },
+    {
+      "name": "Delete Stock",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 204', function() {",
+              "    pm.response.to.have.status(204);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{baseUrl}}/stocks/US0378331005",
+          "host": ["{{baseUrl}}"],
+          "path": ["stocks", "US0378331005"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
+    }
+  ]
+}

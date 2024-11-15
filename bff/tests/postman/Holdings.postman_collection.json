@@ -1,0 +1,279 @@
+{
+  "info": {
+    "name": "Stock Portfolio BFF - Holdings",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Holding",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 201', function() {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Response has correct holding data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.have.property('id');",
+              "    pm.expect(response.portfolioId).to.eql(pm.variables.get('portfolioId'));",
+              "    pm.expect(response.isin).to.eql('US0378331005');",
+              "    pm.expect(response.quantity).to.eql(100);",
+              "    pm.variables.set('holdingId', response.id);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"portfolioId\": \"{{portfolioId}}\",\n    \"isin\": \"US0378331005\",\n    \"quantity\": 100,\n    \"price\": 150.50\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/holdings",
+          "host": ["{{baseUrl}}"],
+          "path": ["holdings"]
+        }
+      }
+    },
+    {
+      "name": "Get Holding",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has correct holding data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response.id).to.eql(pm.variables.get('holdingId'));",
+              "    pm.expect(response.portfolioId).to.eql(pm.variables.get('portfolioId'));",
+              "    pm.expect(response).to.have.property('stock');",
+              "    pm.expect(response).to.have.property('currentPrice');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/holdings/{{holdingId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["holdings", "{{holdingId}}"]
+        }
+      }
+    },
+    {
+      "name": "Update Holding",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has updated holding data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response.id).to.eql(pm.variables.get('holdingId'));",
+              "    pm.expect(response.quantity).to.eql(150);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"quantity\": 150\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/holdings/{{holdingId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["holdings", "{{holdingId}}"]
+        }
+      }
+    },
+    {
+      "name": "Get Holding Performance",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has performance metrics', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.have.property('totalInvested');",
+              "    pm.expect(response).to.have.property('currentValue');",
+              "    pm.expect(response).to.have.property('totalReturn');",
+              "    pm.expect(response).to.have.property('totalReturnPercentage');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/holdings/{{holdingId}}/performance",
+          "host": ["{{baseUrl}}"],
+          "path": ["holdings", "{{holdingId}}", "performance"]
+        }
+      }
+    },
+    {
+      "name": "Get Holding Value",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has value details', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.have.property('quantity');",
+              "    pm.expect(response).to.have.property('costBasis');",
+              "    pm.expect(response).to.have.property('averageCost');",
+              "    pm.expect(response).to.have.property('currentValue');",
+              "    pm.expect(response).to.have.property('unrealizedGainLoss');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/holdings/{{holdingId}}/value",
+          "host": ["{{baseUrl}}"],
+          "path": ["holdings", "{{holdingId}}", "value"]
+        }
+      }
+    },
+    {
+      "name": "Get Holding Transactions",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is an array of transactions', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.be.an('array');",
+              "    if (response.length > 0) {",
+              "        pm.expect(response[0]).to.have.property('id');",
+              "        pm.expect(response[0]).to.have.property('type');",
+              "        pm.expect(response[0]).to.have.property('quantity');",
+              "        pm.expect(response[0]).to.have.property('price');",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/holdings/{{holdingId}}/transactions",
+          "host": ["{{baseUrl}}"],
+          "path": ["holdings", "{{holdingId}}", "transactions"]
+        }
+      }
+    },
+    {
+      "name": "Get Holding History",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has history data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.be.an('array');",
+              "    if (response.length > 0) {",
+              "        pm.expect(response[0]).to.have.property('date');",
+              "        pm.expect(response[0]).to.have.property('value');",
+              "        pm.expect(response[0]).to.have.property('quantity');",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/holdings/{{holdingId}}/history",
+          "host": ["{{baseUrl}}"],
+          "path": ["holdings", "{{holdingId}}", "history"]
+        }
+      }
+    },
+    {
+      "name": "Delete Holding",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 204', function() {",
+              "    pm.response.to.have.status(204);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{baseUrl}}/holdings/{{holdingId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["holdings", "{{holdingId}}"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
+    }
+  ]
+}

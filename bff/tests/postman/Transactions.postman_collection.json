@@ -1,0 +1,220 @@
+{
+  "info": {
+    "name": "Stock Portfolio BFF - Transactions",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Transaction",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 201', function() {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Response has correct transaction data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.have.property('id');",
+              "    pm.expect(response.holdingId).to.eql(pm.variables.get('holdingId'));",
+              "    pm.expect(response.type).to.eql('BUY');",
+              "    pm.expect(response.quantity).to.eql(100);",
+              "    pm.variables.set('transactionId', response.id);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"type\": \"BUY\",\n    \"quantity\": 100,\n    \"price\": 150.50,\n    \"date\": \"2024-01-15T10:00:00Z\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/transactions/holding/{{holdingId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["transactions", "holding", "{{holdingId}}"]
+        }
+      }
+    },
+    {
+      "name": "Get Transactions by Holding",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is an array of transactions', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.be.an('array');",
+              "    if (response.length > 0) {",
+              "        pm.expect(response[0]).to.have.property('id');",
+              "        pm.expect(response[0]).to.have.property('type');",
+              "        pm.expect(response[0]).to.have.property('quantity');",
+              "        pm.expect(response[0]).to.have.property('price');",
+              "        pm.expect(response[0]).to.have.property('date');",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/transactions/holding/{{holdingId}}?startDate=2024-01-01T00:00:00Z&endDate=2024-12-31T23:59:59Z&type=BUY&sort=date&order=desc&page=1&limit=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["transactions", "holding", "{{holdingId}}"],
+          "query": [
+            {
+              "key": "startDate",
+              "value": "2024-01-01T00:00:00Z"
+            },
+            {
+              "key": "endDate",
+              "value": "2024-12-31T23:59:59Z"
+            },
+            {
+              "key": "type",
+              "value": "BUY"
+            },
+            {
+              "key": "sort",
+              "value": "date"
+            },
+            {
+              "key": "order",
+              "value": "desc"
+            },
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Transactions by Portfolio",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is an array of transactions', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.be.an('array');",
+              "    if (response.length > 0) {",
+              "        pm.expect(response[0]).to.have.property('id');",
+              "        pm.expect(response[0]).to.have.property('type');",
+              "        pm.expect(response[0]).to.have.property('quantity');",
+              "        pm.expect(response[0]).to.have.property('price');",
+              "        pm.expect(response[0]).to.have.property('date');",
+              "        pm.expect(response[0]).to.have.property('holdingId');",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/transactions/portfolio/{{portfolioId}}?startDate=2024-01-01T00:00:00Z&endDate=2024-12-31T23:59:59Z&type=BUY&sort=date&order=desc&page=1&limit=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["transactions", "portfolio", "{{portfolioId}}"],
+          "query": [
+            {
+              "key": "startDate",
+              "value": "2024-01-01T00:00:00Z"
+            },
+            {
+              "key": "endDate",
+              "value": "2024-12-31T23:59:59Z"
+            },
+            {
+              "key": "type",
+              "value": "BUY"
+            },
+            {
+              "key": "sort",
+              "value": "date"
+            },
+            {
+              "key": "order",
+              "value": "desc"
+            },
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Transaction by ID",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has correct transaction data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response.id).to.eql(pm.variables.get('transactionId'));",
+              "    pm.expect(response).to.have.property('type');",
+              "    pm.expect(response).to.have.property('quantity');",
+              "    pm.expect(response).to.have.property('price');",
+              "    pm.expect(response).to.have.property('date');",
+              "    pm.expect(response).to.have.property('holdingId');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/transactions/{{transactionId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["transactions", "{{transactionId}}"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
+    }
+  ]
+}

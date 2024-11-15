@@ -1,0 +1,247 @@
+{
+  "info": {
+    "name": "Stock Portfolio BFF - Users",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create User",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 201', function() {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Response has correct user data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response.user).to.have.property('id');",
+              "    pm.expect(response.user.email).to.eql(pm.variables.get('userEmail'));",
+              "    pm.expect(response.user.firstName).to.eql('Test');",
+              "    pm.expect(response.user.lastName).to.eql('User');",
+              "    pm.variables.set('userId', response.user.id);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"email\": \"{{$randomEmail}}\",\n    \"firstName\": \"Test\",\n    \"lastName\": \"User\",\n    \"password\": \"password123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/users",
+          "host": ["{{baseUrl}}"],
+          "path": ["users"]
+        }
+      }
+    },
+    {
+      "name": "Get Own Profile",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has correct user profile data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response.user).to.have.property('id');",
+              "    pm.expect(response.user).to.have.property('email');",
+              "    pm.expect(response.user).to.have.property('firstName');",
+              "    pm.expect(response.user).to.have.property('lastName');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/users/profile/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["users", "profile", "me"]
+        }
+      }
+    },
+    {
+      "name": "Update Own Profile",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has updated user profile data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response.user).to.have.property('id');",
+              "    pm.expect(response.user.firstName).to.eql('Updated Test');",
+              "    pm.expect(response.user.lastName).to.eql('Updated User');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"firstName\": \"Updated Test\",\n    \"lastName\": \"Updated User\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/users/profile/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["users", "profile", "me"]
+        }
+      }
+    },
+    {
+      "name": "Get User by ID",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has correct user data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response.user.id).to.eql(pm.variables.get('userId'));",
+              "    pm.expect(response.user).to.have.property('email');",
+              "    pm.expect(response.user).to.have.property('firstName');",
+              "    pm.expect(response.user).to.have.property('lastName');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/users/{{userId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["users", "{{userId}}"]
+        }
+      }
+    },
+    {
+      "name": "Update User",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has updated user data', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response.user.id).to.eql(pm.variables.get('userId'));",
+              "    pm.expect(response.user.firstName).to.eql('Admin');",
+              "    pm.expect(response.user.lastName).to.eql('User');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"firstName\": \"Admin\",\n    \"lastName\": \"User\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/users/{{userId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["users", "{{userId}}"]
+        }
+      }
+    },
+    {
+      "name": "Delete User",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 204', function() {",
+              "    pm.response.to.have.status(204);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/users/{{userId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["users", "{{userId}}"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
+    }
+  ]
+}

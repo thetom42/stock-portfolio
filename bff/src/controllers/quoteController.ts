@@ -13,8 +13,8 @@ import {
 import * as quoteService from '../services/quoteService';
 
 // Define response types
-type QuoteResponse = RealTimeQuote;
-type QuotesResponse = { quotes: RealTimeQuote[] };
+type QuoteResponse = Quote | RealTimeQuote;
+type QuotesResponse = { quotes: Quote[] };
 type HistoricalQuotesResponse = { quotes: HistoricalQuote[] };
 type ErrorResponse = { error: string };
 
@@ -34,20 +34,12 @@ export const getLatestQuote = async (
     // Get latest quotes using the service
     const quotes = await quoteService.getLatestQuotes([isin]);
     
-    // If we have a non-stale quote, return it
+    // If we have a non-stale quote, return it as Quote format
     if (quotes.length > 0 && !isQuoteStale(quotes[0].timestamp)) {
-      const storedQuote = quotes[0];
-      // Convert stored quote to real-time quote format
-      const quote: RealTimeQuote = {
-        price: storedQuote.price,
-        change: 0, // These would need to be calculated if needed
-        changePercent: 0,
-        timestamp: storedQuote.timestamp
-      };
-      return res.status(200).json(quote);
+      return res.status(200).json(quotes[0]);
     }
     
-    // If no quote or stale, get real-time quote
+    // If no quote or stale, get real-time quote and return in RealTimeQuote format
     const realTimeQuote = await quoteService.getRealTimeQuote(isin);
     return res.status(200).json(realTimeQuote);
   } catch (error) {
@@ -85,12 +77,9 @@ export const getIntradayQuotes = async (
     
     const intraday = await quoteService.getIntradayQuotes(isin);
     
-    // Convert stored quotes to real-time quote format
-    const quotes: RealTimeQuote[] = intraday.map(quote => ({
-      price: quote.price,
-      change: 0, // These would need to be calculated if needed
-      changePercent: 0,
-      timestamp: quote.timestamp
+    // Preserve Quote interface structure
+    const quotes: Quote[] = intraday.map(quote => ({
+      ...quote // Keep all existing Quote properties
     }));
     
     res.status(200).json({ quotes });
@@ -123,16 +112,10 @@ export const getPortfolioQuotes = async (
       holdings.map(holding => quoteService.getLatestQuotes([holding.ISIN]))
     );
     
-    // Flatten and filter out empty results, then convert to real-time quote format
-    const flatQuotes: RealTimeQuote[] = quotes
+    // Flatten and filter out empty results, preserve Quote interface
+    const flatQuotes: Quote[] = quotes
       .map(quoteArr => quoteArr[0])
-      .filter(quote => quote !== undefined)
-      .map(quote => ({
-        price: quote.price,
-        change: 0, // These would need to be calculated if needed
-        changePercent: 0,
-        timestamp: quote.timestamp
-      }));
+      .filter(quote => quote !== undefined);
     
     res.status(200).json({ quotes: flatQuotes });
   } catch (error) {
