@@ -9,7 +9,6 @@
 > - The db model as seen in the DB section (db/model.png)
 > - SQL Code for db creation (db/sql/all.sql)
 
-
 ## General Information
 
 Initial purpose of the "Stock Portfolio" was a study project aimed at developing the skills required by a modern "full-stack developer" to create enterprise applications as a member of an agile Scrum team. The project develops a web and mobile application for managing stock portfolios, using a multi-layer architecture with frontend, middleware (backend-for-frontend), and database backend.
@@ -17,6 +16,7 @@ Initial purpose of the "Stock Portfolio" was a study project aimed at developing
 ![Overview Diagram](docs/overview.jpeg)
 
 ### Main Features
+
 - Create, view, and manage stock portfolios
 - Track stock holdings and transactions
 - View stock quotes and historical data
@@ -25,7 +25,8 @@ Initial purpose of the "Stock Portfolio" was a study project aimed at developing
 - Secure authentication and authorization
 
 ### Technology Stack
-- **Frontend**: JavaScript with VueJS
+
+- **Frontend**: Typescript with VueJS
 - **Middleware**: NodeJS with ExpressJS, providing REST API
 - **Database**: PostgreSQL
 - **Authentication**: JWT (Keycloak)
@@ -33,6 +34,7 @@ Initial purpose of the "Stock Portfolio" was a study project aimed at developing
 - **Testing**: Mocha framework
 
 ### Development Tools
+
 - Visual Studio Code
 - Git (GitLab Community Edition)
 - cURL
@@ -42,7 +44,8 @@ Initial purpose of the "Stock Portfolio" was a study project aimed at developing
 - HeidiSQL
 
 ### Project Documentation Tools
-- Jira (Issue tracking)
+
+- GitHub Issues (Issue tracking)
 - Confluence (Comprehensive documentation)
 - Miro (Brainstorming)
 - Visual Paradigm Community Edition (UML)
@@ -54,8 +57,10 @@ Initial purpose of the "Stock Portfolio" was a study project aimed at developing
 The application follows a modern, layered architecture consisting of three main components:
 
 ### 1. Database Layer
+
 Located in `/db`, handles data persistence and management:
-```
+
+``` text
 db/
 ├── interfaces/          # Repository interfaces
 ├── providers/          # Database provider implementations
@@ -68,8 +73,10 @@ db/
 ```
 
 ### 2. BFF (Backend-For-Frontend) Layer
+
 Located in `/bff`, serves as the API middleware:
-```
+
+``` text
 bff/
 ├── src/
 │   ├── config/        # Configuration files
@@ -83,6 +90,7 @@ bff/
 ```
 
 ### 3. UI Layer (Planned)
+
 Will be implemented as part of the roadmap, focusing on a modern, responsive user interface.
 
 ## Technical Insights
@@ -96,12 +104,14 @@ The database model represents a comprehensive stock portfolio management system 
 ![View Database Model](db/model.png)
 
 #### Architecture
+
 - Implements Repository Pattern with Strategy/Adapter
 - Uses Plugin Pattern for multiple database providers
 - Supports PostgreSQL (primary) and SQLite (secondary)
 - Implements comprehensive error handling and transaction management
 
 #### Key Features
+
 - Connection pooling for optimal performance
 - Robust data validation at multiple levels
 - Secure data handling with encryption
@@ -111,12 +121,14 @@ The database model represents a comprehensive stock portfolio management system 
 ### BFF Layer
 
 #### Architecture
+
 - Built with Express.js and TypeScript
 - Implements REST API principles
 - Uses JWT authentication with Keycloak integration
 - Includes comprehensive middleware stack
 
 #### Key Components
+
 - Controllers for handling HTTP requests
 - Services for business logic
 - Models for type-safe data handling
@@ -124,6 +136,7 @@ The database model represents a comprehensive stock portfolio management system 
 - Integration with Yahoo Finance API
 
 ### Security Features
+
 - JWT-based authentication
 - Role-based access control
 - Input validation and sanitization
@@ -135,6 +148,7 @@ The database model represents a comprehensive stock portfolio management system 
 ## Layer Details
 
 ### 1. Database Layer
+
 - **Data Model**: Includes entities for Users, Portfolios, Stocks, Holdings, Transactions, and Quotes
 - **Transaction Management**: Ensures data consistency across operations
 - **Migration System**: Manages schema changes and versioning
@@ -142,6 +156,7 @@ The database model represents a comprehensive stock portfolio management system 
 - **Performance Optimization**: Implements connection pooling and query optimization
 
 ### 2. BFF Layer
+
 - **API Endpoints**: RESTful endpoints for all major operations
 - **Authentication**: Keycloak integration for secure access
 - **Data Validation**: Multiple layers of validation
@@ -150,7 +165,9 @@ The database model represents a comprehensive stock portfolio management system 
 - **Monitoring**: Comprehensive logging and metrics
 
 ### 3. UI Layer (Planned)
+
 Will focus on:
+
 - Modern, responsive design
 - Real-time data updates
 - Interactive charts and visualizations
@@ -160,6 +177,7 @@ Will focus on:
 ## Roadmap
 
 ### 1. UI Layer Implementation
+
 - Design system development
 - Component library creation
 - State management implementation
@@ -169,6 +187,7 @@ Will focus on:
 - Performance optimization
 
 ### 2. Containerization via Docker Compose
+
 - Container definitions for all services
 - Development environment setup
 - Production environment configuration
@@ -178,6 +197,7 @@ Will focus on:
 - Logging configuration
 
 ### 3. DevContainer Configuration
+
 - VS Code development container setup
 - Development tools integration
 - Extension configuration
@@ -187,6 +207,7 @@ Will focus on:
 - Task automation
 
 ### 4. Renovate Integration
+
 - Dependency update automation
 - Update schedule configuration
 - Version pinning strategy
@@ -196,6 +217,7 @@ Will focus on:
 - Change log generation
 
 ### 5. DevOps Pipeline
+
 - Kubernetes deployment (using Minikube or k3s)
 - GitLab CI/CD pipeline implementation
 - Local Kubernetes cluster setup
@@ -204,6 +226,7 @@ Will focus on:
 ## Development Practices
 
 ### Code Quality
+
 - TypeScript for type safety
 - ESLint for code quality
 - Prettier for code formatting
@@ -212,6 +235,7 @@ Will focus on:
 - Code review process
 
 ### Testing Strategy
+
 - Unit tests for all layers
 - Integration tests for APIs
 - End-to-end testing
@@ -220,6 +244,7 @@ Will focus on:
 - Automated CI/CD pipeline
 
 ### Documentation
+
 - API documentation (OpenAPI/Swagger)
 - Code documentation
 - Architecture documentation
@@ -229,6 +254,7 @@ Will focus on:
 ## Performance Considerations
 
 ### Database Optimization
+
 - Connection pooling
 - Query optimization
 - Indexing strategy
@@ -237,6 +263,7 @@ Will focus on:
 - Database sharding (future)
 
 ### API Optimization
+
 - Response caching
 - Rate limiting
 - Pagination
@@ -245,6 +272,7 @@ Will focus on:
 - Resource cleanup
 
 ### Security Measures
+
 - Data encryption
 - Access control
 - Input sanitization
