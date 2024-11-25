@@ -1,8 +1,58 @@
 {
   "info": {
     "name": "Stock Portfolio BFF - Transactions",
+    "description": "Collection for managing stock transactions in the Stock Portfolio application.\n\nAuthentication:\nThis collection uses Keycloak for authentication. Authentication is handled automatically through a pre-request script that:\n1. Checks for an existing access token\n2. If no token exists, requests a new one from Keycloak using credentials from environment variables\n3. Stores the tokens in environment variables for subsequent requests\n\nRequired Environment Variables:\n- keycloakUrl: Keycloak server URL (e.g., http://localhost:8080)\n- realm: Keycloak realm name (e.g., stock-portfolio)\n- clientId: Client ID for the application (e.g., bff-client)\n- clientSecret: Client secret for authentication\n- username: Test user username\n- password: Test user password\n- accessToken: (Managed automatically) Current access token\n- refreshToken: (Managed automatically) Current refresh token\n\nAdditional Variables:\n- holdingId: ID of the holding for transaction operations\n- portfolioId: ID of the portfolio when retrieving portfolio transactions\n- transactionId: ID of the specific transaction being accessed\n\nAll endpoints require a valid access token, which is automatically managed and included in the Authorization header. This collection provides comprehensive transaction management including creating new transactions and retrieving transaction history with filtering and pagination support.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "// Check if we have a valid access token",
+          "const accessToken = pm.environment.get('accessToken');",
+          "if (!accessToken) {",
+          "    // No token - get a new one",
+          "    const keycloakUrl = pm.environment.get('keycloakUrl');",
+          "    const realm = pm.environment.get('realm');",
+          "    const tokenUrl = `${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`;",
+          "",
+          "    const clientId = pm.environment.get('clientId');",
+          "    const clientSecret = pm.environment.get('clientSecret');",
+          "    const username = pm.environment.get('username');",
+          "    const password = pm.environment.get('password');",
+          "",
+          "    pm.sendRequest({",
+          "        url: tokenUrl,",
+          "        method: 'POST',",
+          "        header: {",
+          "            'Content-Type': 'application/x-www-form-urlencoded'",
+          "        },",
+          "        body: {",
+          "            mode: 'urlencoded',",
+          "            urlencoded: [",
+          "                { key: 'grant_type', value: 'password' },",
+          "                { key: 'client_id', value: clientId },",
+          "                { key: 'client_secret', value: clientSecret },",
+          "                { key: 'username', value: username },",
+          "                { key: 'password', value: password }",
+          "            ]",
+          "        }",
+          "    }, function (err, res) {",
+          "        if (err) {",
+          "            console.error(err);",
+          "        } else {",
+          "            const response = res.json();",
+          "            pm.environment.set('accessToken', response.access_token);",
+          "            pm.environment.set('refreshToken', response.refresh_token);",
+          "        }",
+          "    });",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
   "item": [
     {
       "name": "Create Transaction",
@@ -33,6 +83,10 @@
           {
             "key": "Content-Type",
             "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
           }
         ],
         "body": {
@@ -74,6 +128,12 @@
       ],
       "request": {
         "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/transactions/holding/{{holdingId}}?startDate=2024-01-01T00:00:00Z&endDate=2024-12-31T23:59:59Z&type=BUY&sort=date&order=desc&page=1&limit=10",
           "host": ["{{baseUrl}}"],
@@ -140,6 +200,12 @@
       ],
       "request": {
         "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/transactions/portfolio/{{portfolioId}}?startDate=2024-01-01T00:00:00Z&endDate=2024-12-31T23:59:59Z&type=BUY&sort=date&order=desc&page=1&limit=10",
           "host": ["{{baseUrl}}"],
@@ -203,6 +269,12 @@
       ],
       "request": {
         "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/transactions/{{transactionId}}",
           "host": ["{{baseUrl}}"],

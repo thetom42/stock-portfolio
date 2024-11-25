@@ -1,8 +1,58 @@
 {
   "info": {
     "name": "Stock Portfolio BFF - Stocks",
+    "description": "Collection for managing stocks in the Stock Portfolio application.\n\nAuthentication:\nThis collection uses Keycloak for authentication. Authentication is handled automatically through a pre-request script that:\n1. Checks for an existing access token\n2. If no token exists, requests a new one from Keycloak using credentials from environment variables\n3. Stores the tokens in environment variables for subsequent requests\n\nRequired Environment Variables:\n- keycloakUrl: Keycloak server URL (e.g., http://localhost:8080)\n- realm: Keycloak realm name (e.g., stock-portfolio)\n- clientId: Client ID for the application (e.g., bff-client)\n- clientSecret: Client secret for authentication\n- username: Test user username\n- password: Test user password\n- accessToken: (Managed automatically) Current access token\n- refreshToken: (Managed automatically) Current refresh token\n\nAdditional Variables:\n- categoryId: ID of the category when filtering stocks by category\n\nAll endpoints require a valid access token, which is automatically managed and included in the Authorization header. This collection provides comprehensive stock management including searching, creating, updating, and retrieving stock information by various identifiers (ISIN, WKN, Symbol).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "// Check if we have a valid access token",
+          "const accessToken = pm.environment.get('accessToken');",
+          "if (!accessToken) {",
+          "    // No token - get a new one",
+          "    const keycloakUrl = pm.environment.get('keycloakUrl');",
+          "    const realm = pm.environment.get('realm');",
+          "    const tokenUrl = `${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`;",
+          "",
+          "    const clientId = pm.environment.get('clientId');",
+          "    const clientSecret = pm.environment.get('clientSecret');",
+          "    const username = pm.environment.get('username');",
+          "    const password = pm.environment.get('password');",
+          "",
+          "    pm.sendRequest({",
+          "        url: tokenUrl,",
+          "        method: 'POST',",
+          "        header: {",
+          "            'Content-Type': 'application/x-www-form-urlencoded'",
+          "        },",
+          "        body: {",
+          "            mode: 'urlencoded',",
+          "            urlencoded: [",
+          "                { key: 'grant_type', value: 'password' },",
+          "                { key: 'client_id', value: clientId },",
+          "                { key: 'client_secret', value: clientSecret },",
+          "                { key: 'username', value: username },",
+          "                { key: 'password', value: password }",
+          "            ]",
+          "        }",
+          "    }, function (err, res) {",
+          "        if (err) {",
+          "            console.error(err);",
+          "        } else {",
+          "            const response = res.json();",
+          "            pm.environment.set('accessToken', response.access_token);",
+          "            pm.environment.set('refreshToken', response.refresh_token);",
+          "        }",
+          "    });",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
   "item": [
     {
       "name": "Search Stocks",
@@ -30,6 +80,12 @@
       ],
       "request": {
         "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/stocks/search?query=Apple",
           "host": ["{{baseUrl}}"],
@@ -69,6 +125,12 @@
       ],
       "request": {
         "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/stocks",
           "host": ["{{baseUrl}}"],
@@ -102,6 +164,12 @@
       ],
       "request": {
         "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/stocks/category/{{categoryId}}",
           "host": ["{{baseUrl}}"],
@@ -137,6 +205,10 @@
           {
             "key": "Content-Type",
             "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
           }
         ],
         "body": {
@@ -173,6 +245,12 @@
       ],
       "request": {
         "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/stocks/isin/US0378331005",
           "host": ["{{baseUrl}}"],
@@ -203,6 +281,12 @@
       ],
       "request": {
         "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/stocks/symbol/AAPL",
           "host": ["{{baseUrl}}"],
@@ -233,6 +317,12 @@
       ],
       "request": {
         "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/stocks/wkn/865985",
           "host": ["{{baseUrl}}"],
@@ -265,6 +355,12 @@
       ],
       "request": {
         "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/stocks/details/US0378331005",
           "host": ["{{baseUrl}}"],
@@ -298,6 +394,10 @@
           {
             "key": "Content-Type",
             "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
           }
         ],
         "body": {
@@ -327,6 +427,12 @@
       ],
       "request": {
         "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/stocks/US0378331005",
           "host": ["{{baseUrl}}"],

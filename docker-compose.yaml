@@ -16,6 +16,32 @@ services:
       timeout: 5s
       retries: 5
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:21.1
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/stock_portfolio
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
+      KC_HEALTH_ENABLED: "true"
+    command:
+      - start-dev
+      - --import-realm
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    #healthcheck:
+    #  test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+    #  interval: 5s
+    #  timeout: 5s
+    #  retries: 10
+
   bff:
     build:
       context: .
@@ -27,6 +53,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      keycloak:
+        condition: service_started
+        #condition: service_healthy
     volumes:
       # Mount files exactly where the imports expect them
       - ./bff/src:/app/src

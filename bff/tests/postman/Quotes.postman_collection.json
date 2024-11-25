@@ -1,8 +1,58 @@
 {
   "info": {
     "name": "Stock Portfolio BFF - Quotes",
+    "description": "Collection for retrieving stock quotes and price history in the Stock Portfolio application.\n\nAuthentication:\nThis collection uses Keycloak for authentication. Authentication is handled automatically through a pre-request script that:\n1. Checks for an existing access token\n2. If no token exists, requests a new one from Keycloak using credentials from environment variables\n3. Stores the tokens in environment variables for subsequent requests\n\nRequired Environment Variables:\n- keycloakUrl: Keycloak server URL (e.g., http://localhost:8080)\n- realm: Keycloak realm name (e.g., stock-portfolio)\n- clientId: Client ID for the application (e.g., bff-client)\n- clientSecret: Client secret for authentication\n- username: Test user username\n- password: Test user password\n- accessToken: (Managed automatically) Current access token\n- refreshToken: (Managed automatically) Current refresh token\n\nAdditional Variables:\n- portfolioId: ID of the portfolio when retrieving portfolio quotes\n- holdingId: ID of the holding when retrieving holding quotes\n\nAll endpoints require a valid access token, which is automatically managed and included in the Authorization header. This collection provides access to real-time quotes, historical data, and aggregated quote information for portfolios and holdings.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "// Check if we have a valid access token",
+          "const accessToken = pm.environment.get('accessToken');",
+          "if (!accessToken) {",
+          "    // No token - get a new one",
+          "    const keycloakUrl = pm.environment.get('keycloakUrl');",
+          "    const realm = pm.environment.get('realm');",
+          "    const tokenUrl = `${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`;",
+          "",
+          "    const clientId = pm.environment.get('clientId');",
+          "    const clientSecret = pm.environment.get('clientSecret');",
+          "    const username = pm.environment.get('username');",
+          "    const password = pm.environment.get('password');",
+          "",
+          "    pm.sendRequest({",
+          "        url: tokenUrl,",
+          "        method: 'POST',",
+          "        header: {",
+          "            'Content-Type': 'application/x-www-form-urlencoded'",
+          "        },",
+          "        body: {",
+          "            mode: 'urlencoded',",
+          "            urlencoded: [",
+          "                { key: 'grant_type', value: 'password' },",
+          "                { key: 'client_id', value: clientId },",
+          "                { key: 'client_secret', value: clientSecret },",
+          "                { key: 'username', value: username },",
+          "                { key: 'password', value: password }",
+          "            ]",
+          "        }",
+          "    }, function (err, res) {",
+          "        if (err) {",
+          "            console.error(err);",
+          "        } else {",
+          "            const response = res.json();",
+          "            pm.environment.set('accessToken', response.access_token);",
+          "            pm.environment.set('refreshToken', response.refresh_token);",
+          "        }",
+          "    });",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
   "item": [
     {
       "name": "Get Latest Quote",
@@ -27,6 +77,12 @@
       ],
       "request": {
         "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/quotes/stock/US0378331005/latest",
           "host": ["{{baseUrl}}"],
@@ -60,6 +116,12 @@
       ],
       "request": {
         "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/quotes/stock/US0378331005/history",
           "host": ["{{baseUrl}}"],
@@ -93,6 +155,12 @@
       ],
       "request": {
         "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/quotes/stock/US0378331005/intraday",
           "host": ["{{baseUrl}}"],
@@ -126,6 +194,12 @@
       ],
       "request": {
         "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/quotes/portfolio/{{portfolioId}}/quotes",
           "host": ["{{baseUrl}}"],
@@ -159,6 +233,12 @@
       ],
       "request": {
         "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/quotes/holding/{{holdingId}}/quotes",
           "host": ["{{baseUrl}}"],
