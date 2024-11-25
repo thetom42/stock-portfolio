@@ -1,21 +1,30 @@
 {
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Debug BFF",
-      "skipFiles": ["<node_internals>/**"],
-      "program": "${workspaceFolder}/bff/src/app.ts",
-      "runtimeArgs": ["-r", "ts-node/register"],
-      "outFiles": ["${workspaceFolder}/bff/dist/**/*.js"],
-      "env": {
-        "NODE_ENV": "development",
-        "DATABASE_URL": "postgresql://postgres:postgres@localhost:5432/stock_portfolio"
-      },
-      "sourceMaps": true,
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen"
-    }
-  ]
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug BFF",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "cwd": "${workspaceFolder}/bff",
+            "runtimeArgs": [
+                "-r",
+                "ts-node/register"
+            ],
+            "program": "${workspaceFolder}/bff/src/app.ts",
+            "outFiles": [
+                "${workspaceFolder}/bff/dist/**/*.js"
+            ],
+            "sourceMaps": true,
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/bff/**",
+                "!**/node_modules/**"
+            ],
+            "env": {
+                "NODE_ENV": "development"
+            }
+        }
+    ]
 }
