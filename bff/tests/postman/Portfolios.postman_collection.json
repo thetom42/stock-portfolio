@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Stock Portfolio BFF - Portfolios",
-    "description": "Collection for managing investment portfolios in the Stock Portfolio application.\n\nAuthentication:\nThis collection uses Keycloak for authentication. Authentication is handled automatically through a pre-request script that:\n1. Checks for an existing access token\n2. If no token exists, requests a new one from Keycloak using credentials from environment variables\n3. Stores the tokens in environment variables for subsequent requests\n\nRequired Environment Variables:\n- keycloakUrl: Keycloak server URL (e.g., http://localhost:8080)\n- realm: Keycloak realm name (e.g., stock-portfolio)\n- clientId: Client ID for the application (e.g., bff-client)\n- clientSecret: Client secret for authentication\n- username: Test user username\n- password: Test user password\n- accessToken: (Managed automatically) Current access token\n- refreshToken: (Managed automatically) Current refresh token\n\nAdditional Variables:\n- portfolioId: ID of the portfolio being accessed\n\nAll endpoints require a valid access token, which is automatically managed and included in the Authorization header. This collection provides comprehensive portfolio management including creation, updates, performance tracking, and portfolio analysis.",
+    "description": "Collection for managing investment portfolios in the Stock Portfolio application.\n\nAuthentication:\nThis collection uses Keycloak for authentication. Portfolios are user-specific resources, requiring authentication to ensure users can only access and modify their own portfolios.\n\nRequired Environment Variables:\n- Regular User Authentication:\n  * username: Regular test user username\n  * password: Regular test user password\n  * accessToken: Regular user access token\n\nAdditional Variables:\n- portfolioId: ID of the portfolio being accessed\n\nThe collection includes operations for managing portfolios, including creation, updates, and retrieving various portfolio metrics (performance, allocation, etc.). All operations require authentication and verify resource ownership.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "event": [
@@ -9,45 +9,52 @@
       "listen": "prerequest",
       "script": {
         "exec": [
-          "// Check if we have a valid access token",
-          "const accessToken = pm.environment.get('accessToken');",
-          "if (!accessToken) {",
-          "    // No token - get a new one",
-          "    const keycloakUrl = pm.environment.get('keycloakUrl');",
-          "    const realm = pm.environment.get('realm');",
-          "    const tokenUrl = `${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`;",
+          "// Function to get token based on role",
+          "const getToken = (isAdmin = false) => {",
+          "    const username = isAdmin ? pm.environment.get('adminUsername') : pm.environment.get('username');",
+          "    const password = isAdmin ? pm.environment.get('adminPassword') : pm.environment.get('password');",
+          "    const tokenVar = isAdmin ? 'adminAccessToken' : 'accessToken';",
+          "    const refreshTokenVar = isAdmin ? 'adminRefreshToken' : 'refreshToken';",
           "",
-          "    const clientId = pm.environment.get('clientId');",
-          "    const clientSecret = pm.environment.get('clientSecret');",
-          "    const username = pm.environment.get('username');",
-          "    const password = pm.environment.get('password');",
+          "    const accessToken = pm.environment.get(tokenVar);",
+          "    if (!accessToken) {",
+          "        const keycloakUrl = pm.environment.get('keycloakUrl');",
+          "        const realm = pm.environment.get('realm');",
+          "        const tokenUrl = `${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`;",
           "",
-          "    pm.sendRequest({",
-          "        url: tokenUrl,",
-          "        method: 'POST',",
-          "        header: {",
-          "            'Content-Type': 'application/x-www-form-urlencoded'",
-          "        },",
-          "        body: {",
-          "            mode: 'urlencoded',",
-          "            urlencoded: [",
-          "                { key: 'grant_type', value: 'password' },",
-          "                { key: 'client_id', value: clientId },",
-          "                { key: 'client_secret', value: clientSecret },",
-          "                { key: 'username', value: username },",
-          "                { key: 'password', value: password }",
-          "            ]",
-          "        }",
-          "    }, function (err, res) {",
-          "        if (err) {",
-          "            console.error(err);",
-          "        } else {",
-          "            const response = res.json();",
-          "            pm.environment.set('accessToken', response.access_token);",
-          "            pm.environment.set('refreshToken', response.refresh_token);",
-          "        }",
-          "    });",
-          "}"
+          "        const clientId = pm.environment.get('clientId');",
+          "        const clientSecret = pm.environment.get('clientSecret');",
+          "",
+          "        pm.sendRequest({",
+          "            url: tokenUrl,",
+          "            method: 'POST',",
+          "            header: {",
+          "                'Content-Type': 'application/x-www-form-urlencoded'",
+          "            },",
+          "            body: {",
+          "                mode: 'urlencoded',",
+          "                urlencoded: [",
+          "                    { key: 'grant_type', value: 'password' },",
+          "                    { key: 'client_id', value: clientId },",
+          "                    { key: 'client_secret', value: clientSecret },",
+          "                    { key: 'username', value: username },",
+          "                    { key: 'password', value: password }",
+          "                ]",
+          "            }",
+          "        }, function (err, res) {",
+          "            if (err) {",
+          "                console.error(err);",
+          "            } else {",
+          "                const response = res.json();",
+          "                pm.environment.set(tokenVar, response.access_token);",
+          "                pm.environment.set(refreshTokenVar, response.refresh_token);",
+          "            }",
+          "        });",
+          "    }",
+          "};",
+          "",
+          "// Get regular user token since portfolios are user-specific",
+          "getToken(false);"
         ],
         "type": "text/javascript"
       }
@@ -55,413 +62,492 @@
   ],
   "item": [
     {
-      "name": "Create Portfolio",
-      "event": [
+      "name": "Portfolio Management",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 201', function() {",
-              "    pm.response.to.have.status(201);",
-              "});",
-              "",
-              "pm.test('Response has correct portfolio data', function() {",
-              "    const response = pm.response.json();",
-              "    pm.expect(response).to.have.property('id');",
-              "    pm.expect(response.name).to.eql('Test Portfolio');",
-              "    pm.variables.set('portfolioId', response.id);",
-              "});"
-            ]
+          "name": "Create Portfolio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has correct portfolio data', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.expect(response.name).to.eql('Test Portfolio');",
+                  "    pm.environment.set('portfolioId', response.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Test Portfolio\",\n    \"description\": \"Test Description\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/portfolios",
+              "host": ["{{baseUrl}}"],
+              "path": ["portfolios"]
+            }
           }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          },
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"name\": \"Test Portfolio\",\n    \"description\": \"Test Description\"\n}"
         },
-        "url": {
-          "raw": "{{baseUrl}}/portfolios",
-          "host": ["{{baseUrl}}"],
-          "path": ["portfolios"]
-        }
-      }
-    },
-    {
-      "name": "Get User Portfolios",
-      "event": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function() {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response is an array of portfolios', function() {",
-              "    const response = pm.response.json();",
-              "    pm.expect(response).to.be.an('array');",
-              "    if (response.length > 0) {",
-              "        pm.expect(response[0]).to.have.property('id');",
-              "        pm.expect(response[0]).to.have.property('name');",
-              "    }",
-              "});"
-            ]
+          "name": "Get User Portfolios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array of portfolios', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    if (response.length > 0) {",
+                  "        pm.expect(response[0]).to.have.property('id');",
+                  "        pm.expect(response[0]).to.have.property('name');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/portfolios",
+              "host": ["{{baseUrl}}"],
+              "path": ["portfolios"]
+            }
           }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/portfolios",
-          "host": ["{{baseUrl}}"],
-          "path": ["portfolios"]
-        }
-      }
-    },
-    {
-      "name": "Get Portfolio",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function() {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response has correct portfolio data', function() {",
-              "    const response = pm.response.json();",
-              "    pm.expect(response.id).to.eql(pm.variables.get('portfolioId'));",
-              "    pm.expect(response).to.have.property('name');",
-              "    pm.expect(response).to.have.property('description');",
-              "});"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/portfolios/{{portfolioId}}",
-          "host": ["{{baseUrl}}"],
-          "path": ["portfolios", "{{portfolioId}}"]
-        }
-      }
-    },
-    {
-      "name": "Update Portfolio",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function() {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response has updated portfolio data', function() {",
-              "    const response = pm.response.json();",
-              "    pm.expect(response.id).to.eql(pm.variables.get('portfolioId'));",
-              "    pm.expect(response.name).to.eql('Updated Portfolio');",
-              "});"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "PUT",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          },
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"name\": \"Updated Portfolio\",\n    \"description\": \"Updated Description\"\n}"
         },
-        "url": {
-          "raw": "{{baseUrl}}/portfolios/{{portfolioId}}",
-          "host": ["{{baseUrl}}"],
-          "path": ["portfolios", "{{portfolioId}}"]
+        {
+          "name": "Get Portfolio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has correct portfolio data', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.id).to.eql(pm.environment.get('portfolioId'));",
+                  "    pm.expect(response).to.have.property('name');",
+                  "    pm.expect(response).to.have.property('description');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/portfolios/{{portfolioId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["portfolios", "{{portfolioId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Portfolio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has updated portfolio data', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.id).to.eql(pm.environment.get('portfolioId'));",
+                  "    pm.expect(response.name).to.eql('Updated Portfolio');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Updated Portfolio\",\n    \"description\": \"Updated Description\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/portfolios/{{portfolioId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["portfolios", "{{portfolioId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Portfolio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204', function() {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/portfolios/{{portfolioId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["portfolios", "{{portfolioId}}"]
+            }
+          }
         }
-      }
+      ]
     },
     {
-      "name": "Get Portfolio Summary",
-      "event": [
+      "name": "Portfolio Analysis",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function() {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response has summary data', function() {",
-              "    const response = pm.response.json();",
-              "    pm.expect(response).to.have.property('totalValue');",
-              "    pm.expect(response).to.have.property('totalHoldings');",
-              "});"
-            ]
+          "name": "Get Portfolio Summary",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has summary data', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('totalValue');",
+                  "    pm.expect(response).to.have.property('totalHoldings');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/portfolios/{{portfolioId}}/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["portfolios", "{{portfolioId}}", "summary"]
+            }
+          }
+        },
+        {
+          "name": "Get Portfolio Performance",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has performance data', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('totalReturn');",
+                  "    pm.expect(response).to.have.property('returnPercentage');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/portfolios/{{portfolioId}}/performance",
+              "host": ["{{baseUrl}}"],
+              "path": ["portfolios", "{{portfolioId}}", "performance"]
+            }
+          }
+        },
+        {
+          "name": "Get Portfolio Holdings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array of holdings', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    if (response.length > 0) {",
+                  "        pm.expect(response[0]).to.have.property('id');",
+                  "        pm.expect(response[0]).to.have.property('quantity');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/portfolios/{{portfolioId}}/holdings",
+              "host": ["{{baseUrl}}"],
+              "path": ["portfolios", "{{portfolioId}}", "holdings"]
+            }
+          }
+        },
+        {
+          "name": "Get Portfolio Allocation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has allocation data', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    if (response.length > 0) {",
+                  "        pm.expect(response[0]).to.have.property('category');",
+                  "        pm.expect(response[0]).to.have.property('percentage');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/portfolios/{{portfolioId}}/allocation",
+              "host": ["{{baseUrl}}"],
+              "path": ["portfolios", "{{portfolioId}}", "allocation"]
+            }
+          }
+        },
+        {
+          "name": "Get Portfolio Returns",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has returns data', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('totalReturn');",
+                  "    pm.expect(response).to.have.property('annualizedReturn');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/portfolios/{{portfolioId}}/returns",
+              "host": ["{{baseUrl}}"],
+              "path": ["portfolios", "{{portfolioId}}", "returns"]
+            }
+          }
+        },
+        {
+          "name": "Get Portfolio History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has history data', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    if (response.length > 0) {",
+                  "        pm.expect(response[0]).to.have.property('date');",
+                  "        pm.expect(response[0]).to.have.property('value');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/portfolios/{{portfolioId}}/history",
+              "host": ["{{baseUrl}}"],
+              "path": ["portfolios", "{{portfolioId}}", "history"]
+            }
           }
         }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/portfolios/{{portfolioId}}/summary",
-          "host": ["{{baseUrl}}"],
-          "path": ["portfolios", "{{portfolioId}}", "summary"]
-        }
-      }
+      ]
     },
     {
-      "name": "Get Portfolio Performance",
-      "event": [
+      "name": "Access Control Tests",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function() {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response has performance data', function() {",
-              "    const response = pm.response.json();",
-              "    pm.expect(response).to.have.property('totalReturn');",
-              "    pm.expect(response).to.have.property('returnPercentage');",
-              "});"
-            ]
+          "name": "Get Other User's Portfolio (Should Fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403', function() {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Response has correct error message', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.error).to.have.property('message');",
+                  "    pm.expect(response.error.message).to.include('Forbidden');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/portfolios/other-user-portfolio-id",
+              "host": ["{{baseUrl}}"],
+              "path": ["portfolios", "other-user-portfolio-id"]
+            }
           }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/portfolios/{{portfolioId}}/performance",
-          "host": ["{{baseUrl}}"],
-          "path": ["portfolios", "{{portfolioId}}", "performance"]
-        }
-      }
-    },
-    {
-      "name": "Get Portfolio Holdings",
-      "event": [
+        },
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function() {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response is an array of holdings', function() {",
-              "    const response = pm.response.json();",
-              "    pm.expect(response).to.be.an('array');",
-              "    if (response.length > 0) {",
-              "        pm.expect(response[0]).to.have.property('id');",
-              "        pm.expect(response[0]).to.have.property('quantity');",
-              "    }",
-              "});"
-            ]
+          "name": "Access Without Auth (Should Fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401', function() {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Response has correct error message', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.error).to.have.property('message');",
+                  "    pm.expect(response.error.message).to.include('Unauthorized');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/portfolios",
+              "host": ["{{baseUrl}}"],
+              "path": ["portfolios"]
+            }
           }
         }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/portfolios/{{portfolioId}}/holdings",
-          "host": ["{{baseUrl}}"],
-          "path": ["portfolios", "{{portfolioId}}", "holdings"]
-        }
-      }
-    },
-    {
-      "name": "Get Portfolio Allocation",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function() {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response has allocation data', function() {",
-              "    const response = pm.response.json();",
-              "    pm.expect(response).to.be.an('array');",
-              "    if (response.length > 0) {",
-              "        pm.expect(response[0]).to.have.property('category');",
-              "        pm.expect(response[0]).to.have.property('percentage');",
-              "    }",
-              "});"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/portfolios/{{portfolioId}}/allocation",
-          "host": ["{{baseUrl}}"],
-          "path": ["portfolios", "{{portfolioId}}", "allocation"]
-        }
-      }
-    },
-    {
-      "name": "Get Portfolio Returns",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function() {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response has returns data', function() {",
-              "    const response = pm.response.json();",
-              "    pm.expect(response).to.have.property('totalReturn');",
-              "    pm.expect(response).to.have.property('annualizedReturn');",
-              "});"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/portfolios/{{portfolioId}}/returns",
-          "host": ["{{baseUrl}}"],
-          "path": ["portfolios", "{{portfolioId}}", "returns"]
-        }
-      }
-    },
-    {
-      "name": "Get Portfolio History",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function() {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response has history data', function() {",
-              "    const response = pm.response.json();",
-              "    pm.expect(response).to.be.an('array');",
-              "    if (response.length > 0) {",
-              "        pm.expect(response[0]).to.have.property('date');",
-              "        pm.expect(response[0]).to.have.property('value');",
-              "    }",
-              "});"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/portfolios/{{portfolioId}}/history",
-          "host": ["{{baseUrl}}"],
-          "path": ["portfolios", "{{portfolioId}}", "history"]
-        }
-      }
-    },
-    {
-      "name": "Delete Portfolio",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 204', function() {",
-              "    pm.response.to.have.status(204);",
-              "});"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "DELETE",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/portfolios/{{portfolioId}}",
-          "host": ["{{baseUrl}}"],
-          "path": ["portfolios", "{{portfolioId}}"]
-        }
-      }
+      ]
     }
   ],
   "variable": [

@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Stock Portfolio BFF - Stocks",
-    "description": "Collection for managing stocks in the Stock Portfolio application.\n\nAuthentication:\nThis collection uses Keycloak for authentication. Authentication is handled automatically through a pre-request script that:\n1. Checks for an existing access token\n2. If no token exists, requests a new one from Keycloak using credentials from environment variables\n3. Stores the tokens in environment variables for subsequent requests\n\nRequired Environment Variables:\n- keycloakUrl: Keycloak server URL (e.g., http://localhost:8080)\n- realm: Keycloak realm name (e.g., stock-portfolio)\n- clientId: Client ID for the application (e.g., bff-client)\n- clientSecret: Client secret for authentication\n- username: Test user username\n- password: Test user password\n- accessToken: (Managed automatically) Current access token\n- refreshToken: (Managed automatically) Current refresh token\n\nAdditional Variables:\n- categoryId: ID of the category when filtering stocks by category\n\nAll endpoints require a valid access token, which is automatically managed and included in the Authorization header. This collection provides comprehensive stock management including searching, creating, updating, and retrieving stock information by various identifiers (ISIN, WKN, Symbol).",
+    "description": "Collection for managing stocks in the Stock Portfolio application.\n\nAuthentication:\nThis collection uses Keycloak for authentication with support for both regular users and administrators.\n\nRequired Environment Variables:\n- Regular User Authentication:\n  * username: Regular test user username\n  * password: Regular test user password\n  * accessToken: Regular user access token\n\n- Admin Authentication:\n  * adminUsername: Admin test user username\n  * adminPassword: Admin test user password\n  * adminAccessToken: Admin user access token\n\nThe collection includes tests for both regular user operations (viewing stocks) and admin-specific operations (creating, updating, deleting stocks). Stock identifiers (ISIN, WKN, Symbol) are used for lookups, and category relationships are managed through categoryId.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "event": [
@@ -9,44 +9,55 @@
       "listen": "prerequest",
       "script": {
         "exec": [
-          "// Check if we have a valid access token",
-          "const accessToken = pm.environment.get('accessToken');",
-          "if (!accessToken) {",
-          "    // No token - get a new one",
-          "    const keycloakUrl = pm.environment.get('keycloakUrl');",
-          "    const realm = pm.environment.get('realm');",
-          "    const tokenUrl = `${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`;",
+          "// Function to get token based on role",
+          "const getToken = (isAdmin = false) => {",
+          "    const username = isAdmin ? pm.environment.get('adminUsername') : pm.environment.get('username');",
+          "    const password = isAdmin ? pm.environment.get('adminPassword') : pm.environment.get('password');",
+          "    const tokenVar = isAdmin ? 'adminAccessToken' : 'accessToken';",
+          "    const refreshTokenVar = isAdmin ? 'adminRefreshToken' : 'refreshToken';",
           "",
-          "    const clientId = pm.environment.get('clientId');",
-          "    const clientSecret = pm.environment.get('clientSecret');",
-          "    const username = pm.environment.get('username');",
-          "    const password = pm.environment.get('password');",
+          "    const accessToken = pm.environment.get(tokenVar);",
+          "    if (!accessToken) {",
+          "        const keycloakUrl = pm.environment.get('keycloakUrl');",
+          "        const realm = pm.environment.get('realm');",
+          "        const tokenUrl = `${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`;",
           "",
-          "    pm.sendRequest({",
-          "        url: tokenUrl,",
-          "        method: 'POST',",
-          "        header: {",
-          "            'Content-Type': 'application/x-www-form-urlencoded'",
-          "        },",
-          "        body: {",
-          "            mode: 'urlencoded',",
-          "            urlencoded: [",
-          "                { key: 'grant_type', value: 'password' },",
-          "                { key: 'client_id', value: clientId },",
-          "                { key: 'client_secret', value: clientSecret },",
-          "                { key: 'username', value: username },",
-          "                { key: 'password', value: password }",
-          "            ]",
-          "        }",
-          "    }, function (err, res) {",
-          "        if (err) {",
-          "            console.error(err);",
-          "        } else {",
-          "            const response = res.json();",
-          "            pm.environment.set('accessToken', response.access_token);",
-          "            pm.environment.set('refreshToken', response.refresh_token);",
-          "        }",
-          "    });",
+          "        const clientId = pm.environment.get('clientId');",
+          "        const clientSecret = pm.environment.get('clientSecret');",
+          "",
+          "        pm.sendRequest({",
+          "            url: tokenUrl,",
+          "            method: 'POST',",
+          "            header: {",
+          "                'Content-Type': 'application/x-www-form-urlencoded'",
+          "            },",
+          "            body: {",
+          "                mode: 'urlencoded',",
+          "                urlencoded: [",
+          "                    { key: 'grant_type', value: 'password' },",
+          "                    { key: 'client_id', value: clientId },",
+          "                    { key: 'client_secret', value: clientSecret },",
+          "                    { key: 'username', value: username },",
+          "                    { key: 'password', value: password }",
+          "                ]",
+          "            }",
+          "        }, function (err, res) {",
+          "            if (err) {",
+          "                console.error(err);",
+          "            } else {",
+          "                const response = res.json();",
+          "                pm.environment.set(tokenVar, response.access_token);",
+          "                pm.environment.set(refreshTokenVar, response.refresh_token);",
+          "            }",
+          "        });",
+          "    }",
+          "};",
+          "",
+          "// Get appropriate token based on request name",
+          "if (pm.info.requestName.toLowerCase().includes('admin')) {",
+          "    getToken(true);",
+          "} else {",
+          "    getToken(false);",
           "}"
         ],
         "type": "text/javascript"
@@ -55,390 +66,333 @@
   ],
   "item": [
     {
-      "name": "Search Stocks",
-      "event": [
+      "name": "Regular User Operations",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function() {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response is an array of stocks', function() {",
-              "    const response = pm.response.json();",
-              "    pm.expect(response).to.be.an('array');",
-              "    if (response.length > 0) {",
-              "        pm.expect(response[0]).to.have.property('isin');",
-              "        pm.expect(response[0]).to.have.property('name');",
-              "        pm.expect(response[0]).to.have.property('symbol');",
-              "    }",
-              "});"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/stocks/search?query=Apple",
-          "host": ["{{baseUrl}}"],
-          "path": ["stocks", "search"],
-          "query": [
+          "name": "Search Stocks",
+          "event": [
             {
-              "key": "query",
-              "value": "Apple"
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array of stocks', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    if (response.length > 0) {",
+                  "        pm.expect(response[0]).to.have.property('isin');",
+                  "        pm.expect(response[0]).to.have.property('name');",
+                  "        pm.expect(response[0]).to.have.property('symbol');",
+                  "    }",
+                  "});"
+                ]
+              }
             }
-          ]
-        }
-      }
-    },
-    {
-      "name": "Get All Stocks",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function() {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response is an array of stocks', function() {",
-              "    const response = pm.response.json();",
-              "    pm.expect(response).to.be.an('array');",
-              "    if (response.length > 0) {",
-              "        pm.expect(response[0]).to.have.property('isin');",
-              "        pm.expect(response[0]).to.have.property('name');",
-              "        pm.expect(response[0]).to.have.property('symbol');",
-              "    }",
-              "});"
-            ]
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/stocks/search?query=Apple",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks", "search"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "Apple"
+                }
+              ]
+            }
           }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/stocks",
-          "host": ["{{baseUrl}}"],
-          "path": ["stocks"]
-        }
-      }
-    },
-    {
-      "name": "Get Stocks by Category",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function() {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response is an array of stocks in category', function() {",
-              "    const response = pm.response.json();",
-              "    pm.expect(response).to.be.an('array');",
-              "    if (response.length > 0) {",
-              "        pm.expect(response[0]).to.have.property('isin');",
-              "        pm.expect(response[0]).to.have.property('name');",
-              "        pm.expect(response[0]).to.have.property('categoryId');",
-              "    }",
-              "});"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/stocks/category/{{categoryId}}",
-          "host": ["{{baseUrl}}"],
-          "path": ["stocks", "category", "{{categoryId}}"]
-        }
-      }
-    },
-    {
-      "name": "Create Stock",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 201', function() {",
-              "    pm.response.to.have.status(201);",
-              "});",
-              "",
-              "pm.test('Response has correct stock data', function() {",
-              "    const response = pm.response.json();",
-              "    pm.expect(response).to.have.property('isin');",
-              "    pm.expect(response).to.have.property('name');",
-              "    pm.expect(response).to.have.property('symbol');",
-              "    pm.expect(response).to.have.property('wkn');",
-              "});"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          },
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"isin\": \"US0378331005\",\n    \"name\": \"Apple Inc.\",\n    \"symbol\": \"AAPL\",\n    \"wkn\": \"865985\",\n    \"categoryId\": \"{{categoryId}}\"\n}"
         },
-        "url": {
-          "raw": "{{baseUrl}}/stocks",
-          "host": ["{{baseUrl}}"],
-          "path": ["stocks"]
-        }
-      }
-    },
-    {
-      "name": "Get Stock by ISIN",
-      "event": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function() {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response has correct stock data', function() {",
-              "    const response = pm.response.json();",
-              "    pm.expect(response.isin).to.eql('US0378331005');",
-              "    pm.expect(response).to.have.property('name');",
-              "    pm.expect(response).to.have.property('symbol');",
-              "});"
-            ]
+          "name": "Get All Stocks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array of stocks', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    if (response.length > 0) {",
+                  "        pm.expect(response[0]).to.have.property('isin');",
+                  "        pm.expect(response[0]).to.have.property('name');",
+                  "        pm.expect(response[0]).to.have.property('symbol');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/stocks",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks"]
+            }
           }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/stocks/isin/US0378331005",
-          "host": ["{{baseUrl}}"],
-          "path": ["stocks", "isin", "US0378331005"]
-        }
-      }
-    },
-    {
-      "name": "Get Stock by Symbol",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function() {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response has correct stock data', function() {",
-              "    const response = pm.response.json();",
-              "    pm.expect(response.symbol).to.eql('AAPL');",
-              "    pm.expect(response).to.have.property('isin');",
-              "    pm.expect(response).to.have.property('name');",
-              "});"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/stocks/symbol/AAPL",
-          "host": ["{{baseUrl}}"],
-          "path": ["stocks", "symbol", "AAPL"]
-        }
-      }
-    },
-    {
-      "name": "Get Stock by WKN",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function() {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response has correct stock data', function() {",
-              "    const response = pm.response.json();",
-              "    pm.expect(response.wkn).to.eql('865985');",
-              "    pm.expect(response).to.have.property('isin');",
-              "    pm.expect(response).to.have.property('name');",
-              "});"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/stocks/wkn/865985",
-          "host": ["{{baseUrl}}"],
-          "path": ["stocks", "wkn", "865985"]
-        }
-      }
-    },
-    {
-      "name": "Get Stock Details",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function() {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response has detailed stock data', function() {",
-              "    const response = pm.response.json();",
-              "    pm.expect(response.isin).to.eql('US0378331005');",
-              "    pm.expect(response).to.have.property('name');",
-              "    pm.expect(response).to.have.property('description');",
-              "    pm.expect(response).to.have.property('sector');",
-              "    pm.expect(response).to.have.property('marketCap');",
-              "});"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/stocks/details/US0378331005",
-          "host": ["{{baseUrl}}"],
-          "path": ["stocks", "details", "US0378331005"]
-        }
-      }
-    },
-    {
-      "name": "Update Stock",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function() {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response has updated stock data', function() {",
-              "    const response = pm.response.json();",
-              "    pm.expect(response.isin).to.eql('US0378331005');",
-              "    pm.expect(response.name).to.eql('Updated Apple Inc.');",
-              "});"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "PUT",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          },
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"name\": \"Updated Apple Inc.\",\n    \"description\": \"Updated description\"\n}"
         },
-        "url": {
-          "raw": "{{baseUrl}}/stocks/US0378331005",
-          "host": ["{{baseUrl}}"],
-          "path": ["stocks", "US0378331005"]
+        {
+          "name": "Get Stocks by Category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array of stocks in category', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    if (response.length > 0) {",
+                  "        pm.expect(response[0]).to.have.property('isin');",
+                  "        pm.expect(response[0]).to.have.property('name');",
+                  "        pm.expect(response[0]).to.have.property('categoryId');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/stocks/category/{{categoryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks", "category", "{{categoryId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Stock by ISIN",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has correct stock data', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.isin).to.eql('US0378331005');",
+                  "    pm.expect(response).to.have.property('name');",
+                  "    pm.expect(response).to.have.property('symbol');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/stocks/isin/US0378331005",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks", "isin", "US0378331005"]
+            }
+          }
+        },
+        {
+          "name": "Create Stock (Should Fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403', function() {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Response has correct error message', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.error).to.have.property('message');",
+                  "    pm.expect(response.error.message).to.include('Forbidden');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"isin\": \"US0378331005\",\n    \"name\": \"Apple Inc.\",\n    \"symbol\": \"AAPL\",\n    \"wkn\": \"865985\",\n    \"categoryId\": \"{{categoryId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stocks",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks"]
+            }
+          }
         }
-      }
+      ]
     },
     {
-      "name": "Delete Stock",
-      "event": [
+      "name": "Admin Operations",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 204', function() {",
-              "    pm.response.to.have.status(204);",
-              "});"
-            ]
+          "name": "Admin Create Stock",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has correct stock data', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('isin');",
+                  "    pm.expect(response).to.have.property('name');",
+                  "    pm.expect(response).to.have.property('symbol');",
+                  "    pm.expect(response).to.have.property('wkn');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"isin\": \"US0378331005\",\n    \"name\": \"Apple Inc.\",\n    \"symbol\": \"AAPL\",\n    \"wkn\": \"865985\",\n    \"categoryId\": \"{{categoryId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stocks",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks"]
+            }
+          }
+        },
+        {
+          "name": "Admin Update Stock",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has updated stock data', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.isin).to.eql('US0378331005');",
+                  "    pm.expect(response.name).to.eql('Updated Apple Inc.');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Updated Apple Inc.\",\n    \"description\": \"Updated description\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stocks/US0378331005",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks", "US0378331005"]
+            }
+          }
+        },
+        {
+          "name": "Admin Delete Stock",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204', function() {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/stocks/US0378331005",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks", "US0378331005"]
+            }
           }
         }
-      ],
-      "request": {
-        "method": "DELETE",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/stocks/US0378331005",
-          "host": ["{{baseUrl}}"],
-          "path": ["stocks", "US0378331005"]
-        }
-      }
+      ]
     }
   ],
   "variable": [

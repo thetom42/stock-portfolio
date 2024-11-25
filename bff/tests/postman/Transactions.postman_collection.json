@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Stock Portfolio BFF - Transactions",
-    "description": "Collection for managing stock transactions in the Stock Portfolio application.\n\nAuthentication:\nThis collection uses Keycloak for authentication. Authentication is handled automatically through a pre-request script that:\n1. Checks for an existing access token\n2. If no token exists, requests a new one from Keycloak using credentials from environment variables\n3. Stores the tokens in environment variables for subsequent requests\n\nRequired Environment Variables:\n- keycloakUrl: Keycloak server URL (e.g., http://localhost:8080)\n- realm: Keycloak realm name (e.g., stock-portfolio)\n- clientId: Client ID for the application (e.g., bff-client)\n- clientSecret: Client secret for authentication\n- username: Test user username\n- password: Test user password\n- accessToken: (Managed automatically) Current access token\n- refreshToken: (Managed automatically) Current refresh token\n\nAdditional Variables:\n- holdingId: ID of the holding for transaction operations\n- portfolioId: ID of the portfolio when retrieving portfolio transactions\n- transactionId: ID of the specific transaction being accessed\n\nAll endpoints require a valid access token, which is automatically managed and included in the Authorization header. This collection provides comprehensive transaction management including creating new transactions and retrieving transaction history with filtering and pagination support.",
+    "description": "Collection for managing stock transactions in the Stock Portfolio application.\n\nAuthentication:\nThis collection uses Keycloak for authentication. Transactions are user-specific resources tied to holdings, requiring authentication to ensure users can only access and create transactions for their own holdings.\n\nRequired Environment Variables:\n- Regular User Authentication:\n  * username: Regular test user username\n  * password: Regular test user password\n  * accessToken: Regular user access token\n\nAdditional Variables:\n- holdingId: ID of the holding for which transactions are being managed\n- portfolioId: ID of the portfolio containing the holdings\n- transactionId: ID of the specific transaction being accessed\n\nThe collection includes operations for managing transactions within holdings, including creation and retrieval. All operations require authentication and verify resource ownership through the holding relationship.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "event": [
@@ -9,45 +9,52 @@
       "listen": "prerequest",
       "script": {
         "exec": [
-          "// Check if we have a valid access token",
-          "const accessToken = pm.environment.get('accessToken');",
-          "if (!accessToken) {",
-          "    // No token - get a new one",
-          "    const keycloakUrl = pm.environment.get('keycloakUrl');",
-          "    const realm = pm.environment.get('realm');",
-          "    const tokenUrl = `${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`;",
+          "// Function to get token based on role",
+          "const getToken = (isAdmin = false) => {",
+          "    const username = isAdmin ? pm.environment.get('adminUsername') : pm.environment.get('username');",
+          "    const password = isAdmin ? pm.environment.get('adminPassword') : pm.environment.get('password');",
+          "    const tokenVar = isAdmin ? 'adminAccessToken' : 'accessToken';",
+          "    const refreshTokenVar = isAdmin ? 'adminRefreshToken' : 'refreshToken';",
           "",
-          "    const clientId = pm.environment.get('clientId');",
-          "    const clientSecret = pm.environment.get('clientSecret');",
-          "    const username = pm.environment.get('username');",
-          "    const password = pm.environment.get('password');",
+          "    const accessToken = pm.environment.get(tokenVar);",
+          "    if (!accessToken) {",
+          "        const keycloakUrl = pm.environment.get('keycloakUrl');",
+          "        const realm = pm.environment.get('realm');",
+          "        const tokenUrl = `${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`;",
           "",
-          "    pm.sendRequest({",
-          "        url: tokenUrl,",
-          "        method: 'POST',",
-          "        header: {",
-          "            'Content-Type': 'application/x-www-form-urlencoded'",
-          "        },",
-          "        body: {",
-          "            mode: 'urlencoded',",
-          "            urlencoded: [",
-          "                { key: 'grant_type', value: 'password' },",
-          "                { key: 'client_id', value: clientId },",
-          "                { key: 'client_secret', value: clientSecret },",
-          "                { key: 'username', value: username },",
-          "                { key: 'password', value: password }",
-          "            ]",
-          "        }",
-          "    }, function (err, res) {",
-          "        if (err) {",
-          "            console.error(err);",
-          "        } else {",
-          "            const response = res.json();",
-          "            pm.environment.set('accessToken', response.access_token);",
-          "            pm.environment.set('refreshToken', response.refresh_token);",
-          "        }",
-          "    });",
-          "}"
+          "        const clientId = pm.environment.get('clientId');",
+          "        const clientSecret = pm.environment.get('clientSecret');",
+          "",
+          "        pm.sendRequest({",
+          "            url: tokenUrl,",
+          "            method: 'POST',",
+          "            header: {",
+          "                'Content-Type': 'application/x-www-form-urlencoded'",
+          "            },",
+          "            body: {",
+          "                mode: 'urlencoded',",
+          "                urlencoded: [",
+          "                    { key: 'grant_type', value: 'password' },",
+          "                    { key: 'client_id', value: clientId },",
+          "                    { key: 'client_secret', value: clientSecret },",
+          "                    { key: 'username', value: username },",
+          "                    { key: 'password', value: password }",
+          "                ]",
+          "            }",
+          "        }, function (err, res) {",
+          "            if (err) {",
+          "                console.error(err);",
+          "            } else {",
+          "                const response = res.json();",
+          "                pm.environment.set(tokenVar, response.access_token);",
+          "                pm.environment.set(refreshTokenVar, response.refresh_token);",
+          "            }",
+          "        });",
+          "    }",
+          "};",
+          "",
+          "// Get regular user token since transactions are user-specific",
+          "getToken(false);"
         ],
         "type": "text/javascript"
       }
@@ -68,10 +75,10 @@
               "pm.test('Response has correct transaction data', function() {",
               "    const response = pm.response.json();",
               "    pm.expect(response).to.have.property('id');",
-              "    pm.expect(response.holdingId).to.eql(pm.variables.get('holdingId'));",
+              "    pm.expect(response.holdingId).to.eql(pm.environment.get('holdingId'));",
               "    pm.expect(response.type).to.eql('BUY');",
               "    pm.expect(response.quantity).to.eql(100);",
-              "    pm.variables.set('transactionId', response.id);",
+              "    pm.environment.set('transactionId', response.id);",
               "});"
             ]
           }
@@ -256,7 +263,7 @@
               "",
               "pm.test('Response has correct transaction data', function() {",
               "    const response = pm.response.json();",
-              "    pm.expect(response.id).to.eql(pm.variables.get('transactionId'));",
+              "    pm.expect(response.id).to.eql(pm.environment.get('transactionId'));",
               "    pm.expect(response).to.have.property('type');",
               "    pm.expect(response).to.have.property('quantity');",
               "    pm.expect(response).to.have.property('price');",
@@ -279,6 +286,41 @@
           "raw": "{{baseUrl}}/transactions/{{transactionId}}",
           "host": ["{{baseUrl}}"],
           "path": ["transactions", "{{transactionId}}"]
+        }
+      }
+    },
+    {
+      "name": "Get Other User's Transaction (Should Fail)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 403', function() {",
+              "    pm.response.to.have.status(403);",
+              "});",
+              "",
+              "pm.test('Response has correct error message', function() {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response.error).to.have.property('message');",
+              "    pm.expect(response.error.message).to.include('Forbidden');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/transactions/other-user-transaction-id",
+          "host": ["{{baseUrl}}"],
+          "path": ["transactions", "other-user-transaction-id"]
         }
       }
     }
