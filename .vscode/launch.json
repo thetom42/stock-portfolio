@@ -11,7 +11,9 @@
             "cwd": "${workspaceFolder}/bff",
             "runtimeArgs": [
                 "-r",
-                "ts-node/register"
+                "ts-node/register",
+                "-r",
+                "dotenv/config"
             ],
             "program": "${workspaceFolder}/bff/src/app.ts",
             "outFiles": [
@@ -22,6 +24,7 @@
                 "${workspaceFolder}/bff/**",
                 "!**/node_modules/**"
             ],
+            "envFile": "${workspaceFolder}/bff/.env",
             "env": {
                 "NODE_ENV": "development"
             }
