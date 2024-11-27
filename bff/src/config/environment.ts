@@ -1,7 +1,7 @@
 export const environment = {
   // Server configuration
   NODE_ENV: process.env.NODE_ENV || 'development',
-  PORT: parseInt(process.env.PORT || '3000', 10),
+  PORT: parseInt(process.env.INTERNAL_BFF_PORT || '3000', 10),
   API_PREFIX: '/api',
 
   // Database configuration
