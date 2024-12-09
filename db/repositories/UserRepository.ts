@@ -19,21 +19,26 @@ export class UserRepository {
 
   async findById(id: string): Promise<User | null> {
     return await this.prisma.user.findUnique({
-      where: { USERS_ID: id }
+      where: { users_id: id }
     });
   }
 
   async findByEmail(email: string): Promise<User | null> {
     return await this.prisma.user.findUnique({
-      where: { EMAIL: email }
+      where: { email }
     });
   }
 
-  async update(id: string, data: Partial<User>): Promise<User> {
+  async update(id: string, userData: Partial<User>): Promise<User> {
     try {
+      const existingUser = await this.findById(id);
+      if (!existingUser) {
+        throw new Error('User not found');
+      }
+
       return await this.prisma.user.update({
-        where: { USERS_ID: id },
-        data
+        where: { users_id: id },
+        data: userData
       });
     } catch (error) {
       if (error instanceof Error && error.message.includes('Record to update not found')) {
@@ -46,7 +51,7 @@ export class UserRepository {
   async delete(id: string): Promise<User> {
     try {
       return await this.prisma.user.delete({
-        where: { USERS_ID: id }
+        where: { users_id: id }
       });
     } catch (error) {
       if (error instanceof Error && error.message.includes('Record to delete does not exist')) {

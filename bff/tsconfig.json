@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es2018",
     "module": "commonjs",
-    "lib": ["es2018"],
+    "lib": ["es2018", "dom"],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -24,7 +24,7 @@
     "noImplicitThis": true,
     "alwaysStrict": true,
     "allowJs": true,
-    "types": ["node", "mocha", "chai"],
+    "types": ["node", "mocha", "chai", "express", "node-fetch"],
     "typeRoots": ["./node_modules/@types", "./src/types"]
   },
   "include": [

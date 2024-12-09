@@ -4,6 +4,11 @@ import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import { createMockPrismaClient, resetMockPrismaClient } from './helpers/mockPrisma';
 import * as database from '../src/utils/database';
+import path from 'path';
+import dotenv from 'dotenv';
+
+// Load test environment variables
+dotenv.config({ path: path.join(__dirname, '../.env.test') });
 
 // Initialize chai plugins
 chai.use(chaiSpies);
@@ -21,13 +26,13 @@ export const mochaHooks = {
     process.env.PORT = '3000';
     process.env.DB_HOST = 'localhost';
     process.env.DB_PORT = '5432';
-    process.env.DB_NAME = 'stock_portfolio_test';
-    process.env.DB_USER = 'test_user';
+    process.env.DB_NAME = 'stockportfolio_test';
+    process.env.DB_USER = 'postgres';
     process.env.DB_PASSWORD = 'test_password';
-    process.env.KEYCLOAK_CLIENT_ID = 'test-client';
-    process.env.KEYCLOAK_CLIENT_SECRET = 'test-secret';
-    process.env.YAHOO_FINANCE_API_KEY = 'test-api-key';
-    process.env.JWT_SECRET = 'test-jwt-secret';
+    process.env.KEYCLOAK_CLIENT_ID = 'bff-client-test';
+    process.env.KEYCLOAK_CLIENT_SECRET = 'test_client_secret';
+    process.env.YAHOO_FINANCE_API_KEY = 'test_api_key';
+    process.env.JWT_SECRET = 'test_jwt_secret';
 
     // Setup mock Prisma client
     const mockPrismaClient = createMockPrismaClient();

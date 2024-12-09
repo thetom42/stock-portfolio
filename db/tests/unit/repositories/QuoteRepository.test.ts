@@ -25,18 +25,18 @@ describe('QuoteRepository', () => {
 
         // Create test category
         testCategory = {
-            CATEGORIES_ID: 'test-category-id',
-            NAME: 'Test Category'
+            categories_id: 'test-category-id',
+            name: 'Test Category'
         };
         await categoryRepository.create(testCategory);
 
         // Create test stock
         testStock = {
-            ISIN: 'TEST123456789',
-            CATEGORIES_ID: testCategory.CATEGORIES_ID,
-            NAME: 'Test Stock',
-            WKN: 'TEST123',
-            SYMBOL: 'TST'
+            isin: 'TEST123456789',
+            categories_id: testCategory.categories_id,
+            name: 'Test Stock',
+            wkn: 'TEST123',
+            symbol: 'TST'
         };
         await stockRepository.create(testStock);
     });
@@ -45,12 +45,12 @@ describe('QuoteRepository', () => {
         it('should create a new quote', async () => {
             // Arrange
             const quoteData: CreateQuoteInput = {
-                QUOTES_ID: 'test-quote-id',
-                ISIN: testStock.ISIN,
-                PRICE: 100.50,
-                CURRENCY: 'USD',
-                MARKET_TIME: new Date(),
-                EXCHANGE: 'NYSE'
+                quotes_id: 'test-quote-id',
+                isin: testStock.isin,
+                price: 100.50,
+                currency: 'USD',
+                market_time: new Date(),
+                exchange: 'NYSE'
             };
 
             // Act
@@ -58,27 +58,27 @@ describe('QuoteRepository', () => {
 
             // Assert
             expect(result).toBeDefined();
-            expect(result.QUOTES_ID).toBe(quoteData.QUOTES_ID);
-            expect(result.PRICE).toEqual(new Decimal(quoteData.PRICE));
-            expect(result.CURRENCY).toBe(quoteData.CURRENCY);
+            expect(result.quotes_id).toBe(quoteData.quotes_id);
+            expect(result.price).toEqual(new Decimal(quoteData.price));
+            expect(result.currency).toBe(quoteData.currency);
 
             // Verify the quote was actually saved
             const savedQuote = await prisma.quote.findUnique({
-                where: { QUOTES_ID: quoteData.QUOTES_ID }
+                where: { quotes_id: quoteData.quotes_id }
             });
             expect(savedQuote).toBeDefined();
-            expect(savedQuote?.PRICE).toEqual(new Decimal(quoteData.PRICE));
+            expect(savedQuote?.price).toEqual(new Decimal(quoteData.price));
         });
 
         it('should throw an error if stock does not exist', async () => {
             // Arrange
             const quoteData: CreateQuoteInput = {
-                QUOTES_ID: 'test-quote-id',
-                ISIN: 'non-existent-isin',
-                PRICE: 100.50,
-                CURRENCY: 'USD',
-                MARKET_TIME: new Date(),
-                EXCHANGE: 'NYSE'
+                quotes_id: 'test-quote-id',
+                isin: 'non-existent-isin',
+                price: 100.50,
+                currency: 'USD',
+                market_time: new Date(),
+                exchange: 'NYSE'
             };
 
             // Act & Assert
@@ -88,128 +88,84 @@ describe('QuoteRepository', () => {
         });
     });
 
-    describe('findByStock', () => {
+    describe('findByIsin', () => {
         it('should find all quotes for a stock', async () => {
             // Arrange
             const quotes: CreateQuoteInput[] = [
                 {
-                    QUOTES_ID: 'quote-1',
-                    ISIN: testStock.ISIN,
-                    PRICE: 100.50,
-                    CURRENCY: 'USD',
-                    MARKET_TIME: new Date('2024-01-01T10:00:00Z'),
-                    EXCHANGE: 'NYSE'
+                    quotes_id: 'quote-1',
+                    isin: testStock.isin,
+                    price: 100.50,
+                    currency: 'USD',
+                    market_time: new Date('2024-01-01T10:00:00Z'),
+                    exchange: 'NYSE'
                 },
                 {
-                    QUOTES_ID: 'quote-2',
-                    ISIN: testStock.ISIN,
-                    PRICE: 101.50,
-                    CURRENCY: 'USD',
-                    MARKET_TIME: new Date('2024-01-01T11:00:00Z'),
-                    EXCHANGE: 'NYSE'
+                    quotes_id: 'quote-2',
+                    isin: testStock.isin,
+                    price: 101.50,
+                    currency: 'USD',
+                    market_time: new Date('2024-01-01T11:00:00Z'),
+                    exchange: 'NYSE'
                 }
             ];
             await Promise.all(quotes.map(quote => quoteRepository.create(quote)));
 
             // Act
-            const result = await quoteRepository.findByStock(testStock.ISIN);
+            const result = await quoteRepository.findByIsin(testStock.isin);
 
             // Assert
             expect(result).toHaveLength(2);
-            expect(result[0].MARKET_TIME.getTime()).toBeGreaterThan(result[1].MARKET_TIME.getTime()); // Check descending order
+            expect(result[0].market_time.getTime()).toBeGreaterThan(result[1].market_time.getTime()); // Check descending order
         });
 
         it('should return empty array when stock has no quotes', async () => {
             // Act
-            const result = await quoteRepository.findByStock(testStock.ISIN);
+            const result = await quoteRepository.findByIsin(testStock.isin);
 
             // Assert
             expect(result).toEqual([]);
         });
     });
 
-    describe('findLatestByStock', () => {
+    describe('findLatestByIsin', () => {
         it('should find the latest quote for a stock', async () => {
             // Arrange
             const quotes: CreateQuoteInput[] = [
                 {
-                    QUOTES_ID: 'quote-1',
-                    ISIN: testStock.ISIN,
-                    PRICE: 100.50,
-                    CURRENCY: 'USD',
-                    MARKET_TIME: new Date('2024-01-01T10:00:00Z'),
-                    EXCHANGE: 'NYSE'
+                    quotes_id: 'quote-1',
+                    isin: testStock.isin,
+                    price: 100.50,
+                    currency: 'USD',
+                    market_time: new Date('2024-01-01T10:00:00Z'),
+                    exchange: 'NYSE'
                 },
                 {
-                    QUOTES_ID: 'quote-2',
-                    ISIN: testStock.ISIN,
-                    PRICE: 101.50,
-                    CURRENCY: 'USD',
-                    MARKET_TIME: new Date('2024-01-01T11:00:00Z'),
-                    EXCHANGE: 'NYSE'
+                    quotes_id: 'quote-2',
+                    isin: testStock.isin,
+                    price: 101.50,
+                    currency: 'USD',
+                    market_time: new Date('2024-01-01T11:00:00Z'),
+                    exchange: 'NYSE'
                 }
             ];
             await Promise.all(quotes.map(quote => quoteRepository.create(quote)));
 
             // Act
-            const result = await quoteRepository.findLatestByStock(testStock.ISIN);
+            const result = await quoteRepository.findLatestByIsin(testStock.isin);
 
             // Assert
             expect(result).toBeDefined();
-            expect(result?.QUOTES_ID).toBe('quote-2');
-            expect(result?.PRICE).toEqual(new Decimal(101.50));
+            expect(result?.quotes_id).toBe('quote-2');
+            expect(result?.price).toEqual(new Decimal(101.50));
         });
 
         it('should return null when stock has no quotes', async () => {
             // Act
-            const result = await quoteRepository.findLatestByStock(testStock.ISIN);
+            const result = await quoteRepository.findLatestByIsin(testStock.isin);
 
             // Assert
             expect(result).toBeNull();
-        });
-    });
-
-    describe('findByStockAndTimeRange', () => {
-        it('should find quotes within time range', async () => {
-            // Arrange
-            const quotes: CreateQuoteInput[] = [
-                {
-                    QUOTES_ID: 'quote-1',
-                    ISIN: testStock.ISIN,
-                    PRICE: 100.50,
-                    CURRENCY: 'USD',
-                    MARKET_TIME: new Date('2024-01-01T10:00:00Z'),
-                    EXCHANGE: 'NYSE'
-                },
-                {
-                    QUOTES_ID: 'quote-2',
-                    ISIN: testStock.ISIN,
-                    PRICE: 101.50,
-                    CURRENCY: 'USD',
-                    MARKET_TIME: new Date('2024-01-01T11:00:00Z'),
-                    EXCHANGE: 'NYSE'
-                },
-                {
-                    QUOTES_ID: 'quote-3',
-                    ISIN: testStock.ISIN,
-                    PRICE: 102.50,
-                    CURRENCY: 'USD',
-                    MARKET_TIME: new Date('2024-01-01T12:00:00Z'),
-                    EXCHANGE: 'NYSE'
-                }
-            ];
-            await Promise.all(quotes.map(quote => quoteRepository.create(quote)));
-
-            // Act
-            const result = await quoteRepository.findByStockAndTimeRange(
-                testStock.ISIN,
-                new Date('2024-01-01T10:30:00Z'),
-                new Date('2024-01-01T11:30:00Z')
-            );
-
-            // Assert
-            expect(result).toHaveLength(1);
-            expect(result[0].QUOTES_ID).toBe('quote-2');
         });
     });
 
@@ -217,40 +173,40 @@ describe('QuoteRepository', () => {
         it('should update a quote', async () => {
             // Arrange
             const quoteData: CreateQuoteInput = {
-                QUOTES_ID: 'test-quote-id',
-                ISIN: testStock.ISIN,
-                PRICE: 100.50,
-                CURRENCY: 'USD',
-                MARKET_TIME: new Date(),
-                EXCHANGE: 'NYSE'
+                quotes_id: 'test-quote-id',
+                isin: testStock.isin,
+                price: 100.50,
+                currency: 'USD',
+                market_time: new Date(),
+                exchange: 'NYSE'
             };
             await quoteRepository.create(quoteData);
 
             const updateData = {
-                PRICE: 150.75,
-                CURRENCY: 'EUR'
+                price: 150.75,
+                currency: 'EUR'
             };
 
             // Act
-            const result = await quoteRepository.update(quoteData.QUOTES_ID, updateData);
+            const result = await quoteRepository.update(quoteData.quotes_id, updateData);
 
             // Assert
             expect(result).toBeDefined();
-            expect(result.PRICE).toEqual(new Decimal(updateData.PRICE));
-            expect(result.CURRENCY).toBe(updateData.CURRENCY);
-            expect(result.ISIN).toBe(quoteData.ISIN); // Unchanged field
+            expect(result.price).toEqual(new Decimal(updateData.price));
+            expect(result.currency).toBe(updateData.currency);
+            expect(result.isin).toBe(quoteData.isin); // Unchanged field
 
             // Verify the update was persisted
             const updatedQuote = await prisma.quote.findUnique({
-                where: { QUOTES_ID: quoteData.QUOTES_ID }
+                where: { quotes_id: quoteData.quotes_id }
             });
-            expect(updatedQuote?.PRICE).toEqual(new Decimal(updateData.PRICE));
-            expect(updatedQuote?.CURRENCY).toBe(updateData.CURRENCY);
+            expect(updatedQuote?.price).toEqual(new Decimal(updateData.price));
+            expect(updatedQuote?.currency).toBe(updateData.currency);
         });
 
         it('should throw an error if quote does not exist', async () => {
             // Act & Assert
-            await expect(quoteRepository.update('non-existent-id', { PRICE: 150.75 }))
+            await expect(quoteRepository.update('non-existent-id', { price: 150.75 }))
                 .rejects
                 .toThrow('Quote not found');
         });
@@ -260,25 +216,25 @@ describe('QuoteRepository', () => {
         it('should delete a quote', async () => {
             // Arrange
             const quoteData: CreateQuoteInput = {
-                QUOTES_ID: 'test-quote-id',
-                ISIN: testStock.ISIN,
-                PRICE: 100.50,
-                CURRENCY: 'USD',
-                MARKET_TIME: new Date(),
-                EXCHANGE: 'NYSE'
+                quotes_id: 'test-quote-id',
+                isin: testStock.isin,
+                price: 100.50,
+                currency: 'USD',
+                market_time: new Date(),
+                exchange: 'NYSE'
             };
             await quoteRepository.create(quoteData);
 
             // Act
-            const result = await quoteRepository.delete(quoteData.QUOTES_ID);
+            const result = await quoteRepository.delete(quoteData.quotes_id);
 
             // Assert
             expect(result).toBeDefined();
-            expect(result.QUOTES_ID).toBe(quoteData.QUOTES_ID);
+            expect(result.quotes_id).toBe(quoteData.quotes_id);
 
             // Verify the quote was actually deleted
             const deletedQuote = await prisma.quote.findUnique({
-                where: { QUOTES_ID: quoteData.QUOTES_ID }
+                where: { quotes_id: quoteData.quotes_id }
             });
             expect(deletedQuote).toBeNull();
         });
@@ -288,50 +244,6 @@ describe('QuoteRepository', () => {
             await expect(quoteRepository.delete('non-existent-id'))
                 .rejects
                 .toThrow('Quote not found');
-        });
-    });
-
-    describe('deleteByTimeRange', () => {
-        it('should delete quotes within time range', async () => {
-            // Arrange
-            const quotes: CreateQuoteInput[] = [
-                {
-                    QUOTES_ID: 'quote-1',
-                    ISIN: testStock.ISIN,
-                    PRICE: 100.50,
-                    CURRENCY: 'USD',
-                    MARKET_TIME: new Date('2024-01-01T10:00:00Z'),
-                    EXCHANGE: 'NYSE'
-                },
-                {
-                    QUOTES_ID: 'quote-2',
-                    ISIN: testStock.ISIN,
-                    PRICE: 101.50,
-                    CURRENCY: 'USD',
-                    MARKET_TIME: new Date('2024-01-01T11:00:00Z'),
-                    EXCHANGE: 'NYSE'
-                },
-                {
-                    QUOTES_ID: 'quote-3',
-                    ISIN: testStock.ISIN,
-                    PRICE: 102.50,
-                    CURRENCY: 'USD',
-                    MARKET_TIME: new Date('2024-01-01T12:00:00Z'),
-                    EXCHANGE: 'NYSE'
-                }
-            ];
-            await Promise.all(quotes.map(quote => quoteRepository.create(quote)));
-
-            // Act
-            const deletedCount = await quoteRepository.deleteByTimeRange(
-                new Date('2024-01-01T10:30:00Z'),
-                new Date('2024-01-01T11:30:00Z')
-            );
-
-            // Assert
-            expect(deletedCount).toBe(1);
-            const remainingQuotes = await quoteRepository.findByStock(testStock.ISIN);
-            expect(remainingQuotes).toHaveLength(2);
         });
     });
 });

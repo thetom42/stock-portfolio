@@ -1,5 +1,6 @@
 import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from 'express';
 import { ParamsDictionary, Query, Send } from 'express-serve-static-core';
+import { Token } from 'keycloak-connect';
 
 // Core custom types
 export interface AuthUser {
@@ -10,11 +11,30 @@ export interface AuthUser {
   roles?: string[];
 }
 
+// Keycloak types
+export interface KeycloakToken extends Token {
+  realm_access?: {
+    roles: string[];
+  };
+  email?: string;
+  given_name?: string;
+  family_name?: string;
+  sub?: string;
+}
+
+export interface KeycloakGrant {
+  access_token: {
+    token: string;
+    content: KeycloakToken;
+  };
+}
+
 // Extend Express namespace for global augmentation
 declare global {
   namespace Express {
     interface Request {
       user: AuthUser;
+      kauth?: AuthenticatedRequest['kauth'];
     }
   }
 }
@@ -30,6 +50,9 @@ export interface Request<
   query: ReqQuery;
   params: P;
   user?: AuthUser;
+  kauth?: {
+    grant?: KeycloakGrant;
+  };
   path: string;
   method: string;
   url: string;
@@ -37,6 +60,7 @@ export interface Request<
   baseUrl: string;
   headers: {
     [key: string]: string | string[] | undefined;
+    authorization?: string;
   };
 }
 

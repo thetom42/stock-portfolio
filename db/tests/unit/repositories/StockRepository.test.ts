@@ -19,8 +19,8 @@ describe('StockRepository', () => {
 
         // Create a test category
         testCategory = {
-            CATEGORIES_ID: 'test-category-id',
-            NAME: 'Test Category'
+            categories_id: 'test-category-id',
+            name: 'Test Category'
         };
         await categoryRepository.create(testCategory);
     });
@@ -29,11 +29,11 @@ describe('StockRepository', () => {
         it('should create a new stock', async () => {
             // Arrange
             const stockData: Stock = {
-                ISIN: 'TEST123456789',
-                CATEGORIES_ID: testCategory.CATEGORIES_ID,
-                NAME: 'Test Stock',
-                WKN: 'TEST123',
-                SYMBOL: 'TST'
+                isin: 'TEST123456789',
+                categories_id: testCategory.categories_id,
+                name: 'Test Stock',
+                wkn: 'TEST123',
+                symbol: 'TST'
             };
 
             // Act
@@ -41,26 +41,26 @@ describe('StockRepository', () => {
 
             // Assert
             expect(result).toBeDefined();
-            expect(result.ISIN).toBe(stockData.ISIN);
-            expect(result.NAME).toBe(stockData.NAME);
-            expect(result.CATEGORIES_ID).toBe(stockData.CATEGORIES_ID);
+            expect(result.isin).toBe(stockData.isin);
+            expect(result.name).toBe(stockData.name);
+            expect(result.categories_id).toBe(stockData.categories_id);
 
             // Verify the stock was actually saved
             const savedStock = await prisma.stock.findUnique({
-                where: { ISIN: stockData.ISIN }
+                where: { isin: stockData.isin }
             });
             expect(savedStock).toBeDefined();
-            expect(savedStock?.NAME).toBe(stockData.NAME);
+            expect(savedStock?.name).toBe(stockData.name);
         });
 
         it('should throw an error if category does not exist', async () => {
             // Arrange
             const stockData: Stock = {
-                ISIN: 'TEST123456789',
-                CATEGORIES_ID: 'non-existent-category',
-                NAME: 'Test Stock',
-                WKN: 'TEST123',
-                SYMBOL: 'TST'
+                isin: 'TEST123456789',
+                categories_id: 'non-existent-category',
+                name: 'Test Stock',
+                wkn: 'TEST123',
+                symbol: 'TST'
             };
 
             // Act & Assert
@@ -69,62 +69,62 @@ describe('StockRepository', () => {
                 .toThrow('Category not found');
         });
 
-        it('should throw an error if ISIN already exists', async () => {
+        it('should throw an error if isin already exists', async () => {
             // Arrange
             const stockData: Stock = {
-                ISIN: 'TEST123456789',
-                CATEGORIES_ID: testCategory.CATEGORIES_ID,
-                NAME: 'Test Stock',
-                WKN: 'TEST123',
-                SYMBOL: 'TST'
+                isin: 'TEST123456789',
+                categories_id: testCategory.categories_id,
+                name: 'Test Stock',
+                wkn: 'TEST123',
+                symbol: 'TST'
             };
             await stockRepository.create(stockData);
 
             // Act & Assert
-            const duplicateStock = { ...stockData, NAME: 'Different Name' };
+            const duplicateStock = { ...stockData, name: 'Different Name' };
             await expect(stockRepository.create(duplicateStock))
                 .rejects
                 .toThrow('Stock with this ISIN already exists');
         });
 
-        it('should throw an error if WKN already exists', async () => {
+        it('should throw an error if wkn already exists', async () => {
             // Arrange
             const stockData: Stock = {
-                ISIN: 'TEST123456789',
-                CATEGORIES_ID: testCategory.CATEGORIES_ID,
-                NAME: 'Test Stock',
-                WKN: 'TEST123',
-                SYMBOL: 'TST'
+                isin: 'TEST123456789',
+                categories_id: testCategory.categories_id,
+                name: 'Test Stock',
+                wkn: 'TEST123',
+                symbol: 'TST'
             };
             await stockRepository.create(stockData);
 
             // Act & Assert
             const duplicateStock = { 
                 ...stockData, 
-                ISIN: 'DIFFERENT123456',
-                SYMBOL: 'DIF'
+                isin: 'DIFFERENT123456',
+                symbol: 'DIF'
             };
             await expect(stockRepository.create(duplicateStock))
                 .rejects
                 .toThrow('Stock with this WKN already exists');
         });
 
-        it('should throw an error if SYMBOL already exists', async () => {
+        it('should throw an error if symbol already exists', async () => {
             // Arrange
             const stockData: Stock = {
-                ISIN: 'TEST123456789',
-                CATEGORIES_ID: testCategory.CATEGORIES_ID,
-                NAME: 'Test Stock',
-                WKN: 'TEST123',
-                SYMBOL: 'TST'
+                isin: 'TEST123456789',
+                categories_id: testCategory.categories_id,
+                name: 'Test Stock',
+                wkn: 'TEST123',
+                symbol: 'TST'
             };
             await stockRepository.create(stockData);
 
             // Act & Assert
             const duplicateStock = { 
                 ...stockData, 
-                ISIN: 'DIFFERENT123456',
-                WKN: 'DIFF123'
+                isin: 'DIFFERENT123456',
+                wkn: 'DIFF123'
             };
             await expect(stockRepository.create(duplicateStock))
                 .rejects
@@ -132,30 +132,30 @@ describe('StockRepository', () => {
         });
     });
 
-    describe('findByISIN', () => {
-        it('should find a stock by ISIN', async () => {
+    describe('findByIsin', () => {
+        it('should find a stock by isin', async () => {
             // Arrange
             const stockData: Stock = {
-                ISIN: 'TEST123456789',
-                CATEGORIES_ID: testCategory.CATEGORIES_ID,
-                NAME: 'Test Stock',
-                WKN: 'TEST123',
-                SYMBOL: 'TST'
+                isin: 'TEST123456789',
+                categories_id: testCategory.categories_id,
+                name: 'Test Stock',
+                wkn: 'TEST123',
+                symbol: 'TST'
             };
             await prisma.stock.create({ data: stockData });
 
             // Act
-            const result = await stockRepository.findByISIN(stockData.ISIN);
+            const result = await stockRepository.findByIsin(stockData.isin);
 
             // Assert
             expect(result).toBeDefined();
-            expect(result?.ISIN).toBe(stockData.ISIN);
-            expect(result?.NAME).toBe(stockData.NAME);
+            expect(result?.isin).toBe(stockData.isin);
+            expect(result?.name).toBe(stockData.name);
         });
 
         it('should return null if stock is not found', async () => {
             // Act
-            const result = await stockRepository.findByISIN('non-existent-isin');
+            const result = await stockRepository.findByIsin('non-existent-isin');
 
             // Assert
             expect(result).toBeNull();
@@ -167,18 +167,18 @@ describe('StockRepository', () => {
             // Arrange
             const stocks = [
                 {
-                    ISIN: 'TEST123456789',
-                    CATEGORIES_ID: testCategory.CATEGORIES_ID,
-                    NAME: 'Test Stock 1',
-                    WKN: 'TEST123',
-                    SYMBOL: 'TST1'
+                    isin: 'TEST123456789',
+                    categories_id: testCategory.categories_id,
+                    name: 'Test Stock 1',
+                    wkn: 'TEST123',
+                    symbol: 'TST1'
                 },
                 {
-                    ISIN: 'TEST987654321',
-                    CATEGORIES_ID: testCategory.CATEGORIES_ID,
-                    NAME: 'Test Stock 2',
-                    WKN: 'TEST987',
-                    SYMBOL: 'TST2'
+                    isin: 'TEST987654321',
+                    categories_id: testCategory.categories_id,
+                    name: 'Test Stock 2',
+                    wkn: 'TEST987',
+                    symbol: 'TST2'
                 }
             ];
             await Promise.all(stocks.map(stock => 
@@ -186,7 +186,7 @@ describe('StockRepository', () => {
             ));
 
             // Act
-            const result = await stockRepository.findByCategory(testCategory.CATEGORIES_ID);
+            const result = await stockRepository.findByCategory(testCategory.categories_id);
 
             // Assert
             expect(result).toHaveLength(2);
@@ -197,7 +197,7 @@ describe('StockRepository', () => {
 
         it('should return empty array when category has no stocks', async () => {
             // Act
-            const result = await stockRepository.findByCategory(testCategory.CATEGORIES_ID);
+            const result = await stockRepository.findByCategory(testCategory.categories_id);
 
             // Assert
             expect(result).toEqual([]);
@@ -208,36 +208,36 @@ describe('StockRepository', () => {
         it('should update a stock', async () => {
             // Arrange
             const stockData: Stock = {
-                ISIN: 'TEST123456789',
-                CATEGORIES_ID: testCategory.CATEGORIES_ID,
-                NAME: 'Test Stock',
-                WKN: 'TEST123',
-                SYMBOL: 'TST'
+                isin: 'TEST123456789',
+                categories_id: testCategory.categories_id,
+                name: 'Test Stock',
+                wkn: 'TEST123',
+                symbol: 'TST'
             };
             await prisma.stock.create({ data: stockData });
 
             const updateData = {
-                NAME: 'Updated Stock Name'
+                name: 'Updated Stock Name'
             };
 
             // Act
-            const result = await stockRepository.update(stockData.ISIN, updateData);
+            const result = await stockRepository.update(stockData.isin, updateData);
 
             // Assert
             expect(result).toBeDefined();
-            expect(result.NAME).toBe(updateData.NAME);
-            expect(result.CATEGORIES_ID).toBe(stockData.CATEGORIES_ID); // Unchanged field
+            expect(result.name).toBe(updateData.name);
+            expect(result.categories_id).toBe(stockData.categories_id); // Unchanged field
 
             // Verify the update was persisted
             const updatedStock = await prisma.stock.findUnique({
-                where: { ISIN: stockData.ISIN }
+                where: { isin: stockData.isin }
             });
-            expect(updatedStock?.NAME).toBe(updateData.NAME);
+            expect(updatedStock?.name).toBe(updateData.name);
         });
 
         it('should throw an error if stock does not exist', async () => {
             // Act & Assert
-            await expect(stockRepository.update('non-existent-isin', { NAME: 'New Name' }))
+            await expect(stockRepository.update('non-existent-isin', { name: 'New Name' }))
                 .rejects
                 .toThrow('Stock not found');
         });
@@ -245,16 +245,16 @@ describe('StockRepository', () => {
         it('should throw an error if updated category does not exist', async () => {
             // Arrange
             const stockData: Stock = {
-                ISIN: 'TEST123456789',
-                CATEGORIES_ID: testCategory.CATEGORIES_ID,
-                NAME: 'Test Stock',
-                WKN: 'TEST123',
-                SYMBOL: 'TST'
+                isin: 'TEST123456789',
+                categories_id: testCategory.categories_id,
+                name: 'Test Stock',
+                wkn: 'TEST123',
+                symbol: 'TST'
             };
             await prisma.stock.create({ data: stockData });
 
             // Act & Assert
-            await expect(stockRepository.update(stockData.ISIN, { CATEGORIES_ID: 'non-existent-category' }))
+            await expect(stockRepository.update(stockData.isin, { categories_id: 'non-existent-category' }))
                 .rejects
                 .toThrow('Category not found');
         });
@@ -264,24 +264,24 @@ describe('StockRepository', () => {
         it('should delete a stock', async () => {
             // Arrange
             const stockData: Stock = {
-                ISIN: 'TEST123456789',
-                CATEGORIES_ID: testCategory.CATEGORIES_ID,
-                NAME: 'Test Stock',
-                WKN: 'TEST123',
-                SYMBOL: 'TST'
+                isin: 'TEST123456789',
+                categories_id: testCategory.categories_id,
+                name: 'Test Stock',
+                wkn: 'TEST123',
+                symbol: 'TST'
             };
             await prisma.stock.create({ data: stockData });
 
             // Act
-            const result = await stockRepository.delete(stockData.ISIN);
+            const result = await stockRepository.delete(stockData.isin);
 
             // Assert
             expect(result).toBeDefined();
-            expect(result.ISIN).toBe(stockData.ISIN);
+            expect(result.isin).toBe(stockData.isin);
 
             // Verify the stock was actually deleted
             const deletedStock = await prisma.stock.findUnique({
-                where: { ISIN: stockData.ISIN }
+                where: { isin: stockData.isin }
             });
             expect(deletedStock).toBeNull();
         });

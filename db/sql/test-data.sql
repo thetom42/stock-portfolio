@@ -1,5 +1,5 @@
 -- Insert test users
-INSERT INTO "USERS" ("USERS_ID", "NAME", "SURNAME", "EMAIL", "NICKNAME", "PASSWORD", "JOIN_DATE")
+INSERT INTO users (users_id, name, surname, email, nickname, password, join_date)
 VALUES
   ('user-1', 'John', 'Doe', 'john.doe@example.com', 'johnd', 'password123', '2023-01-01'),
   ('user-2', 'Jane', 'Smith', 'jane.smith@example.com', 'janes', 'password456', '2023-01-02'),
@@ -13,7 +13,7 @@ VALUES
   ('user-10', 'Maria', 'Garcia', 'maria.g@example.com', 'mariag', 'password741', '2023-08-25');
 
 -- Insert categories
-INSERT INTO "CATEGORIES" ("CATEGORIES_ID", "NAME")
+INSERT INTO categories (categories_id, name)
 VALUES
   ('cat-1', 'Technology'),
   ('cat-2', 'Finance'),
@@ -29,7 +29,7 @@ VALUES
   ('cat-12', 'Entertainment');
 
 -- Insert stocks (using real companies)
-INSERT INTO "STOCKS" ("ISIN", "CATEGORIES_ID", "NAME", "WKN", "SYMBOL")
+INSERT INTO stocks (isin, categories_id, name, wkn, symbol)
 VALUES
   ('US0378331005', 'cat-1', 'Apple Inc.', '865985', 'AAPL'),
   ('US5949181045', 'cat-1', 'Microsoft Corporation', '870747', 'MSFT'),
@@ -49,9 +49,8 @@ VALUES
   ('US1912161007', 'cat-4', 'Coca-Cola Company', '850663', 'KO'),
   ('US7427181091', 'cat-4', 'Procter & Gamble Co.', '852062', 'PG'),
   ('US4370761029', 'cat-7', 'Home Depot Inc.', '866953', 'HD'),
-  ('US91324P1021', 'cat-3', 'UnitedHealth Group Inc.', '869561', 'UNH'),
   ('US2546871060', 'cat-8', 'Walt Disney Co.', '855686', 'DIS'),
-  ('US5801351017', 'cat-4', 'McDonald\'s Corporation', '856958', 'MCD'),
+  ('US5801351017', 'cat-4', E'McDonald\'\'s Corporation', '856958', 'MCD'),
   ('US7134481081', 'cat-8', 'PepsiCo Inc.', '851995', 'PEP'),
   ('US4781601046', 'cat-3', 'Johnson & Johnson', '853260', 'JNJ'),
   ('US9311421039', 'cat-9', 'Walmart Inc.', '860853', 'WMT'),
@@ -63,7 +62,7 @@ VALUES
   ('US0605051046', 'cat-2', 'Bank of America Corp.', '858388', 'BAC');
 
 -- Insert quotes (with more recent timestamps and varied prices)
-INSERT INTO "QUOTES" ("QUOTES_ID", "ISIN", "PRICE", "CURRENCY", "MARKET_TIME", "EXCHANGE")
+INSERT INTO quotes (quotes_id, isin, price, currency, market_time, exchange)
 VALUES
   ('quote-1', 'US0378331005', 175.50, 'USD', '2023-10-20 10:00:00', 'NASDAQ'),
   ('quote-2', 'US5949181045', 330.25, 'USD', '2023-10-20 10:00:00', 'NASDAQ'),
@@ -97,7 +96,7 @@ VALUES
   ('quote-30', 'US0605051046', 27.95, 'USD', '2023-10-20 10:00:00', 'NYSE');
 
 -- Insert portfolios
-INSERT INTO "PORTFOLIOS" ("PORTFOLIOS_ID", "NAME", "CREATED_AT", "USERS_ID")
+INSERT INTO portfolios (portfolios_id, name, created_at, users_id)
 VALUES
   ('portfolio-1', 'Tech Growth', '2023-01-15', 'user-1'),
   ('portfolio-2', 'Value Investing', '2023-02-01', 'user-1'),
@@ -119,7 +118,7 @@ VALUES
   ('portfolio-18', 'Small Cap Growth', '2023-10-15', 'user-9');
 
 -- Insert holdings
-INSERT INTO "HOLDINGS" ("HOLDINGS_ID", "PORTFOLIOS_ID", "ISIN", "QUANTITY", "START_DATE", "END_DATE")
+INSERT INTO holdings (holdings_id, portfolios_id, isin, quantity, start_date, end_date)
 VALUES
   ('holding-1', 'portfolio-1', 'US0378331005', 100, '2023-01-16', NULL),
   ('holding-2', 'portfolio-1', 'US5949181045', 50, '2023-01-17', NULL),
@@ -153,14 +152,14 @@ VALUES
   ('holding-30', 'portfolio-6', 'US0605051046', 500, '2023-08-01', NULL);
 
 -- Insert transactions
-INSERT INTO "TRANSACTIONS" ("TRANSACTIONS_ID", "HOLDINGS_ID", "BUY", "TRANSACTION_TIME", "AMOUNT", "PRICE", "COMMISSION", "BROKER")
+INSERT INTO transactions (transactions_id, holdings_id, buy, transaction_time, amount, price, commission, broker)
 VALUES
   ('trans-1', 'holding-1', true, '2023-01-16 09:30:00', 100, 150.25, 5.99, 'Robinhood'),
   ('trans-2', 'holding-2', true, '2023-01-17 10:15:00', 50, 310.75, 5.99, 'Robinhood'),
   ('trans-3', 'holding-3', true, '2023-02-02 11:00:00', 1, 525000.00, 29.99, 'Fidelity'),
   ('trans-4', 'holding-4', true, '2023-02-03 14:30:00', 200, 140.50, 9.99, 'Fidelity'),
-  ('trans-5', 'holding-5', true, '2023-01-21 15:45:00', 150, 98.75, 7.99, 'E*TRADE'),
-  ('trans-6', 'holding-6', true, '2023-02-15 09:45:00', 300, 35.20, 7.99, 'E*TRADE'),
+  ('trans-5', 'holding-5', true, '2023-01-21 15:45:00', 150, 98.75, 7.99, E'E*TRADE'),
+  ('trans-6', 'holding-6', true, '2023-02-15 09:45:00', 300, 35.20, 7.99, E'E*TRADE'),
   ('trans-7', 'holding-7', true, '2023-03-21 10:30:00', 175, 102.30, 9.99, 'Charles Schwab'),
   ('trans-8', 'holding-8', true, '2023-03-22 11:15:00', 1000, 18.75, 9.99, 'Charles Schwab'),
   ('trans-9', 'holding-8', false, '2023-09-15 15:30:00', 1000, 15.25, 9.99, 'Charles Schwab'),
@@ -171,15 +170,15 @@ VALUES
   ('trans-14', 'holding-12', true, '2023-04-17 10:45:00', 90, 228.90, 7.99, 'TD Ameritrade'),
   ('trans-15', 'holding-13', true, '2023-05-02 11:30:00', 250, 105.80, 9.99, 'Fidelity'),
   ('trans-16', 'holding-14', true, '2023-05-16 13:15:00', 60, 380.25, 9.99, 'Fidelity'),
-  ('trans-17', 'holding-15', true, '2023-06-02 14:45:00', 30, 510.90, 7.99, 'E*TRADE'),
+  ('trans-17', 'holding-15', true, '2023-06-02 14:45:00', 30, 510.90, 7.99, E'E*TRADE'),
   ('trans-18', 'holding-16', true, '2023-06-16 09:30:00', 75, 255.40, 5.99, 'Robinhood'),
-  ('trans-19', 'holding-17', true, '2023-07-02 10:15:00', 200, 55.80, 7.99, 'E*TRADE'),
+  ('trans-19', 'holding-17', true, '2023-07-02 10:15:00', 200, 55.80, 7.99, E'E*TRADE'),
   ('trans-20', 'holding-18', true, '2023-07-16 11:00:00', 150, 142.30, 9.99, 'Fidelity'),
   ('trans-21', 'holding-18', false, '2023-10-01 15:45:00', 150, 145.75, 9.99, 'Fidelity'),
   ('trans-22', 'holding-19', true, '2023-08-02 13:30:00', 45, 280.50, 7.99, 'TD Ameritrade'),
   ('trans-23', 'holding-20', true, '2023-08-16 14:15:00', 30, 420.75, 5.99, 'Robinhood'),
   ('trans-24', 'holding-21', true, '2023-09-02 10:30:00', 80, 152.40, 9.99, 'Charles Schwab'),
-  ('trans-25', 'holding-22', true, '2023-09-16 11:45:00', 300, 69.90, 7.99, 'E*TRADE'),
+  ('trans-25', 'holding-22', true, '2023-09-16 11:45:00', 300, 69.90, 7.99, E'E*TRADE'),
   ('trans-26', 'holding-23', true, '2023-10-02 13:00:00', 125, 158.75, 9.99, 'Fidelity'),
   ('trans-27', 'holding-24', true, '2023-10-16 14:30:00', 50, 185.30, 5.99, 'Robinhood'),
   ('trans-28', 'holding-25', true, '2023-03-01 09:45:00', 40, 290.50, 7.99, 'TD Ameritrade'),
@@ -187,6 +186,6 @@ VALUES
   ('trans-30', 'holding-26', true, '2023-04-01 10:30:00', 100, 165.40, 9.99, 'Charles Schwab'),
   ('trans-31', 'holding-27', true, '2023-05-01 11:15:00', 400, 38.90, 5.99, 'Robinhood'),
   ('trans-32', 'holding-27', false, '2023-10-15 14:45:00', 400, 41.20, 5.99, 'Robinhood'),
-  ('trans-33', 'holding-28', true, '2023-06-01 13:30:00', 200, 71.80, 7.99, 'E*TRADE'),
+  ('trans-33', 'holding-28', true, '2023-06-01 13:30:00', 200, 71.80, 7.99, E'E*TRADE'),
   ('trans-34', 'holding-29', true, '2023-07-01 14:15:00', 150, 73.25, 9.99, 'Fidelity'),
   ('trans-35', 'holding-30', true, '2023-08-01 10:45:00', 500, 26.40, 5.99, 'Robinhood');

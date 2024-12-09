@@ -8,12 +8,21 @@
       "clientId": "bff-client",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "your_client_secret_here",
-      "redirectUris": ["http://localhost:4200/*"],
-      "webOrigins": ["http://localhost:4200"],
+      "secret": "bff-client-secret-123",
+      "redirectUris": ["*"],
+      "webOrigins": ["*"],
       "publicClient": false,
       "protocol": "openid-connect",
-      "directAccessGrantsEnabled": true
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": true,
+      "attributes": {
+        "access.token.lifespan": "300",
+        "backchannel.logout.session.required": "true",
+        "backchannel.logout.revoke.offline.tokens": "false"
+      }
     }
   ],
   "users": [

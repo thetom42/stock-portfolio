@@ -22,11 +22,31 @@ validateEnvironment();
 // Initialize express app
 const app = express();
 
-// Security middleware
-app.use(helmet());
+// Security middleware with relaxed CSP for development
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https:"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "http://localhost:*", "http://keycloak:*"],
+      fontSrc: ["'self'", "https:", "data:"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'self'"]
+    }
+  },
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+
+// CORS configuration
 app.use(cors({
   origin: environment.CORS_ORIGIN,
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
 // Rate limiting (skip in test environment)
@@ -68,7 +88,10 @@ if (environment.NODE_ENV === 'test') {
   });
 } else {
   // Keycloak middleware for non-test environments
-  app.use(keycloak.middleware());
+  app.use(keycloak.middleware({
+    logout: '/logout',
+    admin: '/'
+  }));
   app.use(addUserInfo);
 }
 
@@ -123,7 +146,7 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 
 // Global error handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error(err.stack);
+  console.error('Error:', err);
 
   if (err.message === 'Test error') {
     return res.status(500).json({

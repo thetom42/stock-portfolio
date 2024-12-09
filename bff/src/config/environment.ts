@@ -1,7 +1,7 @@
 export const environment = {
   // Server configuration
   NODE_ENV: process.env.NODE_ENV || 'development',
-  PORT: parseInt(process.env.INTERNAL_BFF_PORT || '3000', 10),
+  PORT: parseInt(process.env.INTERNAL_BFF_PORT || '3001', 10),
   API_PREFIX: '/api',
 
   // Database configuration
@@ -13,7 +13,10 @@ export const environment = {
   DB_SSL: process.env.DB_SSL === 'true',
 
   // Keycloak configuration
-  KEYCLOAK_AUTH_SERVER_URL: process.env.KEYCLOAK_AUTH_SERVER_URL || 'http://localhost:8080/auth',
+  // Always use the Docker service name when running in a container
+  KEYCLOAK_AUTH_SERVER_URL: process.env.DB_HOST === 'postgres' 
+    ? 'http://keycloak:8080'
+    : (process.env.KEYCLOAK_AUTH_SERVER_URL || 'http://localhost:8080'),
   KEYCLOAK_REALM: process.env.KEYCLOAK_REALM || 'stock-portfolio',
   KEYCLOAK_CLIENT_ID: process.env.KEYCLOAK_CLIENT_ID || 'bff-client',
   KEYCLOAK_CLIENT_SECRET: process.env.KEYCLOAK_CLIENT_SECRET || '',

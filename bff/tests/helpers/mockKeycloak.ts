@@ -1,42 +1,42 @@
 import sinon from 'sinon';
-import type { NextFunction, Request, Response, AuthUser } from '../../src/types/express';
+import type { NextFunction, Request, Response, AuthUser, KeycloakToken, KeycloakGrant } from '../../src/types/express';
 import type { RequestWithUser } from './mockRequest';
 import type { MockResponse } from './mockResponse';
 
-export interface MockToken {
-  sub?: string;
-  email?: string;
-  given_name?: string;
-  family_name?: string;
-  realm_access?: {
-    roles: string[];
-  };
-  hasRole?: (role: string) => boolean;
+export interface MockToken extends Omit<KeycloakToken, 'hasRole' | 'isExpired' | 'hasApplicationRole' | 'hasRealmRole'> {
+  hasRole: (role: string) => boolean;
+  isExpired: () => boolean;
+  hasApplicationRole: (app: string, role: string) => boolean;
+  hasRealmRole: (role: string) => boolean;
 }
 
-export interface MockGrant {
+export interface MockGrant extends Omit<KeycloakGrant, 'access_token'> {
   access_token: {
+    token: string;
     content: MockToken;
   };
 }
 
-export const createMockToken = (options: Partial<MockToken> = {}): MockToken => {
+export const createMockToken = (options: Partial<Omit<MockToken, 'hasRole' | 'isExpired' | 'hasApplicationRole' | 'hasRealmRole'>> = {}): MockToken => {
+  const roles = options.realm_access?.roles || ['user'];
   return {
     sub: options.sub || 'user123',
     email: options.email || 'test@example.com',
     given_name: options.given_name || 'John',
     family_name: options.family_name || 'Doe',
     realm_access: {
-      roles: options.realm_access?.roles || ['user']
+      roles
     },
-    hasRole: options.hasRole || ((role: string) => 
-      (options.realm_access?.roles || ['user']).includes(role)
-    )
+    hasRole: (role: string) => roles.includes(role),
+    isExpired: () => false,
+    hasApplicationRole: () => false,
+    hasRealmRole: (role: string) => roles.includes(role)
   };
 };
 
 export const createMockGrant = (token: MockToken): MockGrant => ({
   access_token: {
+    token: 'mock-token',
     content: token
   }
 });
@@ -79,16 +79,20 @@ export const createProtectionMiddleware = (requiredRole?: string) => {
   return (req: RequestWithUser, res: MockResponse, next: NextFunction) => {
     if (!req.user) {
       res.status(401).json({
-        error: 'Unauthorized',
-        message: 'Authentication required'
+        error: {
+          message: 'Unauthorized',
+          details: 'Authentication required'
+        }
       });
       return;
     }
 
     if (requiredRole && (!req.user.roles || !req.user.roles.includes(requiredRole))) {
       res.status(403).json({
-        error: 'Forbidden',
-        message: 'Insufficient permissions'
+        error: {
+          message: 'Forbidden',
+          details: 'Insufficient permissions'
+        }
       });
       return;
     }

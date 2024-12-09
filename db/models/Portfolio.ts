@@ -1,6 +1,6 @@
 export interface Portfolio {
-  PORTFOLIOS_ID: string;
-  NAME: string;
-  CREATED_AT: Date;
-  USERS_ID: string;
+  portfolios_id: string;
+  name: string;
+  created_at: Date;
+  users_id: string;
 }

@@ -7,87 +7,80 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  USERS_ID  String     @id
-  NAME      String
-  SURNAME   String
-  EMAIL     String     @unique
-  NICKNAME  String
-  PASSWORD  String
-  JOIN_DATE DateTime   @db.Date
-  portfolios Portfolio[]
-
-  @@map("USERS")
+/// Model for users table
+model users {
+  users_id   String       @id
+  name       String
+  surname    String
+  email      String       @unique
+  nickname   String
+  password   String
+  join_date  DateTime     @db.Date
+  portfolios portfolios[]
 }
 
-model Category {
-  CATEGORIES_ID String  @id
-  NAME         String
-  stocks       Stock[]
-
-  @@map("CATEGORIES")
+/// Model for categories table
+model categories {
+  categories_id String    @id
+  name         String
+  stocks       stocks[]
 }
 
-model Stock {
-  ISIN         String    @id
-  category     Category  @relation(fields: [CATEGORIES_ID], references: [CATEGORIES_ID])
-  CATEGORIES_ID String
-  NAME         String
-  WKN          String
-  SYMBOL       String
-  quotes       Quote[]
-  holdings     Holding[]
-
-  @@map("STOCKS")
+/// Model for stocks table
+model stocks {
+  isin          String      @id
+  categories_id String
+  name          String
+  wkn           String
+  symbol        String
+  category      categories  @relation(fields: [categories_id], references: [categories_id])
+  quotes        quotes[]
+  holdings      holdings[]
 }
 
-model Quote {
-  QUOTES_ID   String   @id
-  stock       Stock    @relation(fields: [ISIN], references: [ISIN])
-  ISIN        String
-  PRICE       Decimal
-  CURRENCY    String
-  MARKET_TIME DateTime
-  EXCHANGE    String
-
-  @@map("QUOTES")
+/// Model for quotes table
+model quotes {
+  quotes_id    String   @id
+  isin         String
+  price        Decimal
+  currency     String
+  market_time  DateTime
+  exchange     String
+  stock        stocks   @relation(fields: [isin], references: [isin])
 }
 
-model Portfolio {
-  PORTFOLIOS_ID String    @id
-  NAME          String
-  CREATED_AT    DateTime
-  user          User      @relation(fields: [USERS_ID], references: [USERS_ID])
-  USERS_ID      String
-  holdings      Holding[]
-
-  @@map("PORTFOLIOS")
+/// Model for portfolios table
+model portfolios {
+  portfolios_id String      @id
+  name          String
+  created_at    DateTime
+  users_id      String
+  user          users       @relation(fields: [users_id], references: [users_id])
+  holdings      holdings[]
 }
 
-model Holding {
-  HOLDINGS_ID   String       @id
-  portfolio     Portfolio    @relation(fields: [PORTFOLIOS_ID], references: [PORTFOLIOS_ID])
-  PORTFOLIOS_ID String
-  stock         Stock        @relation(fields: [ISIN], references: [ISIN])
-  ISIN          String
-  QUANTITY      Int
-  START_DATE    DateTime     @db.Date
-  END_DATE      DateTime?    @db.Date
-  transactions  Transaction[]
-
-  @@map("HOLDINGS")
+/// Model for holdings table
+model holdings {
+  holdings_id   String         @id
+  portfolios_id String
+  isin          String
+  quantity      Int
+  start_date    DateTime       @db.Date
+  end_date      DateTime?      @db.Date
+  portfolio     portfolios     @relation(fields: [portfolios_id], references: [portfolios_id])
+  stock         stocks         @relation(fields: [isin], references: [isin])
+  transactions  transactions[]
 }
 
-model Transaction {
-  TRANSACTIONS_ID  String   @id
-  holding          Holding  @relation(fields: [HOLDINGS_ID], references: [HOLDINGS_ID])
-  HOLDINGS_ID      String
-  BUY             Boolean
-  TRANSACTION_TIME DateTime
-  AMOUNT          Int
-  PRICE           Decimal
-  COMMISSION      Decimal
-  BROKER          String
-
-  @@map("TRANSACTIONS")
+/// Model for transactions table
+model transactions {
+  transactions_id  String   @id
+  holdings_id      String
+  buy              Boolean
+  transaction_time DateTime
+  amount           Int
+  price            Decimal
+  commission       Decimal
+  broker           String
+  holding          holdings @relation(fields: [holdings_id], references: [holdings_id])
 }

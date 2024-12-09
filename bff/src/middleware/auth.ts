@@ -1,8 +1,5 @@
 import type { TypedRequest, TypedResponse, NextFunction, AuthenticatedRequest } from '../types/express';
-import { protect } from '../config/keycloak';
-
-// Define response types
-type ErrorResponse = { message: string };
+import { protect, handleAuthError } from '../config/keycloak';
 
 // Type assertion helper for routes with proper generic support
 export const asAuthenticatedHandler = <
@@ -27,7 +24,7 @@ export const asAuthenticatedHandler = <
 
 export const assertAuthenticated = (
   req: TypedRequest,
-  res: TypedResponse<ErrorResponse>,
+  res: TypedResponse,
   next: NextFunction
 ) => {
   if (!req.user) {
@@ -38,10 +35,10 @@ export const assertAuthenticated = (
 
 export const verifyOwnership = (
   req: TypedRequest<{ userId?: string }, any, { userId?: string }>,
-  res: TypedResponse<ErrorResponse>,
+  res: TypedResponse,
   next: NextFunction
 ) => {
-  const user = (req as AuthenticatedRequest).user;
+  const user = req.user;
   if (!user) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
@@ -54,15 +51,19 @@ export const verifyOwnership = (
   return res.status(403).json({ message: 'Forbidden' });
 };
 
+// Middleware factory for role-based authorization
 export const requireRole = (role: string) => {
   return [
-    protect(),
+    protect(role),
     (
       req: TypedRequest,
-      res: TypedResponse<ErrorResponse>,
+      res: TypedResponse,
       next: NextFunction
     ) => {
-      const user = (req as AuthenticatedRequest).user;
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
       if (user.roles?.includes(role)) {
         next();
       } else {
@@ -72,14 +73,18 @@ export const requireRole = (role: string) => {
   ];
 };
 
+// Admin role check middleware
 export const requireAdmin = [
-  protect(),
+  protect('admin'),
   (
     req: TypedRequest,
-    res: TypedResponse<ErrorResponse>,
+    res: TypedResponse,
     next: NextFunction
   ) => {
-    const user = (req as AuthenticatedRequest).user;
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
     if (user.roles?.includes('admin')) {
       next();
     } else {
@@ -88,32 +93,51 @@ export const requireAdmin = [
   }
 ];
 
+// Keycloak handles user attachment through its middleware
 export const attachUser = (
   req: TypedRequest,
   res: TypedResponse,
   next: NextFunction
 ) => {
-  // This middleware would typically extract user info from the token
-  // and attach it to the request. In our case, Keycloak is handling this.
   next();
 };
 
 interface AuthError extends Error {
-  name: 'TokenExpiredError' | 'JsonWebTokenError' | string;
+  name: 'TokenExpiredError' | 'JsonWebTokenError' | 'UnauthorizedError' | 'ForbiddenError' | string;
+  statusCode?: number;
+  code?: string | number;
 }
 
 export const authErrorHandler = (
   err: AuthError,
   req: TypedRequest,
-  res: TypedResponse<ErrorResponse>,
+  res: TypedResponse,
   next: NextFunction
 ) => {
+  console.error('Auth Error:', {
+    name: err.name,
+    message: err.message,
+    stack: err.stack,
+    code: err.code,
+    details: err
+  });
+
   if (err.name === 'TokenExpiredError') {
     return res.status(401).json({ message: 'Token expired' });
   }
+
   if (err.name === 'JsonWebTokenError') {
     return res.status(401).json({ message: 'Invalid token' });
   }
+
+  if (err.name === 'UnauthorizedError') {
+    return res.status(401).json({ message: err.message || 'Invalid or expired token' });
+  }
+
+  if (err.name === 'ForbiddenError' || err.statusCode === 403) {
+    return res.status(403).json({ message: err.message || 'Access denied' });
+  }
+
   next(err);
 };
 

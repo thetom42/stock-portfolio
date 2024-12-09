@@ -1,7 +1,7 @@
 import KeycloakConnect from 'keycloak-connect';
 import session from 'express-session';
 import { environment } from './environment';
-import type { Request, Response, NextFunction } from 'express-serve-static-core';
+import type { Request, Response, NextFunction, AuthUser, KeycloakToken } from '../types/express';
 
 // Session configuration
 const memoryStore = new session.MemoryStore();
@@ -20,14 +20,26 @@ export const sessionConfig = {
 const keycloakConfig = {
   realm: environment.KEYCLOAK_REALM,
   'auth-server-url': environment.KEYCLOAK_AUTH_SERVER_URL,
-  'ssl-required': environment.NODE_ENV === 'production' ? 'external' : 'none',
+  'ssl-required': 'none',
   resource: environment.KEYCLOAK_CLIENT_ID,
   credentials: {
     secret: environment.KEYCLOAK_CLIENT_SECRET
   },
   'confidential-port': 0,
-  'bearer-only': true
+  'bearer-only': true,
+  'verify-token-audience': false,
+  'use-resource-role-mappings': true,
+  'enable-cors': true,
+  'token-validation': {
+    'verify-token-issuer': false
+  }
 };
+
+console.log('Detailed Keycloak Config:', {
+  ...keycloakConfig,
+  credentials: { secret: '***' },
+  'full-auth-server-url': `${keycloakConfig['auth-server-url']}/realms/${keycloakConfig.realm}`
+});
 
 // Initialize Keycloak instance
 const keycloak = new KeycloakConnect({ store: memoryStore }, keycloakConfig);
@@ -50,52 +62,87 @@ export const protect = (role?: string) => {
     return mockProtect(role);
   }
   
-  if (role) {
-    return keycloak.protect((token) => {
-      if (!token.hasRole(role)) {
-        return false;
+  return (req: Request, res: Response, next: NextFunction) => {
+    // Use Keycloak's built-in protect middleware
+    keycloak.protect(role)(req, res, (err?: any) => {
+      if (err) {
+        console.error('Keycloak protect error:', err);
+        return res.status(403).json({
+          error: {
+            message: 'Forbidden',
+            details: 'Invalid or expired token'
+          }
+        });
       }
-      return true;
+      next();
     });
-  }
-  return keycloak.protect();
+  };
 };
 
 // Helper function to extract user info from token
-export const extractUserInfo = (token: any) => {
-  if (!token) {
-    return null;
+export const extractUserInfo = (token: KeycloakToken): AuthUser | undefined => {
+  if (!token || !token.sub || !token.email || !token.given_name || !token.family_name) {
+    console.log('Missing required user info in token');
+    return undefined;
   }
 
-  return {
+  const userInfo: AuthUser = {
     id: token.sub,
     email: token.email,
     firstName: token.given_name,
     lastName: token.family_name,
     roles: token.realm_access?.roles || []
   };
+  console.log('Extracted user info:', userInfo);
+  return userInfo;
 };
 
 // Middleware to add user info to request
-export const addUserInfo = (req: any, res: any, next: any) => {
-  if (req.kauth && req.kauth.grant) {
-    req.user = extractUserInfo(req.kauth.grant.access_token.content);
+export const addUserInfo = (req: Request, res: Response, next: NextFunction) => {
+  console.log('Adding user info to request');
+  if (req.kauth?.grant?.access_token?.content) {
+    const userInfo = extractUserInfo(req.kauth.grant.access_token.content);
+    if (userInfo) {
+      req.user = userInfo;
+      console.log('User info added to request');
+    } else {
+      console.log('Failed to extract user info from token');
+    }
+  } else {
+    console.log('No Keycloak grant found in request');
   }
   next();
 };
 
 // Custom error handler for authentication errors
-export const handleAuthError = (err: any, req: any, res: any, next: any) => {
+export const handleAuthError = (err: any, req: Request, res: Response, next: NextFunction) => {
+  console.error('Auth Error:', {
+    name: err.name,
+    message: err.message,
+    stack: err.stack,
+    code: err.code,
+    details: err
+  });
+
   if (err.name === 'UnauthorizedError') {
-    res.status(401).json({
+    return res.status(401).json({
       error: {
         message: 'Unauthorized',
-        details: 'Invalid or expired token'
+        details: err.message || 'Invalid or expired token'
       }
     });
-  } else {
-    next(err);
   }
+
+  if (err.name === 'ForbiddenError' || err.statusCode === 403) {
+    return res.status(403).json({
+      error: {
+        message: 'Forbidden',
+        details: err.message || 'Access denied'
+      }
+    });
+  }
+
+  next(err);
 };
 
 export default keycloak;

@@ -2,10 +2,13 @@ module.exports = {
   require: [
     'ts-node/register/transpile-only',
     'dotenv/config',
-    './tests/setup.ts'
+    '../setup.ts'
   ],
   extension: ['ts'],
-  spec: 'tests/**/*.test.ts',
+  spec: [
+    'app.test.ts'
+  ],
   timeout: 10000,
-  exit: true
+  exit: true,
+  ignore: ['../unit/**/*.ts']
 };

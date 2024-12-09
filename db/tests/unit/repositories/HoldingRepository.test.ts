@@ -35,39 +35,39 @@ describe('HoldingRepository', () => {
 
         // Create test user
         testUser = {
-            USERS_ID: 'test-user-id',
-            NAME: 'John',
-            SURNAME: 'Doe',
-            EMAIL: 'john.doe@example.com',
-            NICKNAME: 'johnd',
-            PASSWORD: 'hashedPassword',
-            JOIN_DATE: new Date('2024-01-01')
+            users_id: 'test-user-id',
+            name: 'John',
+            surname: 'Doe',
+            email: 'john.doe@example.com',
+            nickname: 'johnd',
+            password: 'hashedPassword',
+            join_date: new Date('2024-01-01')
         };
         await userRepository.create(testUser);
 
         // Create test category
         testCategory = {
-            CATEGORIES_ID: 'test-category-id',
-            NAME: 'Test Category'
+            categories_id: 'test-category-id',
+            name: 'Test Category'
         };
         await categoryRepository.create(testCategory);
 
         // Create test stock
         testStock = {
-            ISIN: 'TEST123456789',
-            CATEGORIES_ID: testCategory.CATEGORIES_ID,
-            NAME: 'Test Stock',
-            WKN: 'TEST123',
-            SYMBOL: 'TST'
+            isin: 'TEST123456789',
+            categories_id: testCategory.categories_id,
+            name: 'Test Stock',
+            wkn: 'TEST123',
+            symbol: 'TST'
         };
         await stockRepository.create(testStock);
 
         // Create test portfolio
         testPortfolio = {
-            PORTFOLIOS_ID: 'test-portfolio-id',
-            NAME: 'Test Portfolio',
-            CREATED_AT: new Date(),
-            USERS_ID: testUser.USERS_ID
+            portfolios_id: 'test-portfolio-id',
+            name: 'Test Portfolio',
+            created_at: new Date(),
+            users_id: testUser.users_id
         };
         await portfolioRepository.create(testPortfolio);
     });
@@ -76,12 +76,12 @@ describe('HoldingRepository', () => {
         it('should create a new holding', async () => {
             // Arrange
             const holdingData: Holding = {
-                HOLDINGS_ID: 'test-holding-id',
-                PORTFOLIOS_ID: testPortfolio.PORTFOLIOS_ID,
-                ISIN: testStock.ISIN,
-                QUANTITY: 100,
-                START_DATE: new Date('2024-01-01'),
-                END_DATE: null
+                holdings_id: 'test-holding-id',
+                portfolios_id: testPortfolio.portfolios_id,
+                isin: testStock.isin,
+                quantity: 100,
+                start_date: new Date('2024-01-01'),
+                end_date: null
             };
 
             // Act
@@ -89,26 +89,26 @@ describe('HoldingRepository', () => {
 
             // Assert
             expect(result).toBeDefined();
-            expect(result.HOLDINGS_ID).toBe(holdingData.HOLDINGS_ID);
-            expect(result.QUANTITY).toBe(holdingData.QUANTITY);
+            expect(result.holdings_id).toBe(holdingData.holdings_id);
+            expect(result.quantity).toBe(holdingData.quantity);
 
             // Verify the holding was actually saved
             const savedHolding = await prisma.holding.findUnique({
-                where: { HOLDINGS_ID: holdingData.HOLDINGS_ID }
+                where: { holdings_id: holdingData.holdings_id }
             });
             expect(savedHolding).toBeDefined();
-            expect(savedHolding?.QUANTITY).toBe(holdingData.QUANTITY);
+            expect(savedHolding?.quantity).toBe(holdingData.quantity);
         });
 
         it('should throw an error if portfolio does not exist', async () => {
             // Arrange
             const holdingData: Holding = {
-                HOLDINGS_ID: 'test-holding-id',
-                PORTFOLIOS_ID: 'non-existent-portfolio',
-                ISIN: testStock.ISIN,
-                QUANTITY: 100,
-                START_DATE: new Date('2024-01-01'),
-                END_DATE: null
+                holdings_id: 'test-holding-id',
+                portfolios_id: 'non-existent-portfolio',
+                isin: testStock.isin,
+                quantity: 100,
+                start_date: new Date('2024-01-01'),
+                end_date: null
             };
 
             // Act & Assert
@@ -120,12 +120,12 @@ describe('HoldingRepository', () => {
         it('should throw an error if stock does not exist', async () => {
             // Arrange
             const holdingData: Holding = {
-                HOLDINGS_ID: 'test-holding-id',
-                PORTFOLIOS_ID: testPortfolio.PORTFOLIOS_ID,
-                ISIN: 'non-existent-isin',
-                QUANTITY: 100,
-                START_DATE: new Date('2024-01-01'),
-                END_DATE: null
+                holdings_id: 'test-holding-id',
+                portfolios_id: testPortfolio.portfolios_id,
+                isin: 'non-existent-isin',
+                quantity: 100,
+                start_date: new Date('2024-01-01'),
+                end_date: null
             };
 
             // Act & Assert
@@ -137,12 +137,12 @@ describe('HoldingRepository', () => {
         it('should throw an error if quantity is not positive', async () => {
             // Arrange
             const holdingData: Holding = {
-                HOLDINGS_ID: 'test-holding-id',
-                PORTFOLIOS_ID: testPortfolio.PORTFOLIOS_ID,
-                ISIN: testStock.ISIN,
-                QUANTITY: 0,
-                START_DATE: new Date('2024-01-01'),
-                END_DATE: null
+                holdings_id: 'test-holding-id',
+                portfolios_id: testPortfolio.portfolios_id,
+                isin: testStock.isin,
+                quantity: 0,
+                start_date: new Date('2024-01-01'),
+                end_date: null
             };
 
             // Act & Assert
@@ -154,12 +154,12 @@ describe('HoldingRepository', () => {
         it('should throw an error if end date is before start date', async () => {
             // Arrange
             const holdingData: Holding = {
-                HOLDINGS_ID: 'test-holding-id',
-                PORTFOLIOS_ID: testPortfolio.PORTFOLIOS_ID,
-                ISIN: testStock.ISIN,
-                QUANTITY: 100,
-                START_DATE: new Date('2024-01-02'),
-                END_DATE: new Date('2024-01-01')
+                holdings_id: 'test-holding-id',
+                portfolios_id: testPortfolio.portfolios_id,
+                isin: testStock.isin,
+                quantity: 100,
+                start_date: new Date('2024-01-02'),
+                end_date: new Date('2024-01-01')
             };
 
             // Act & Assert
@@ -169,160 +169,117 @@ describe('HoldingRepository', () => {
         });
     });
 
-    describe('findByPortfolio', () => {
+    describe('findByPortfolioId', () => {
         it('should find all holdings for a portfolio', async () => {
             // Arrange
             const holdings: Holding[] = [
                 {
-                    HOLDINGS_ID: 'holding-1',
-                    PORTFOLIOS_ID: testPortfolio.PORTFOLIOS_ID,
-                    ISIN: testStock.ISIN,
-                    QUANTITY: 100,
-                    START_DATE: new Date('2024-01-01'),
-                    END_DATE: null
+                    holdings_id: 'holding-1',
+                    portfolios_id: testPortfolio.portfolios_id,
+                    isin: testStock.isin,
+                    quantity: 100,
+                    start_date: new Date('2024-01-01'),
+                    end_date: null
                 },
                 {
-                    HOLDINGS_ID: 'holding-2',
-                    PORTFOLIOS_ID: testPortfolio.PORTFOLIOS_ID,
-                    ISIN: testStock.ISIN,
-                    QUANTITY: 200,
-                    START_DATE: new Date('2024-01-02'),
-                    END_DATE: null
+                    holdings_id: 'holding-2',
+                    portfolios_id: testPortfolio.portfolios_id,
+                    isin: testStock.isin,
+                    quantity: 200,
+                    start_date: new Date('2024-01-02'),
+                    end_date: null
                 }
             ];
             await Promise.all(holdings.map(holding => holdingRepository.create(holding)));
 
             // Act
-            const result = await holdingRepository.findByPortfolio(testPortfolio.PORTFOLIOS_ID);
+            const result = await holdingRepository.findByPortfolioId(testPortfolio.portfolios_id);
 
             // Assert
             expect(result).toHaveLength(2);
-            expect(result[0].START_DATE.getTime()).toBeGreaterThan(result[1].START_DATE.getTime()); // Check descending order
+            expect(result[0].start_date.getTime()).toBeGreaterThan(result[1].start_date.getTime()); // Check descending order
         });
     });
 
-    describe('findActiveByPortfolio', () => {
+    describe('findActiveByPortfolioId', () => {
         it('should find only active holdings for a portfolio', async () => {
             // Arrange
             const holdings: Holding[] = [
                 {
-                    HOLDINGS_ID: 'holding-1',
-                    PORTFOLIOS_ID: testPortfolio.PORTFOLIOS_ID,
-                    ISIN: testStock.ISIN,
-                    QUANTITY: 100,
-                    START_DATE: new Date('2024-01-01'),
-                    END_DATE: null
+                    holdings_id: 'holding-1',
+                    portfolios_id: testPortfolio.portfolios_id,
+                    isin: testStock.isin,
+                    quantity: 100,
+                    start_date: new Date('2024-01-01'),
+                    end_date: null
                 },
                 {
-                    HOLDINGS_ID: 'holding-2',
-                    PORTFOLIOS_ID: testPortfolio.PORTFOLIOS_ID,
-                    ISIN: testStock.ISIN,
-                    QUANTITY: 200,
-                    START_DATE: new Date('2024-01-01'),
-                    END_DATE: new Date('2024-01-02')
+                    holdings_id: 'holding-2',
+                    portfolios_id: testPortfolio.portfolios_id,
+                    isin: testStock.isin,
+                    quantity: 200,
+                    start_date: new Date('2024-01-01'),
+                    end_date: new Date('2024-01-02')
                 }
             ];
             await Promise.all(holdings.map(holding => holdingRepository.create(holding)));
 
             // Act
-            const result = await holdingRepository.findActiveByPortfolio(testPortfolio.PORTFOLIOS_ID);
+            const result = await holdingRepository.findActiveByPortfolioId(testPortfolio.portfolios_id);
 
             // Assert
             expect(result).toHaveLength(1);
-            expect(result[0].HOLDINGS_ID).toBe('holding-1');
+            expect(result[0].holdings_id).toBe('holding-1');
         });
     });
 
-    describe('closeHolding', () => {
-        it('should close an active holding', async () => {
+    describe('update', () => {
+        it('should update a holding', async () => {
             // Arrange
             const holdingData: Holding = {
-                HOLDINGS_ID: 'test-holding-id',
-                PORTFOLIOS_ID: testPortfolio.PORTFOLIOS_ID,
-                ISIN: testStock.ISIN,
-                QUANTITY: 100,
-                START_DATE: new Date('2024-01-01'),
-                END_DATE: null
+                holdings_id: 'test-holding-id',
+                portfolios_id: testPortfolio.portfolios_id,
+                isin: testStock.isin,
+                quantity: 100,
+                start_date: new Date('2024-01-01'),
+                end_date: null
             };
             await holdingRepository.create(holdingData);
 
-            const endDate = new Date('2024-01-02');
+            const updateData = {
+                quantity: 150,
+                end_date: new Date('2024-01-02')
+            };
 
             // Act
-            const result = await holdingRepository.closeHolding(holdingData.HOLDINGS_ID, endDate);
+            const result = await holdingRepository.update(holdingData.holdings_id, updateData);
 
             // Assert
-            expect(result.END_DATE).toEqual(endDate);
+            expect(result.quantity).toBe(updateData.quantity);
+            expect(result.end_date).toEqual(updateData.end_date);
 
             // Verify the update was persisted
             const updatedHolding = await prisma.holding.findUnique({
-                where: { HOLDINGS_ID: holdingData.HOLDINGS_ID }
+                where: { holdings_id: holdingData.holdings_id }
             });
-            expect(updatedHolding?.END_DATE).toEqual(endDate);
-        });
-
-        it('should throw an error if holding is already closed', async () => {
-            // Arrange
-            const holdingData: Holding = {
-                HOLDINGS_ID: 'test-holding-id',
-                PORTFOLIOS_ID: testPortfolio.PORTFOLIOS_ID,
-                ISIN: testStock.ISIN,
-                QUANTITY: 100,
-                START_DATE: new Date('2024-01-01'),
-                END_DATE: new Date('2024-01-02')
-            };
-            await holdingRepository.create(holdingData);
-
-            // Act & Assert
-            await expect(holdingRepository.closeHolding(
-                holdingData.HOLDINGS_ID,
-                new Date('2024-01-03')
-            ))
-                .rejects
-                .toThrow('Holding is already closed');
-        });
-    });
-
-    describe('updateQuantity', () => {
-        it('should update holding quantity', async () => {
-            // Arrange
-            const holdingData: Holding = {
-                HOLDINGS_ID: 'test-holding-id',
-                PORTFOLIOS_ID: testPortfolio.PORTFOLIOS_ID,
-                ISIN: testStock.ISIN,
-                QUANTITY: 100,
-                START_DATE: new Date('2024-01-01'),
-                END_DATE: null
-            };
-            await holdingRepository.create(holdingData);
-
-            // Act
-            const result = await holdingRepository.updateQuantity(holdingData.HOLDINGS_ID, 150);
-
-            // Assert
-            expect(result.QUANTITY).toBe(150);
-
-            // Verify the update was persisted
-            const updatedHolding = await prisma.holding.findUnique({
-                where: { HOLDINGS_ID: holdingData.HOLDINGS_ID }
-            });
-            expect(updatedHolding?.QUANTITY).toBe(150);
+            expect(updatedHolding?.quantity).toBe(updateData.quantity);
+            expect(updatedHolding?.end_date).toEqual(updateData.end_date);
         });
 
         it('should throw an error if quantity is not positive', async () => {
             // Arrange
             const holdingData: Holding = {
-                HOLDINGS_ID: 'test-holding-id',
-                PORTFOLIOS_ID: testPortfolio.PORTFOLIOS_ID,
-                ISIN: testStock.ISIN,
-                QUANTITY: 100,
-                START_DATE: new Date('2024-01-01'),
-                END_DATE: null
+                holdings_id: 'test-holding-id',
+                portfolios_id: testPortfolio.portfolios_id,
+                isin: testStock.isin,
+                quantity: 100,
+                start_date: new Date('2024-01-01'),
+                end_date: null
             };
             await holdingRepository.create(holdingData);
 
             // Act & Assert
-            await expect(holdingRepository.updateQuantity(holdingData.HOLDINGS_ID, 0))
+            await expect(holdingRepository.update(holdingData.holdings_id, { quantity: 0 }))
                 .rejects
                 .toThrow('Quantity must be positive');
         });
@@ -332,24 +289,24 @@ describe('HoldingRepository', () => {
         it('should delete a holding', async () => {
             // Arrange
             const holdingData: Holding = {
-                HOLDINGS_ID: 'test-holding-id',
-                PORTFOLIOS_ID: testPortfolio.PORTFOLIOS_ID,
-                ISIN: testStock.ISIN,
-                QUANTITY: 100,
-                START_DATE: new Date('2024-01-01'),
-                END_DATE: null
+                holdings_id: 'test-holding-id',
+                portfolios_id: testPortfolio.portfolios_id,
+                isin: testStock.isin,
+                quantity: 100,
+                start_date: new Date('2024-01-01'),
+                end_date: null
             };
             await holdingRepository.create(holdingData);
 
             // Act
-            const result = await holdingRepository.delete(holdingData.HOLDINGS_ID);
+            const result = await holdingRepository.delete(holdingData.holdings_id);
 
             // Assert
-            expect(result.HOLDINGS_ID).toBe(holdingData.HOLDINGS_ID);
+            expect(result.holdings_id).toBe(holdingData.holdings_id);
 
             // Verify the holding was actually deleted
             const deletedHolding = await prisma.holding.findUnique({
-                where: { HOLDINGS_ID: holdingData.HOLDINGS_ID }
+                where: { holdings_id: holdingData.holdings_id }
             });
             expect(deletedHolding).toBeNull();
         });
@@ -357,31 +314,31 @@ describe('HoldingRepository', () => {
         it('should throw an error if holding has transactions', async () => {
             // Arrange
             const holdingData: Holding = {
-                HOLDINGS_ID: 'test-holding-id',
-                PORTFOLIOS_ID: testPortfolio.PORTFOLIOS_ID,
-                ISIN: testStock.ISIN,
-                QUANTITY: 100,
-                START_DATE: new Date('2024-01-01'),
-                END_DATE: null
+                holdings_id: 'test-holding-id',
+                portfolios_id: testPortfolio.portfolios_id,
+                isin: testStock.isin,
+                quantity: 100,
+                start_date: new Date('2024-01-01'),
+                end_date: null
             };
             await holdingRepository.create(holdingData);
 
             // Create a transaction for the holding
             await prisma.transaction.create({
                 data: {
-                    TRANSACTIONS_ID: 'test-transaction-id',
-                    HOLDINGS_ID: holdingData.HOLDINGS_ID,
-                    BUY: true,
-                    TRANSACTION_TIME: new Date(),
-                    AMOUNT: 100,
-                    PRICE: new Decimal(50.00),
-                    COMMISSION: new Decimal(1.00),
-                    BROKER: 'Test Broker'
+                    transactions_id: 'test-transaction-id',
+                    holdings_id: holdingData.holdings_id,
+                    buy: true,
+                    transaction_time: new Date(),
+                    amount: 100,
+                    price: new Decimal(50.00),
+                    commission: new Decimal(1.00),
+                    broker: 'Test Broker'
                 }
             });
 
             // Act & Assert
-            await expect(holdingRepository.delete(holdingData.HOLDINGS_ID))
+            await expect(holdingRepository.delete(holdingData.holdings_id))
                 .rejects
                 .toThrow('Cannot delete holding with associated transactions');
         });

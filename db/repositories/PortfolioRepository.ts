@@ -1,13 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { Portfolio } from '../models/Portfolio';
 
-interface PrismaError {
-  code: string;
-  meta?: {
-    field_name?: string;
-  };
-}
-
 export class PortfolioRepository {
   constructor(private prisma: PrismaClient) {}
 
@@ -17,12 +10,8 @@ export class PortfolioRepository {
         data: portfolio
       });
     } catch (error) {
-      const prismaError = error as PrismaError;
-      if (
-        prismaError.code === 'P2003' &&
-        prismaError.meta?.field_name === 'foreign key'
-      ) {
-        throw new Error('User not found');
+      if (error instanceof Error && error.message.includes('Unique constraint')) {
+        throw new Error('Portfolio already exists');
       }
       throw error;
     }
@@ -30,25 +19,29 @@ export class PortfolioRepository {
 
   async findById(id: string): Promise<Portfolio | null> {
     return await this.prisma.portfolio.findUnique({
-      where: { PORTFOLIOS_ID: id }
+      where: { portfolios_id: id }
     });
   }
 
   async findByUserId(userId: string): Promise<Portfolio[]> {
     return await this.prisma.portfolio.findMany({
-      where: { USERS_ID: userId }
+      where: { users_id: userId }
     });
   }
 
-  async update(id: string, data: Partial<Portfolio>): Promise<Portfolio> {
+  async update(id: string, portfolioData: Partial<Portfolio>): Promise<Portfolio> {
     try {
+      const existingPortfolio = await this.findById(id);
+      if (!existingPortfolio) {
+        throw new Error('Portfolio not found');
+      }
+
       return await this.prisma.portfolio.update({
-        where: { PORTFOLIOS_ID: id },
-        data
+        where: { portfolios_id: id },
+        data: portfolioData
       });
     } catch (error) {
-      const prismaError = error as PrismaError;
-      if (prismaError.code === 'P2025') {
+      if (error instanceof Error && error.message.includes('Record to update not found')) {
         throw new Error('Portfolio not found');
       }
       throw error;
@@ -58,11 +51,10 @@ export class PortfolioRepository {
   async delete(id: string): Promise<Portfolio> {
     try {
       return await this.prisma.portfolio.delete({
-        where: { PORTFOLIOS_ID: id }
+        where: { portfolios_id: id }
       });
     } catch (error) {
-      const prismaError = error as PrismaError;
-      if (prismaError.code === 'P2025') {
+      if (error instanceof Error && error.message.includes('Record to delete does not exist')) {
         throw new Error('Portfolio not found');
       }
       throw error;

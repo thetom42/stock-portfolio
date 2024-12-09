@@ -1,14 +1,10 @@
-import type { Request, AuthUser } from '../../src/types/express';
+import type { Request, AuthUser, KeycloakToken, KeycloakGrant } from '../../src/types/express';
 
 // Extend Request type with Keycloak auth
 export interface RequestWithUser extends Request {
   user?: AuthUser;
   kauth?: {
-    grant?: {
-      access_token?: {
-        content?: any;
-      };
-    };
+    grant?: KeycloakGrant;
   };
 }
 
@@ -19,11 +15,7 @@ interface MockRequestOptions {
   headers?: { [key: string]: string | undefined };
   user?: AuthUser;
   kauth?: {
-    grant?: {
-      access_token?: {
-        content?: any;
-      };
-    };
+    grant?: KeycloakGrant;
   };
 }
 

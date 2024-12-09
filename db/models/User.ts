@@ -1,9 +1,9 @@
 export interface User {
-  USERS_ID: string;
-  NAME: string;
-  SURNAME: string;
-  EMAIL: string;
-  NICKNAME: string;
-  PASSWORD: string;
-  JOIN_DATE: Date;
+  users_id: string;
+  name: string;
+  surname: string;
+  email: string;
+  nickname: string;
+  password: string;
+  join_date: Date;
 }

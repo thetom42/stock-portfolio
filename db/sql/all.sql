@@ -2,150 +2,149 @@
 -- ***************************************************;
 
 
--- ************************************** "USERS"
+-- ************************************** users
 
-CREATE TABLE USERS
+CREATE TABLE users
 (
- USERS_ID   text NOT NULL,
- NAME      text NOT NULL,
- SURNAME   text NOT NULL,
- EMAIL     text NOT NULL,
- NICKNAME  text NOT NULL,
- PASSWORD  text NOT NULL,
- JOIN_DATE date NOT NULL,
- CONSTRAINT PK_users PRIMARY KEY ( USERS_ID )
+ users_id   text NOT NULL,
+ name      text NOT NULL,
+ surname   text NOT NULL,
+ email     text NOT NULL,
+ nickname  text NOT NULL,
+ password  text NOT NULL,
+ join_date date NOT NULL,
+ CONSTRAINT pk_users PRIMARY KEY ( users_id )
 );
 
 -- *************** SqlDBM: PostgreSQL ****************;
 -- ***************************************************;
 
 
--- ************************************** CATEGORIES
+-- ************************************** categories
 
-CREATE TABLE CATEGORIES
+CREATE TABLE categories
 (
- CATEGORIES_ID text NOT NULL,
- NAME        text NOT NULL,
- CONSTRAINT PK_categories PRIMARY KEY ( CATEGORIES_ID )
+ categories_id text NOT NULL,
+ name        text NOT NULL,
+ CONSTRAINT pk_categories PRIMARY KEY ( categories_id )
 );
 
 -- *************** SqlDBM: PostgreSQL ****************;
 -- ***************************************************;
 
 
--- ************************************** STOCKS
+-- ************************************** stocks
 
-CREATE TABLE STOCKS
+CREATE TABLE stocks
 (
- ISIN        text NOT NULL,
- CATEGORIES_ID text NOT NULL,
- NAME        text NOT NULL,
- WKN         text NOT NULL,
- SYMBOL      text NOT NULL,
- CONSTRAINT PK_stocks PRIMARY KEY ( ISIN ),
- CONSTRAINT FK_38 FOREIGN KEY ( CATEGORIES_ID ) REFERENCES CATEGORY ( CATEGORIES_ID )
+ isin        text NOT NULL,
+ categories_id text NOT NULL,
+ name        text NOT NULL,
+ wkn         text NOT NULL,
+ symbol      text NOT NULL,
+ CONSTRAINT pk_stocks PRIMARY KEY ( isin ),
+ CONSTRAINT fk_38 FOREIGN KEY ( categories_id ) REFERENCES categories ( categories_id )
 );
 
-CREATE INDEX fkIdx_39 ON STOCKS
+CREATE INDEX fkidx_39 ON stocks
 (
- CATEGORIES_ID
-);
-
--- *************** SqlDBM: PostgreSQL ****************;
--- ***************************************************;
-
-
--- ************************************** QUOTES
-
-CREATE TABLE QUOTES
-(
- QUOTES_ID    text NOT NULL,
- ISIN        text NOT NULL,
- PRICE       decimal NOT NULL,
- CURRENCY    text NOT NULL,
- MARKET_TIME timestamp NOT NULL,
- EXCHANGE    text NOT NULL,
- CONSTRAINT PK_quotes PRIMARY KEY ( QUOTES_ID ),
- CONSTRAINT FK_27 FOREIGN KEY ( ISIN ) REFERENCES STOCKS ( ISIN )
-);
-
-CREATE INDEX fkIdx_28 ON QUOTES
-(
- ISIN
+ categories_id
 );
 
 -- *************** SqlDBM: PostgreSQL ****************;
 -- ***************************************************;
 
 
--- ************************************** PORTFOLIOS
+-- ************************************** quotes
 
-CREATE TABLE PORTFOLIOS
+CREATE TABLE quotes
 (
- PORTFOLIOS_ID text NOT NULL,
- NAME         text NOT NULL,
- CREATED_AT   timestamp NOT NULL,
- USERS_ID      text NOT NULL,
- CONSTRAINT PK_portfolios PRIMARY KEY ( PORTFOLIOS_ID ),
- CONSTRAINT FK_50 FOREIGN KEY ( USERS_ID ) REFERENCES USERS ( USERS_ID )
+ quotes_id    text NOT NULL,
+ isin        text NOT NULL,
+ price       decimal NOT NULL,
+ currency    text NOT NULL,
+ market_time timestamp NOT NULL,
+ exchange    text NOT NULL,
+ CONSTRAINT pk_quotes PRIMARY KEY ( quotes_id ),
+ CONSTRAINT fk_27 FOREIGN KEY ( isin ) REFERENCES stocks ( isin )
 );
 
-CREATE INDEX fkIdx_51 ON PORTFOLIOS
+CREATE INDEX fkidx_28 ON quotes
 (
- USERS_ID
-);
-
--- *************** SqlDBM: PostgreSQL ****************;
--- ***************************************************;
-
-
--- ************************************** HOLDINGS
-
-CREATE TABLE HOLDINGS
-(
- HOLDINGS_ID  text NOT NULL,
- PORTFOLIOS_ID text NOT NULL,
- ISIN         text NOT NULL,
- QUANTITY     int NOT NULL,
- START_DATE   date NOT NULL,
- END_DATE     date NULL,
- CONSTRAINT PK_holdings PRIMARY KEY ( HOLDINGS_ID ),
- CONSTRAINT FK_18 FOREIGN KEY ( PORTFOLIOS_ID ) REFERENCES PORTFOLIOS ( PORTFOLIOS_ID ),
- CONSTRAINT FK_21 FOREIGN KEY ( ISIN ) REFERENCES STOCKS ( ISIN )
-);
-
-CREATE INDEX fkIdx_19 ON HOLDINGS
-(
- PORTFOLIOS_ID
-);
-
-CREATE INDEX fkIdx_22 ON HOLDINGS
-(
- ISIN
+ isin
 );
 
 -- *************** SqlDBM: PostgreSQL ****************;
 -- ***************************************************;
 
 
--- ************************************** TRANSACTIONS
+-- ************************************** portfolios
 
-CREATE TABLE TRANSACTIONS
+CREATE TABLE portfolios
 (
- TRANSACTIONS_ID     text NOT NULL,
- HOLDINGS_ID text NOT NULL,
- BUY                boolean NOT NULL,
- TRANSACTION_TIME   timestamp NOT NULL,
- AMOUNT             int NOT NULL,
- PRICE              decimal NOT NULL,
- COMMISSION         decimal NOT NULL,
- BROKER             text NOT NULL,
- CONSTRAINT PK_transactions PRIMARY KEY ( TRANSACTIONS_ID ),
- CONSTRAINT FK_61 FOREIGN KEY ( HOLDINGS_ID ) REFERENCES HOLDINGS ( HOLDINGS_ID )
+ portfolios_id text NOT NULL,
+ name         text NOT NULL,
+ created_at   timestamp NOT NULL,
+ users_id      text NOT NULL,
+ CONSTRAINT pk_portfolios PRIMARY KEY ( portfolios_id ),
+ CONSTRAINT fk_50 FOREIGN KEY ( users_id ) REFERENCES users ( users_id )
 );
 
-CREATE INDEX fkIdx_62 ON TRANSACTIONS
+CREATE INDEX fkidx_51 ON portfolios
 (
- HOLDINGS_ID
+ users_id
 );
 
+-- *************** SqlDBM: PostgreSQL ****************;
+-- ***************************************************;
+
+
+-- ************************************** holdings
+
+CREATE TABLE holdings
+(
+ holdings_id  text NOT NULL,
+ portfolios_id text NOT NULL,
+ isin         text NOT NULL,
+ quantity     int NOT NULL,
+ start_date   date NOT NULL,
+ end_date     date NULL,
+ CONSTRAINT pk_holdings PRIMARY KEY ( holdings_id ),
+ CONSTRAINT fk_18 FOREIGN KEY ( portfolios_id ) REFERENCES portfolios ( portfolios_id ),
+ CONSTRAINT fk_21 FOREIGN KEY ( isin ) REFERENCES stocks ( isin )
+);
+
+CREATE INDEX fkidx_19 ON holdings
+(
+ portfolios_id
+);
+
+CREATE INDEX fkidx_22 ON holdings
+(
+ isin
+);
+
+-- *************** SqlDBM: PostgreSQL ****************;
+-- ***************************************************;
+
+
+-- ************************************** transactions
+
+CREATE TABLE transactions
+(
+ transactions_id     text NOT NULL,
+ holdings_id text NOT NULL,
+ buy                boolean NOT NULL,
+ transaction_time   timestamp NOT NULL,
+ amount             int NOT NULL,
+ price              decimal NOT NULL,
+ commission         decimal NOT NULL,
+ broker             text NOT NULL,
+ CONSTRAINT pk_transactions PRIMARY KEY ( transactions_id ),
+ CONSTRAINT fk_61 FOREIGN KEY ( holdings_id ) REFERENCES holdings ( holdings_id )
+);
+
+CREATE INDEX fkidx_62 ON transactions
+(
+ holdings_id
+);

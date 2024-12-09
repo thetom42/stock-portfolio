@@ -17,13 +17,13 @@ describe('UserRepository', () => {
     it('should create a new user', async () => {
       // Arrange
       const userData: User = {
-        USERS_ID: 'test-id',
-        NAME: 'John',
-        SURNAME: 'Doe',
-        EMAIL: 'john.doe@example.com',
-        NICKNAME: 'johnd',
-        PASSWORD: 'hashedPassword',
-        JOIN_DATE: new Date('2024-01-01'),
+        users_id: 'test-id',
+        name: 'John',
+        surname: 'Doe',
+        email: 'john.doe@example.com',
+        nickname: 'johnd',
+        password: 'hashedPassword',
+        join_date: new Date('2024-01-01'),
       };
 
       // Act
@@ -31,32 +31,32 @@ describe('UserRepository', () => {
 
       // Assert
       expect(result).toBeDefined();
-      expect(result.USERS_ID).toBe(userData.USERS_ID);
-      expect(result.EMAIL).toBe(userData.EMAIL);
+      expect(result.users_id).toBe(userData.users_id);
+      expect(result.email).toBe(userData.email);
       
       // Verify the user was actually saved
       const savedUser = await prisma.user.findUnique({
-        where: { USERS_ID: userData.USERS_ID }
+        where: { users_id: userData.users_id }
       });
       expect(savedUser).toBeDefined();
-      expect(savedUser?.EMAIL).toBe(userData.EMAIL);
+      expect(savedUser?.email).toBe(userData.email);
     });
 
     it('should throw an error if email already exists', async () => {
       // Arrange
       const userData: User = {
-        USERS_ID: 'test-id',
-        NAME: 'John',
-        SURNAME: 'Doe',
-        EMAIL: 'john.doe@example.com',
-        NICKNAME: 'johnd',
-        PASSWORD: 'hashedPassword',
-        JOIN_DATE: new Date('2024-01-01'),
+        users_id: 'test-id',
+        name: 'John',
+        surname: 'Doe',
+        email: 'john.doe@example.com',
+        nickname: 'johnd',
+        password: 'hashedPassword',
+        join_date: new Date('2024-01-01'),
       };
       await userRepository.create(userData);
 
       // Act & Assert
-      const duplicateUser = { ...userData, USERS_ID: 'different-id' };
+      const duplicateUser = { ...userData, users_id: 'different-id' };
       await expect(userRepository.create(duplicateUser))
         .rejects
         .toThrow('User with this email already exists');
@@ -67,23 +67,23 @@ describe('UserRepository', () => {
     it('should find a user by ID', async () => {
       // Arrange
       const userData: User = {
-        USERS_ID: 'test-id',
-        NAME: 'John',
-        SURNAME: 'Doe',
-        EMAIL: 'john.doe@example.com',
-        NICKNAME: 'johnd',
-        PASSWORD: 'hashedPassword',
-        JOIN_DATE: new Date('2024-01-01'),
+        users_id: 'test-id',
+        name: 'John',
+        surname: 'Doe',
+        email: 'john.doe@example.com',
+        nickname: 'johnd',
+        password: 'hashedPassword',
+        join_date: new Date('2024-01-01'),
       };
       await prisma.user.create({ data: userData });
 
       // Act
-      const result = await userRepository.findById(userData.USERS_ID);
+      const result = await userRepository.findById(userData.users_id);
 
       // Assert
       expect(result).toBeDefined();
-      expect(result?.USERS_ID).toBe(userData.USERS_ID);
-      expect(result?.EMAIL).toBe(userData.EMAIL);
+      expect(result?.users_id).toBe(userData.users_id);
+      expect(result?.email).toBe(userData.email);
     });
 
     it('should return null if user is not found', async () => {
@@ -99,23 +99,23 @@ describe('UserRepository', () => {
     it('should find a user by email', async () => {
       // Arrange
       const userData: User = {
-        USERS_ID: 'test-id',
-        NAME: 'John',
-        SURNAME: 'Doe',
-        EMAIL: 'john.doe@example.com',
-        NICKNAME: 'johnd',
-        PASSWORD: 'hashedPassword',
-        JOIN_DATE: new Date('2024-01-01'),
+        users_id: 'test-id',
+        name: 'John',
+        surname: 'Doe',
+        email: 'john.doe@example.com',
+        nickname: 'johnd',
+        password: 'hashedPassword',
+        join_date: new Date('2024-01-01'),
       };
       await prisma.user.create({ data: userData });
 
       // Act
-      const result = await userRepository.findByEmail(userData.EMAIL);
+      const result = await userRepository.findByEmail(userData.email);
 
       // Assert
       expect(result).toBeDefined();
-      expect(result?.USERS_ID).toBe(userData.USERS_ID);
-      expect(result?.EMAIL).toBe(userData.EMAIL);
+      expect(result?.users_id).toBe(userData.users_id);
+      expect(result?.email).toBe(userData.email);
     });
 
     it('should return null if user is not found', async () => {
@@ -131,41 +131,41 @@ describe('UserRepository', () => {
     it('should update a user', async () => {
       // Arrange
       const userData: User = {
-        USERS_ID: 'test-id',
-        NAME: 'John',
-        SURNAME: 'Doe',
-        EMAIL: 'john.doe@example.com',
-        NICKNAME: 'johnd',
-        PASSWORD: 'hashedPassword',
-        JOIN_DATE: new Date('2024-01-01'),
+        users_id: 'test-id',
+        name: 'John',
+        surname: 'Doe',
+        email: 'john.doe@example.com',
+        nickname: 'johnd',
+        password: 'hashedPassword',
+        join_date: new Date('2024-01-01'),
       };
       await prisma.user.create({ data: userData });
 
       const updateData = {
-        NAME: 'John Updated',
-        SURNAME: 'Doe Updated',
+        name: 'John Updated',
+        surname: 'Doe Updated',
       };
 
       // Act
-      const result = await userRepository.update(userData.USERS_ID, updateData);
+      const result = await userRepository.update(userData.users_id, updateData);
 
       // Assert
       expect(result).toBeDefined();
-      expect(result.NAME).toBe(updateData.NAME);
-      expect(result.SURNAME).toBe(updateData.SURNAME);
-      expect(result.EMAIL).toBe(userData.EMAIL); // Unchanged field
+      expect(result.name).toBe(updateData.name);
+      expect(result.surname).toBe(updateData.surname);
+      expect(result.email).toBe(userData.email); // Unchanged field
 
       // Verify the update was persisted
       const updatedUser = await prisma.user.findUnique({
-        where: { USERS_ID: userData.USERS_ID }
+        where: { users_id: userData.users_id }
       });
-      expect(updatedUser?.NAME).toBe(updateData.NAME);
-      expect(updatedUser?.SURNAME).toBe(updateData.SURNAME);
+      expect(updatedUser?.name).toBe(updateData.name);
+      expect(updatedUser?.surname).toBe(updateData.surname);
     });
 
     it('should throw an error if user does not exist', async () => {
       // Act & Assert
-      await expect(userRepository.update('non-existent-id', { NAME: 'New Name' }))
+      await expect(userRepository.update('non-existent-id', { name: 'New Name' }))
         .rejects
         .toThrow('User not found');
     });
@@ -175,26 +175,26 @@ describe('UserRepository', () => {
     it('should delete a user', async () => {
       // Arrange
       const userData: User = {
-        USERS_ID: 'test-id',
-        NAME: 'John',
-        SURNAME: 'Doe',
-        EMAIL: 'john.doe@example.com',
-        NICKNAME: 'johnd',
-        PASSWORD: 'hashedPassword',
-        JOIN_DATE: new Date('2024-01-01'),
+        users_id: 'test-id',
+        name: 'John',
+        surname: 'Doe',
+        email: 'john.doe@example.com',
+        nickname: 'johnd',
+        password: 'hashedPassword',
+        join_date: new Date('2024-01-01'),
       };
       await prisma.user.create({ data: userData });
 
       // Act
-      const result = await userRepository.delete(userData.USERS_ID);
+      const result = await userRepository.delete(userData.users_id);
 
       // Assert
       expect(result).toBeDefined();
-      expect(result.USERS_ID).toBe(userData.USERS_ID);
+      expect(result.users_id).toBe(userData.users_id);
 
       // Verify the user was actually deleted
       const deletedUser = await prisma.user.findUnique({
-        where: { USERS_ID: userData.USERS_ID }
+        where: { users_id: userData.users_id }
       });
       expect(deletedUser).toBeNull();
     });

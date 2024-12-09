@@ -40,50 +40,50 @@ describe('TransactionRepository', () => {
 
         // Create test user
         testUser = {
-            USERS_ID: 'test-user-id',
-            NAME: 'John',
-            SURNAME: 'Doe',
-            EMAIL: 'john.doe@example.com',
-            NICKNAME: 'johnd',
-            PASSWORD: 'hashedPassword',
-            JOIN_DATE: new Date('2024-01-01')
+            users_id: 'test-user-id',
+            name: 'John',
+            surname: 'Doe',
+            email: 'john.doe@example.com',
+            nickname: 'johnd',
+            password: 'hashedPassword',
+            join_date: new Date('2024-01-01')
         };
         await userRepository.create(testUser);
 
         // Create test category
         testCategory = {
-            CATEGORIES_ID: 'test-category-id',
-            NAME: 'Test Category'
+            categories_id: 'test-category-id',
+            name: 'Test Category'
         };
         await categoryRepository.create(testCategory);
 
         // Create test stock
         testStock = {
-            ISIN: 'TEST123456789',
-            CATEGORIES_ID: testCategory.CATEGORIES_ID,
-            NAME: 'Test Stock',
-            WKN: 'TEST123',
-            SYMBOL: 'TST'
+            isin: 'TEST123456789',
+            categories_id: testCategory.categories_id,
+            name: 'Test Stock',
+            wkn: 'TEST123',
+            symbol: 'TST'
         };
         await stockRepository.create(testStock);
 
         // Create test portfolio
         testPortfolio = {
-            PORTFOLIOS_ID: 'test-portfolio-id',
-            NAME: 'Test Portfolio',
-            CREATED_AT: new Date(),
-            USERS_ID: testUser.USERS_ID
+            portfolios_id: 'test-portfolio-id',
+            name: 'Test Portfolio',
+            created_at: new Date(),
+            users_id: testUser.users_id
         };
         await portfolioRepository.create(testPortfolio);
 
         // Create test holding
         testHolding = {
-            HOLDINGS_ID: 'test-holding-id',
-            PORTFOLIOS_ID: testPortfolio.PORTFOLIOS_ID,
-            ISIN: testStock.ISIN,
-            QUANTITY: 100,
-            START_DATE: new Date('2024-01-01'),
-            END_DATE: null
+            holdings_id: 'test-holding-id',
+            portfolios_id: testPortfolio.portfolios_id,
+            isin: testStock.isin,
+            quantity: 100,
+            start_date: new Date('2024-01-01'),
+            end_date: null
         };
         await holdingRepository.create(testHolding);
     });
@@ -92,14 +92,14 @@ describe('TransactionRepository', () => {
         it('should create a new transaction', async () => {
             // Arrange
             const transactionData: CreateTransactionInput = {
-                TRANSACTIONS_ID: 'test-transaction-id',
-                HOLDINGS_ID: testHolding.HOLDINGS_ID,
-                BUY: true,
-                TRANSACTION_TIME: new Date(),
-                AMOUNT: 50,
-                PRICE: 100.50,
-                COMMISSION: 1.50,
-                BROKER: 'Test Broker'
+                transactions_id: 'test-transaction-id',
+                holdings_id: testHolding.holdings_id,
+                buy: true,
+                transaction_time: new Date(),
+                amount: 50,
+                price: 100.50,
+                commission: 1.50,
+                broker: 'Test Broker'
             };
 
             // Act
@@ -107,30 +107,30 @@ describe('TransactionRepository', () => {
 
             // Assert
             expect(result).toBeDefined();
-            expect(result.TRANSACTIONS_ID).toBe(transactionData.TRANSACTIONS_ID);
-            expect(result.AMOUNT).toBe(transactionData.AMOUNT);
-            expect(result.PRICE).toEqual(new Decimal(transactionData.PRICE));
-            expect(result.COMMISSION).toEqual(new Decimal(transactionData.COMMISSION));
+            expect(result.transactions_id).toBe(transactionData.transactions_id);
+            expect(result.amount).toBe(transactionData.amount);
+            expect(result.price).toEqual(new Decimal(transactionData.price));
+            expect(result.commission).toEqual(new Decimal(transactionData.commission));
 
             // Verify the transaction was actually saved
             const savedTransaction = await prisma.transaction.findUnique({
-                where: { TRANSACTIONS_ID: transactionData.TRANSACTIONS_ID }
+                where: { transactions_id: transactionData.transactions_id }
             });
             expect(savedTransaction).toBeDefined();
-            expect(savedTransaction?.AMOUNT).toBe(transactionData.AMOUNT);
+            expect(savedTransaction?.amount).toBe(transactionData.amount);
         });
 
         it('should throw an error if holding does not exist', async () => {
             // Arrange
             const transactionData: CreateTransactionInput = {
-                TRANSACTIONS_ID: 'test-transaction-id',
-                HOLDINGS_ID: 'non-existent-holding',
-                BUY: true,
-                TRANSACTION_TIME: new Date(),
-                AMOUNT: 50,
-                PRICE: 100.50,
-                COMMISSION: 1.50,
-                BROKER: 'Test Broker'
+                transactions_id: 'test-transaction-id',
+                holdings_id: 'non-existent-holding',
+                buy: true,
+                transaction_time: new Date(),
+                amount: 50,
+                price: 100.50,
+                commission: 1.50,
+                broker: 'Test Broker'
             };
 
             // Act & Assert
@@ -142,14 +142,14 @@ describe('TransactionRepository', () => {
         it('should throw an error if amount is not positive', async () => {
             // Arrange
             const transactionData: CreateTransactionInput = {
-                TRANSACTIONS_ID: 'test-transaction-id',
-                HOLDINGS_ID: testHolding.HOLDINGS_ID,
-                BUY: true,
-                TRANSACTION_TIME: new Date(),
-                AMOUNT: 0,
-                PRICE: 100.50,
-                COMMISSION: 1.50,
-                BROKER: 'Test Broker'
+                transactions_id: 'test-transaction-id',
+                holdings_id: testHolding.holdings_id,
+                buy: true,
+                transaction_time: new Date(),
+                amount: 0,
+                price: 100.50,
+                commission: 1.50,
+                broker: 'Test Broker'
             };
 
             // Act & Assert
@@ -161,14 +161,14 @@ describe('TransactionRepository', () => {
         it('should throw an error if price is not positive', async () => {
             // Arrange
             const transactionData: CreateTransactionInput = {
-                TRANSACTIONS_ID: 'test-transaction-id',
-                HOLDINGS_ID: testHolding.HOLDINGS_ID,
-                BUY: true,
-                TRANSACTION_TIME: new Date(),
-                AMOUNT: 50,
-                PRICE: 0,
-                COMMISSION: 1.50,
-                BROKER: 'Test Broker'
+                transactions_id: 'test-transaction-id',
+                holdings_id: testHolding.holdings_id,
+                buy: true,
+                transaction_time: new Date(),
+                amount: 50,
+                price: 0,
+                commission: 1.50,
+                broker: 'Test Broker'
             };
 
             // Act & Assert
@@ -180,14 +180,14 @@ describe('TransactionRepository', () => {
         it('should throw an error if commission is negative', async () => {
             // Arrange
             const transactionData: CreateTransactionInput = {
-                TRANSACTIONS_ID: 'test-transaction-id',
-                HOLDINGS_ID: testHolding.HOLDINGS_ID,
-                BUY: true,
-                TRANSACTION_TIME: new Date(),
-                AMOUNT: 50,
-                PRICE: 100.50,
-                COMMISSION: -1.50,
-                BROKER: 'Test Broker'
+                transactions_id: 'test-transaction-id',
+                holdings_id: testHolding.holdings_id,
+                buy: true,
+                transaction_time: new Date(),
+                amount: 50,
+                price: 100.50,
+                commission: -1.50,
+                broker: 'Test Broker'
             };
 
             // Act & Assert
@@ -197,183 +197,163 @@ describe('TransactionRepository', () => {
         });
     });
 
-    describe('findByHolding', () => {
+    describe('findById', () => {
+        it('should find a transaction by ID', async () => {
+            // Arrange
+            const transactionData: CreateTransactionInput = {
+                transactions_id: 'test-transaction-id',
+                holdings_id: testHolding.holdings_id,
+                buy: true,
+                transaction_time: new Date(),
+                amount: 50,
+                price: 100.50,
+                commission: 1.50,
+                broker: 'Test Broker'
+            };
+            await transactionRepository.create(transactionData);
+
+            // Act
+            const result = await transactionRepository.findById(transactionData.transactions_id);
+
+            // Assert
+            expect(result).toBeDefined();
+            expect(result?.transactions_id).toBe(transactionData.transactions_id);
+            expect(result?.amount).toBe(transactionData.amount);
+        });
+
+        it('should return null if transaction is not found', async () => {
+            // Act
+            const result = await transactionRepository.findById('non-existent-id');
+
+            // Assert
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('findByHoldingId', () => {
         it('should find all transactions for a holding', async () => {
             // Arrange
             const transactions: CreateTransactionInput[] = [
                 {
-                    TRANSACTIONS_ID: 'transaction-1',
-                    HOLDINGS_ID: testHolding.HOLDINGS_ID,
-                    BUY: true,
-                    TRANSACTION_TIME: new Date('2024-01-01T10:00:00Z'),
-                    AMOUNT: 50,
-                    PRICE: 100.50,
-                    COMMISSION: 1.50,
-                    BROKER: 'Test Broker'
+                    transactions_id: 'transaction-1',
+                    holdings_id: testHolding.holdings_id,
+                    buy: true,
+                    transaction_time: new Date('2024-01-01T10:00:00Z'),
+                    amount: 50,
+                    price: 100.50,
+                    commission: 1.50,
+                    broker: 'Test Broker'
                 },
                 {
-                    TRANSACTIONS_ID: 'transaction-2',
-                    HOLDINGS_ID: testHolding.HOLDINGS_ID,
-                    BUY: false,
-                    TRANSACTION_TIME: new Date('2024-01-01T11:00:00Z'),
-                    AMOUNT: 25,
-                    PRICE: 110.50,
-                    COMMISSION: 1.50,
-                    BROKER: 'Test Broker'
+                    transactions_id: 'transaction-2',
+                    holdings_id: testHolding.holdings_id,
+                    buy: false,
+                    transaction_time: new Date('2024-01-01T11:00:00Z'),
+                    amount: 25,
+                    price: 110.50,
+                    commission: 1.50,
+                    broker: 'Test Broker'
                 }
             ];
             await Promise.all(transactions.map(t => transactionRepository.create(t)));
 
             // Act
-            const result = await transactionRepository.findByHolding(testHolding.HOLDINGS_ID);
+            const result = await transactionRepository.findByHoldingId(testHolding.holdings_id);
 
             // Assert
             expect(result).toHaveLength(2);
-            expect(result[0].TRANSACTION_TIME.getTime()).toBeGreaterThan(
-                result[1].TRANSACTION_TIME.getTime()
+            expect(result[0].transaction_time.getTime()).toBeGreaterThan(
+                result[1].transaction_time.getTime()
             ); // Check descending order
         });
-    });
 
-    describe('findByHoldingAndType', () => {
-        it('should find only buy transactions', async () => {
-            // Arrange
-            const transactions: CreateTransactionInput[] = [
-                {
-                    TRANSACTIONS_ID: 'transaction-1',
-                    HOLDINGS_ID: testHolding.HOLDINGS_ID,
-                    BUY: true,
-                    TRANSACTION_TIME: new Date('2024-01-01T10:00:00Z'),
-                    AMOUNT: 50,
-                    PRICE: 100.50,
-                    COMMISSION: 1.50,
-                    BROKER: 'Test Broker'
-                },
-                {
-                    TRANSACTIONS_ID: 'transaction-2',
-                    HOLDINGS_ID: testHolding.HOLDINGS_ID,
-                    BUY: false,
-                    TRANSACTION_TIME: new Date('2024-01-01T11:00:00Z'),
-                    AMOUNT: 25,
-                    PRICE: 110.50,
-                    COMMISSION: 1.50,
-                    BROKER: 'Test Broker'
-                }
-            ];
-            await Promise.all(transactions.map(t => transactionRepository.create(t)));
-
+        it('should return empty array when holding has no transactions', async () => {
             // Act
-            const result = await transactionRepository.findByHoldingAndType(testHolding.HOLDINGS_ID, true);
+            const result = await transactionRepository.findByHoldingId(testHolding.holdings_id);
 
             // Assert
-            expect(result).toHaveLength(1);
-            expect(result[0].BUY).toBe(true);
+            expect(result).toEqual([]);
         });
     });
 
-    describe('getTotalAmount', () => {
-        it('should calculate net amount correctly', async () => {
+    describe('update', () => {
+        it('should update a transaction', async () => {
             // Arrange
-            const transactions: CreateTransactionInput[] = [
-                {
-                    TRANSACTIONS_ID: 'transaction-1',
-                    HOLDINGS_ID: testHolding.HOLDINGS_ID,
-                    BUY: true,
-                    TRANSACTION_TIME: new Date('2024-01-01T10:00:00Z'),
-                    AMOUNT: 50,
-                    PRICE: 100.50,
-                    COMMISSION: 1.50,
-                    BROKER: 'Test Broker'
-                },
-                {
-                    TRANSACTIONS_ID: 'transaction-2',
-                    HOLDINGS_ID: testHolding.HOLDINGS_ID,
-                    BUY: false,
-                    TRANSACTION_TIME: new Date('2024-01-01T11:00:00Z'),
-                    AMOUNT: 20,
-                    PRICE: 110.50,
-                    COMMISSION: 1.50,
-                    BROKER: 'Test Broker'
-                }
-            ];
-            await Promise.all(transactions.map(t => transactionRepository.create(t)));
+            const transactionData: CreateTransactionInput = {
+                transactions_id: 'test-transaction-id',
+                holdings_id: testHolding.holdings_id,
+                buy: true,
+                transaction_time: new Date(),
+                amount: 50,
+                price: 100.50,
+                commission: 1.50,
+                broker: 'Test Broker'
+            };
+            await transactionRepository.create(transactionData);
+
+            const updateData = {
+                amount: 75,
+                price: 110.50
+            };
 
             // Act
-            const result = await transactionRepository.getTotalAmount(testHolding.HOLDINGS_ID);
+            const result = await transactionRepository.update(transactionData.transactions_id, updateData);
 
             // Assert
-            expect(result).toBe(30); // 50 bought - 20 sold = 30
+            expect(result).toBeDefined();
+            expect(result.amount).toBe(updateData.amount);
+            expect(result.price).toEqual(new Decimal(updateData.price));
+
+            // Verify the update was persisted
+            const updatedTransaction = await prisma.transaction.findUnique({
+                where: { transactions_id: transactionData.transactions_id }
+            });
+            expect(updatedTransaction?.amount).toBe(updateData.amount);
+            expect(updatedTransaction?.price).toEqual(new Decimal(updateData.price));
+        });
+
+        it('should throw an error if transaction does not exist', async () => {
+            // Act & Assert
+            await expect(transactionRepository.update('non-existent-id', { amount: 75 }))
+                .rejects
+                .toThrow('Transaction not found');
         });
     });
 
-    describe('getTotalValue', () => {
-        it('should calculate total value correctly', async () => {
+    describe('delete', () => {
+        it('should delete a transaction', async () => {
             // Arrange
-            const transactions: CreateTransactionInput[] = [
-                {
-                    TRANSACTIONS_ID: 'transaction-1',
-                    HOLDINGS_ID: testHolding.HOLDINGS_ID,
-                    BUY: true,
-                    TRANSACTION_TIME: new Date('2024-01-01T10:00:00Z'),
-                    AMOUNT: 50,
-                    PRICE: 100,
-                    COMMISSION: 1.50,
-                    BROKER: 'Test Broker'
-                },
-                {
-                    TRANSACTIONS_ID: 'transaction-2',
-                    HOLDINGS_ID: testHolding.HOLDINGS_ID,
-                    BUY: false,
-                    TRANSACTION_TIME: new Date('2024-01-01T11:00:00Z'),
-                    AMOUNT: 20,
-                    PRICE: 110,
-                    COMMISSION: 1.50,
-                    BROKER: 'Test Broker'
-                }
-            ];
-            await Promise.all(transactions.map(t => transactionRepository.create(t)));
+            const transactionData: CreateTransactionInput = {
+                transactions_id: 'test-transaction-id',
+                holdings_id: testHolding.holdings_id,
+                buy: true,
+                transaction_time: new Date(),
+                amount: 50,
+                price: 100.50,
+                commission: 1.50,
+                broker: 'Test Broker'
+            };
+            await transactionRepository.create(transactionData);
 
             // Act
-            const result = await transactionRepository.getTotalValue(testHolding.HOLDINGS_ID);
+            const result = await transactionRepository.delete(transactionData.transactions_id);
 
             // Assert
-            // 50 * 100 bought - 20 * 110 sold = 5000 - 2200 = 2800
-            expect(result).toEqual(new Decimal(2800));
+            expect(result).toBeDefined();
+            expect(result.transactions_id).toBe(transactionData.transactions_id);
+
+            // Verify the transaction was actually deleted
+            const deletedTransaction = await prisma.transaction.findUnique({
+                where: { transactions_id: transactionData.transactions_id }
+            });
+            expect(deletedTransaction).toBeNull();
         });
-    });
 
-    describe('getTotalCommission', () => {
-        it('should calculate total commission correctly', async () => {
-            // Arrange
-            const transactions: CreateTransactionInput[] = [
-                {
-                    TRANSACTIONS_ID: 'transaction-1',
-                    HOLDINGS_ID: testHolding.HOLDINGS_ID,
-                    BUY: true,
-                    TRANSACTION_TIME: new Date('2024-01-01T10:00:00Z'),
-                    AMOUNT: 50,
-                    PRICE: 100.50,
-                    COMMISSION: 1.50,
-                    BROKER: 'Test Broker'
-                },
-                {
-                    TRANSACTIONS_ID: 'transaction-2',
-                    HOLDINGS_ID: testHolding.HOLDINGS_ID,
-                    BUY: false,
-                    TRANSACTION_TIME: new Date('2024-01-01T11:00:00Z'),
-                    AMOUNT: 20,
-                    PRICE: 110.50,
-                    COMMISSION: 2.50,
-                    BROKER: 'Test Broker'
-                }
-            ];
-            await Promise.all(transactions.map(t => transactionRepository.create(t)));
-
-            // Act
-            const result = await transactionRepository.getTotalCommission(testHolding.HOLDINGS_ID);
-
-            // Assert
-            expect(result).toEqual(new Decimal(4.00)); // 1.50 + 2.50 = 4.00
+        it('should throw an error if transaction does not exist', async () => {
+            // Act & Assert
+            await expect(transactionRepository.delete('non-existent-id'))
+                .rejects
+                .toThrow('Transaction not found');
         });
     });
 });

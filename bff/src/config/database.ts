@@ -25,29 +25,31 @@ pool.on('error', (err, client) => {
 });
 
 // Extended PoolClient interface to include lastQuery
-interface ExtendedPoolClient extends PoolClient {
+interface ExtendedPoolClient extends Omit<PoolClient, 'query'> {
   lastQuery?: QueryConfig | string;
+  query(queryTextOrConfig: string | QueryConfig, values?: any[]): Promise<QueryResult>;
+  query<T extends QueryResultRow = any>(queryTextOrConfig: string | QueryConfig, values?: any[]): Promise<QueryResult<T>>;
 }
 
 // Helper function to get a client from the pool
 export const getClient = async (): Promise<ExtendedPoolClient> => {
   const client = await pool.connect() as ExtendedPoolClient;
-  const query = client.query.bind(client);
-  const release = client.release.bind(client);
+  const originalQuery = client.query.bind(client);
+  const originalRelease = client.release.bind(client);
 
   // Monkey patch the query method to keep track of last query
   client.query = (async (queryTextOrConfig: string | QueryConfig, values?: any[]) => {
     client.lastQuery = queryTextOrConfig;
     if (typeof queryTextOrConfig === 'string' && values) {
-      return await query(queryTextOrConfig, values);
+      return await originalQuery(queryTextOrConfig, values);
     }
-    return await query(queryTextOrConfig);
+    return await originalQuery(queryTextOrConfig);
   }) as typeof client.query;
 
   client.release = () => {
     // Clear last query before releasing
     delete client.lastQuery;
-    return release();
+    return originalRelease();
   };
 
   return client;
