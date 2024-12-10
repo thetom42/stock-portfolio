@@ -2,19 +2,19 @@
 -- ***************************************************;
 
 
--- ************************************** PORTFOLIOS
+-- ************************************** portfolio
 
-CREATE TABLE PORTFOLIOS
+CREATE TABLE portfolio
 (
- PORTFOLIOS_ID text NOT NULL,
- NAME         text NOT NULL,
- CREATED_AT   timestamp NOT NULL,
- USERS_ID      text NOT NULL,
- CONSTRAINT PK_portfolios PRIMARY KEY ( PORTFOLIOS_ID ),
- CONSTRAINT FK_50 FOREIGN KEY ( USERS_ID ) REFERENCES USERS ( USERS_ID )
+ portfolio_id text NOT NULL,
+ name         text NOT NULL,
+ created_at   timestamp NOT NULL,
+ user_id      text NOT NULL,
+ CONSTRAINT pk_portfolio PRIMARY KEY ( portfolio_id ),
+ CONSTRAINT fk_50 FOREIGN KEY ( user_id ) REFERENCES user ( user_id )
 );
 
-CREATE INDEX fkIdx_51 ON PORTFOLIOS
+CREATE INDEX fkidx_51 ON portfolio
 (
- USERS_ID
+ user_id
 );

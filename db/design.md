@@ -19,13 +19,13 @@ The database layer will utilize the **Repository Pattern with Strategy/Adapter**
 
 The application's data model consists of the following entities, based on the schema in `db/all.sql`:
 
-* **User:** `USERS_ID` (TEXT, PK), `NAME` (TEXT), `SURNAME` (TEXT), `EMAIL` (TEXT), `NICKNAME` (TEXT), `PASSWORD` (TEXT), `JOIN_DATE` (DATE)
-* **Category:** `CATEGORIES_ID` (TEXT, PK), `NAME` (TEXT)
-* **Stock:** `ISIN` (TEXT, PK), `CATEGORIES_ID` (TEXT, FK referencing Category), `NAME` (TEXT), `WKN` (TEXT), `SYMBOL` (TEXT)
-* **Quote:** `QUOTES_ID` (TEXT, PK), `ISIN` (TEXT, FK referencing Stock), `PRICE` (DECIMAL), `CURRENCY` (TEXT), `MARKET_TIME` (TIMESTAMP), `EXCHANGE` (TEXT)
-* **Portfolio:** `PORTFOLIOS_ID` (TEXT, PK), `NAME` (TEXT), `CREATED_AT` (TIMESTAMP), `USERS_ID` (TEXT, FK referencing User)
-* **Holding:** `HOLDINGS_ID` (TEXT, PK), `PORTFOLIOS_ID` (TEXT, FK referencing Portfolio), `ISIN` (TEXT, FK referencing Stock), `QUANTITY` (INT), `START_DATE` (DATE), `END_DATE` (DATE)
-* **Transaction:** `TRANSACTIONS_ID` (TEXT, PK), `HOLDINGS_ID` (TEXT, FK referencing Holding), `BUY` (BOOLEAN), `TRANSACTION_TIME` (TIMESTAMP), `AMOUNT` (INT), `PRICE` (DECIMAL), `COMMISSION` (DECIMAL), `BROKER` (TEXT)
+* **User:** `user_id` (TEXT, PK), `name` (TEXT), `surname` (TEXT), `email` (TEXT), `nickname` (TEXT), `password` (TEXT), `join_date` (DATE)
+* **Category:** `category_id` (TEXT, PK), `name` (TEXT)
+* **Stock:** `isin` (TEXT, PK), `category_id` (TEXT, FK referencing Category), `name` (TEXT), `wkn` (TEXT), `symbol` (TEXT)
+* **Quote:** `quote_id` (TEXT, PK), `isin` (TEXT, FK referencing Stock), `price` (DECIMAL), `currency` (TEXT), `market_time` (TIMESTAMP), `exchange` (TEXT)
+* **Portfolio:** `portfolio_id` (TEXT, PK), `name` (TEXT), `created_at` (TIMESTAMP), `user_id` (TEXT, FK referencing User)
+* **Holding:** `holding_id` (TEXT, PK), `portfolio_id` (TEXT, FK referencing Portfolio), `isin` (TEXT, FK referencing Stock), `quantity` (INT), `start_date` (DATE), `end_date` (DATE)
+* **Transaction:** `transaction_id` (TEXT, PK), `holding_id` (TEXT, FK referencing Holding), `buy` (BOOLEAN), `transaction_time` (TIMESTAMP), `amount` (INT), `price` (DECIMAL), `commission` (DECIMAL), `broker` (TEXT)
 
 For a visual representation of the relationships between these entities, see the ER diagram:
   
@@ -35,9 +35,9 @@ For a visual representation of the relationships between these entities, see the
 **Example Data Representation (PostgreSQL):**
 
 ```sql
--- Users table
-CREATE TABLE users (
-    USERS_ID TEXT PRIMARY KEY,
+-- User table
+CREATE TABLE user (
+    user_id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     surname TEXT NOT NULL,
     email TEXT NOT NULL,
@@ -46,16 +46,16 @@ CREATE TABLE users (
     join_date DATE NOT NULL
 );
 
--- Categories table
-CREATE TABLE categories (
-    CATEGORIES_ID TEXT PRIMARY KEY,
+-- Category table
+CREATE TABLE category (
+    category_id TEXT PRIMARY KEY,
     name TEXT NOT NULL
 );
 
--- Stocks table
-CREATE TABLE stocks (
+-- Stock table
+CREATE TABLE stock (
     isin TEXT PRIMARY KEY,
-    categories_id TEXT REFERENCES categories(categories_id),
+    category_id TEXT REFERENCES category(category_id),
     name TEXT NOT NULL,
     wkn TEXT NOT NULL,
     symbol TEXT NOT NULL

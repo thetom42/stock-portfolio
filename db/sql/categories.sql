@@ -2,11 +2,11 @@
 -- ***************************************************;
 
 
--- ************************************** CATEGORIES
+-- ************************************** category
 
-CREATE TABLE CATEGORIES
+CREATE TABLE category
 (
- CATEGORIES_ID text NOT NULL,
- NAME        text NOT NULL,
- CONSTRAINT PK_categories PRIMARY KEY ( CATEGORIES_ID )
+ category_id text NOT NULL,
+ name        text NOT NULL,
+ CONSTRAINT pk_category PRIMARY KEY ( category_id )
 );

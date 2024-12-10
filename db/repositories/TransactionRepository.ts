@@ -19,13 +19,13 @@ export class TransactionRepository {
 
   async findById(id: string): Promise<Transaction | null> {
     return await this.prisma.transaction.findUnique({
-      where: { transactions_id: id }
+      where: { transaction_id: id }
     });
   }
 
   async findByHoldingId(holdingId: string): Promise<Transaction[]> {
     return await this.prisma.transaction.findMany({
-      where: { holdings_id: holdingId }
+      where: { holding_id: holdingId }
     });
   }
 
@@ -37,7 +37,7 @@ export class TransactionRepository {
       }
 
       return await this.prisma.transaction.update({
-        where: { transactions_id: id },
+        where: { transaction_id: id },
         data: transactionData
       });
     } catch (error) {
@@ -51,7 +51,7 @@ export class TransactionRepository {
   async delete(id: string): Promise<Transaction> {
     try {
       return await this.prisma.transaction.delete({
-        where: { transactions_id: id }
+        where: { transaction_id: id }
       });
     } catch (error) {
       if (error instanceof Error && error.message.includes('Record to delete does not exist')) {

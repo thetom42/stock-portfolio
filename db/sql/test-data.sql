@@ -1,5 +1,5 @@
 -- Insert test users
-INSERT INTO users (users_id, name, surname, email, nickname, password, join_date)
+INSERT INTO user (user_id, name, surname, email, nickname, password, join_date)
 VALUES
   ('user-1', 'John', 'Doe', 'john.doe@example.com', 'johnd', 'password123', '2023-01-01'),
   ('user-2', 'Jane', 'Smith', 'jane.smith@example.com', 'janes', 'password456', '2023-01-02'),
@@ -13,7 +13,7 @@ VALUES
   ('user-10', 'Maria', 'Garcia', 'maria.g@example.com', 'mariag', 'password741', '2023-08-25');
 
 -- Insert categories
-INSERT INTO categories (categories_id, name)
+INSERT INTO category (category_id, name)
 VALUES
   ('cat-1', 'Technology'),
   ('cat-2', 'Finance'),
@@ -29,7 +29,7 @@ VALUES
   ('cat-12', 'Entertainment');
 
 -- Insert stocks (using real companies)
-INSERT INTO stocks (isin, categories_id, name, wkn, symbol)
+INSERT INTO stock (isin, category_id, name, wkn, symbol)
 VALUES
   ('US0378331005', 'cat-1', 'Apple Inc.', '865985', 'AAPL'),
   ('US5949181045', 'cat-1', 'Microsoft Corporation', '870747', 'MSFT'),
@@ -62,7 +62,7 @@ VALUES
   ('US0605051046', 'cat-2', 'Bank of America Corp.', '858388', 'BAC');
 
 -- Insert quotes (with more recent timestamps and varied prices)
-INSERT INTO quotes (quotes_id, isin, price, currency, market_time, exchange)
+INSERT INTO quote (quote_id, isin, price, currency, market_time, exchange)
 VALUES
   ('quote-1', 'US0378331005', 175.50, 'USD', '2023-10-20 10:00:00', 'NASDAQ'),
   ('quote-2', 'US5949181045', 330.25, 'USD', '2023-10-20 10:00:00', 'NASDAQ'),
@@ -96,7 +96,7 @@ VALUES
   ('quote-30', 'US0605051046', 27.95, 'USD', '2023-10-20 10:00:00', 'NYSE');
 
 -- Insert portfolios
-INSERT INTO portfolios (portfolios_id, name, created_at, users_id)
+INSERT INTO portfolio (portfolio_id, name, created_at, user_id)
 VALUES
   ('portfolio-1', 'Tech Growth', '2023-01-15', 'user-1'),
   ('portfolio-2', 'Value Investing', '2023-02-01', 'user-1'),
@@ -118,7 +118,7 @@ VALUES
   ('portfolio-18', 'Small Cap Growth', '2023-10-15', 'user-9');
 
 -- Insert holdings
-INSERT INTO holdings (holdings_id, portfolios_id, isin, quantity, start_date, end_date)
+INSERT INTO holding (holding_id, portfolio_id, isin, quantity, start_date, end_date)
 VALUES
   ('holding-1', 'portfolio-1', 'US0378331005', 100, '2023-01-16', NULL),
   ('holding-2', 'portfolio-1', 'US5949181045', 50, '2023-01-17', NULL),
@@ -152,7 +152,7 @@ VALUES
   ('holding-30', 'portfolio-6', 'US0605051046', 500, '2023-08-01', NULL);
 
 -- Insert transactions
-INSERT INTO transactions (transactions_id, holdings_id, buy, transaction_time, amount, price, commission, broker)
+INSERT INTO transaction (transaction_id, holding_id, buy, transaction_time, amount, price, commission, broker)
 VALUES
   ('trans-1', 'holding-1', true, '2023-01-16 09:30:00', 100, 150.25, 5.99, 'Robinhood'),
   ('trans-2', 'holding-2', true, '2023-01-17 10:15:00', 50, 310.75, 5.99, 'Robinhood'),

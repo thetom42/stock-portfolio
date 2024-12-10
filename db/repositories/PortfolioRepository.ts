@@ -19,13 +19,13 @@ export class PortfolioRepository {
 
   async findById(id: string): Promise<Portfolio | null> {
     return await this.prisma.portfolio.findUnique({
-      where: { portfolios_id: id }
+      where: { portfolio_id: id }
     });
   }
 
   async findByUserId(userId: string): Promise<Portfolio[]> {
     return await this.prisma.portfolio.findMany({
-      where: { users_id: userId }
+      where: { user_id: userId }
     });
   }
 
@@ -37,7 +37,7 @@ export class PortfolioRepository {
       }
 
       return await this.prisma.portfolio.update({
-        where: { portfolios_id: id },
+        where: { portfolio_id: id },
         data: portfolioData
       });
     } catch (error) {
@@ -51,7 +51,7 @@ export class PortfolioRepository {
   async delete(id: string): Promise<Portfolio> {
     try {
       return await this.prisma.portfolio.delete({
-        where: { portfolios_id: id }
+        where: { portfolio_id: id }
       });
     } catch (error) {
       if (error instanceof Error && error.message.includes('Record to delete does not exist')) {

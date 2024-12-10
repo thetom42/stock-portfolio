@@ -2,27 +2,27 @@
 -- ***************************************************;
 
 
--- ************************************** HOLDINGS
+-- ************************************** holding
 
-CREATE TABLE HOLDINGS
+CREATE TABLE holding
 (
- HOLDINGS_ID  text NOT NULL,
- PORTFOLIOS_ID text NOT NULL,
- ISIN         text NOT NULL,
- QUANTITY     int NOT NULL,
- START_DATE   date NOT NULL,
- END_DATE     date NULL,
- CONSTRAINT PK_holdings PRIMARY KEY ( HOLDINGS_ID ),
- CONSTRAINT FK_18 FOREIGN KEY ( PORTFOLIOS_ID ) REFERENCES PORTFOLIOS ( PORTFOLIOS_ID ),
- CONSTRAINT FK_21 FOREIGN KEY ( ISIN ) REFERENCES STOCKS ( ISIN )
+ holding_id   text NOT NULL,
+ portfolio_id text NOT NULL,
+ isin         text NOT NULL,
+ quantity     int NOT NULL,
+ start_date   date NOT NULL,
+ end_date     date NULL,
+ CONSTRAINT pk_holding PRIMARY KEY ( holding_id ),
+ CONSTRAINT fk_18 FOREIGN KEY ( portfolio_id ) REFERENCES portfolio ( portfolio_id ),
+ CONSTRAINT fk_21 FOREIGN KEY ( isin ) REFERENCES stock ( isin )
 );
 
-CREATE INDEX fkIdx_19 ON HOLDINGS
+CREATE INDEX fkidx_19 ON holding
 (
- PORTFOLIOS_ID
+ portfolio_id
 );
 
-CREATE INDEX fkIdx_22 ON HOLDINGS
+CREATE INDEX fkidx_22 ON holding
 (
- ISIN
+ isin
 );

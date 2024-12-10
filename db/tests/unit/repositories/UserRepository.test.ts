@@ -17,7 +17,7 @@ describe('UserRepository', () => {
     it('should create a new user', async () => {
       // Arrange
       const userData: User = {
-        users_id: 'test-id',
+        user_id: 'test-id',
         name: 'John',
         surname: 'Doe',
         email: 'john.doe@example.com',
@@ -31,12 +31,12 @@ describe('UserRepository', () => {
 
       // Assert
       expect(result).toBeDefined();
-      expect(result.users_id).toBe(userData.users_id);
+      expect(result.user_id).toBe(userData.user_id);
       expect(result.email).toBe(userData.email);
       
       // Verify the user was actually saved
       const savedUser = await prisma.user.findUnique({
-        where: { users_id: userData.users_id }
+        where: { user_id: userData.user_id }
       });
       expect(savedUser).toBeDefined();
       expect(savedUser?.email).toBe(userData.email);
@@ -45,7 +45,7 @@ describe('UserRepository', () => {
     it('should throw an error if email already exists', async () => {
       // Arrange
       const userData: User = {
-        users_id: 'test-id',
+        user_id: 'test-id',
         name: 'John',
         surname: 'Doe',
         email: 'john.doe@example.com',
@@ -56,7 +56,7 @@ describe('UserRepository', () => {
       await userRepository.create(userData);
 
       // Act & Assert
-      const duplicateUser = { ...userData, users_id: 'different-id' };
+      const duplicateUser = { ...userData, user_id: 'different-id' };
       await expect(userRepository.create(duplicateUser))
         .rejects
         .toThrow('User with this email already exists');
@@ -67,7 +67,7 @@ describe('UserRepository', () => {
     it('should find a user by ID', async () => {
       // Arrange
       const userData: User = {
-        users_id: 'test-id',
+        user_id: 'test-id',
         name: 'John',
         surname: 'Doe',
         email: 'john.doe@example.com',
@@ -78,11 +78,11 @@ describe('UserRepository', () => {
       await prisma.user.create({ data: userData });
 
       // Act
-      const result = await userRepository.findById(userData.users_id);
+      const result = await userRepository.findById(userData.user_id);
 
       // Assert
       expect(result).toBeDefined();
-      expect(result?.users_id).toBe(userData.users_id);
+      expect(result?.user_id).toBe(userData.user_id);
       expect(result?.email).toBe(userData.email);
     });
 
@@ -99,7 +99,7 @@ describe('UserRepository', () => {
     it('should find a user by email', async () => {
       // Arrange
       const userData: User = {
-        users_id: 'test-id',
+        user_id: 'test-id',
         name: 'John',
         surname: 'Doe',
         email: 'john.doe@example.com',
@@ -114,7 +114,7 @@ describe('UserRepository', () => {
 
       // Assert
       expect(result).toBeDefined();
-      expect(result?.users_id).toBe(userData.users_id);
+      expect(result?.user_id).toBe(userData.user_id);
       expect(result?.email).toBe(userData.email);
     });
 
@@ -131,7 +131,7 @@ describe('UserRepository', () => {
     it('should update a user', async () => {
       // Arrange
       const userData: User = {
-        users_id: 'test-id',
+        user_id: 'test-id',
         name: 'John',
         surname: 'Doe',
         email: 'john.doe@example.com',
@@ -147,7 +147,7 @@ describe('UserRepository', () => {
       };
 
       // Act
-      const result = await userRepository.update(userData.users_id, updateData);
+      const result = await userRepository.update(userData.user_id, updateData);
 
       // Assert
       expect(result).toBeDefined();
@@ -157,7 +157,7 @@ describe('UserRepository', () => {
 
       // Verify the update was persisted
       const updatedUser = await prisma.user.findUnique({
-        where: { users_id: userData.users_id }
+        where: { user_id: userData.user_id }
       });
       expect(updatedUser?.name).toBe(updateData.name);
       expect(updatedUser?.surname).toBe(updateData.surname);
@@ -175,7 +175,7 @@ describe('UserRepository', () => {
     it('should delete a user', async () => {
       // Arrange
       const userData: User = {
-        users_id: 'test-id',
+        user_id: 'test-id',
         name: 'John',
         surname: 'Doe',
         email: 'john.doe@example.com',
@@ -186,15 +186,15 @@ describe('UserRepository', () => {
       await prisma.user.create({ data: userData });
 
       // Act
-      const result = await userRepository.delete(userData.users_id);
+      const result = await userRepository.delete(userData.user_id);
 
       // Assert
       expect(result).toBeDefined();
-      expect(result.users_id).toBe(userData.users_id);
+      expect(result.user_id).toBe(userData.user_id);
 
       // Verify the user was actually deleted
       const deletedUser = await prisma.user.findUnique({
-        where: { users_id: userData.users_id }
+        where: { user_id: userData.user_id }
       });
       expect(deletedUser).toBeNull();
     });

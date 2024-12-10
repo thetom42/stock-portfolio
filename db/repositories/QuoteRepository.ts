@@ -19,7 +19,7 @@ export class QuoteRepository {
 
   async findById(id: string): Promise<Quote | null> {
     return await this.prisma.quote.findUnique({
-      where: { quotes_id: id }
+      where: { quote_id: id }
     });
   }
 
@@ -44,7 +44,7 @@ export class QuoteRepository {
       }
 
       return await this.prisma.quote.update({
-        where: { quotes_id: id },
+        where: { quote_id: id },
         data: quoteData
       });
     } catch (error) {
@@ -58,7 +58,7 @@ export class QuoteRepository {
   async delete(id: string): Promise<Quote> {
     try {
       return await this.prisma.quote.delete({
-        where: { quotes_id: id }
+        where: { quote_id: id }
       });
     } catch (error) {
       if (error instanceof Error && error.message.includes('Record to delete does not exist')) {

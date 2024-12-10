@@ -19,20 +19,20 @@ export class HoldingRepository {
 
   async findById(id: string): Promise<Holding | null> {
     return await this.prisma.holding.findUnique({
-      where: { holdings_id: id }
+      where: { holding_id: id }
     });
   }
 
   async findByPortfolioId(portfolioId: string): Promise<Holding[]> {
     return await this.prisma.holding.findMany({
-      where: { portfolios_id: portfolioId }
+      where: { portfolio_id: portfolioId }
     });
   }
 
   async findActiveByPortfolioId(portfolioId: string): Promise<Holding[]> {
     return await this.prisma.holding.findMany({
       where: {
-        portfolios_id: portfolioId,
+        portfolio_id: portfolioId,
         end_date: null
       }
     });
@@ -46,7 +46,7 @@ export class HoldingRepository {
       }
 
       return await this.prisma.holding.update({
-        where: { holdings_id: id },
+        where: { holding_id: id },
         data: holdingData
       });
     } catch (error) {
@@ -60,7 +60,7 @@ export class HoldingRepository {
   async delete(id: string): Promise<Holding> {
     try {
       return await this.prisma.holding.delete({
-        where: { holdings_id: id }
+        where: { holding_id: id }
       });
     } catch (error) {
       if (error instanceof Error && error.message.includes('Record to delete does not exist')) {

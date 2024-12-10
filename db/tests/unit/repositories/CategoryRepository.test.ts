@@ -17,7 +17,7 @@ describe('CategoryRepository', () => {
         it('should create a new category', async () => {
             // Arrange
             const categoryData: Category = {
-                categories_id: 'test-category-id',
+                category_id: 'test-category-id',
                 name: 'Test Category'
             };
 
@@ -26,12 +26,12 @@ describe('CategoryRepository', () => {
 
             // Assert
             expect(result).toBeDefined();
-            expect(result.categories_id).toBe(categoryData.categories_id);
+            expect(result.category_id).toBe(categoryData.category_id);
             expect(result.name).toBe(categoryData.name);
 
             // Verify the category was actually saved
             const savedCategory = await prisma.category.findUnique({
-                where: { categories_id: categoryData.categories_id }
+                where: { category_id: categoryData.category_id }
             });
             expect(savedCategory).toBeDefined();
             expect(savedCategory?.name).toBe(categoryData.name);
@@ -40,13 +40,13 @@ describe('CategoryRepository', () => {
         it('should throw an error if category name already exists', async () => {
             // Arrange
             const categoryData: Category = {
-                categories_id: 'test-category-id',
+                category_id: 'test-category-id',
                 name: 'Test Category'
             };
             await categoryRepository.create(categoryData);
 
             // Act & Assert
-            const duplicateCategory = { ...categoryData, categories_id: 'different-id' };
+            const duplicateCategory = { ...categoryData, category_id: 'different-id' };
             await expect(categoryRepository.create(duplicateCategory))
                 .rejects
                 .toThrow('Category with this name already exists');
@@ -57,17 +57,17 @@ describe('CategoryRepository', () => {
         it('should find a category by ID', async () => {
             // Arrange
             const categoryData: Category = {
-                categories_id: 'test-category-id',
+                category_id: 'test-category-id',
                 name: 'Test Category'
             };
             await prisma.category.create({ data: categoryData });
 
             // Act
-            const result = await categoryRepository.findById(categoryData.categories_id);
+            const result = await categoryRepository.findById(categoryData.category_id);
 
             // Assert
             expect(result).toBeDefined();
-            expect(result?.categories_id).toBe(categoryData.categories_id);
+            expect(result?.category_id).toBe(categoryData.category_id);
             expect(result?.name).toBe(categoryData.name);
         });
 
@@ -84,9 +84,9 @@ describe('CategoryRepository', () => {
         it('should return all categories', async () => {
             // Arrange
             const categories = [
-                { categories_id: 'id-1', name: 'Category 1' },
-                { categories_id: 'id-2', name: 'Category 2' },
-                { categories_id: 'id-3', name: 'Category 3' }
+                { category_id: 'id-1', name: 'Category 1' },
+                { category_id: 'id-2', name: 'Category 2' },
+                { category_id: 'id-3', name: 'Category 3' }
             ];
             await Promise.all(categories.map(category => 
                 prisma.category.create({ data: category })
@@ -115,7 +115,7 @@ describe('CategoryRepository', () => {
         it('should update a category', async () => {
             // Arrange
             const categoryData: Category = {
-                categories_id: 'test-category-id',
+                category_id: 'test-category-id',
                 name: 'Test Category'
             };
             await prisma.category.create({ data: categoryData });
@@ -125,7 +125,7 @@ describe('CategoryRepository', () => {
             };
 
             // Act
-            const result = await categoryRepository.update(categoryData.categories_id, updateData);
+            const result = await categoryRepository.update(categoryData.category_id, updateData);
 
             // Assert
             expect(result).toBeDefined();
@@ -133,7 +133,7 @@ describe('CategoryRepository', () => {
 
             // Verify the update was persisted
             const updatedCategory = await prisma.category.findUnique({
-                where: { categories_id: categoryData.categories_id }
+                where: { category_id: categoryData.category_id }
             });
             expect(updatedCategory?.name).toBe(updateData.name);
         });
@@ -148,18 +148,18 @@ describe('CategoryRepository', () => {
         it('should throw an error if updated name already exists', async () => {
             // Arrange
             const category1 = {
-                categories_id: 'id-1',
+                category_id: 'id-1',
                 name: 'Category 1'
             };
             const category2 = {
-                categories_id: 'id-2',
+                category_id: 'id-2',
                 name: 'Category 2'
             };
             await prisma.category.create({ data: category1 });
             await prisma.category.create({ data: category2 });
 
             // Act & Assert
-            await expect(categoryRepository.update(category2.categories_id, { name: category1.name }))
+            await expect(categoryRepository.update(category2.category_id, { name: category1.name }))
                 .rejects
                 .toThrow('Category with this name already exists');
         });
@@ -169,21 +169,21 @@ describe('CategoryRepository', () => {
         it('should delete a category', async () => {
             // Arrange
             const categoryData: Category = {
-                categories_id: 'test-category-id',
+                category_id: 'test-category-id',
                 name: 'Test Category'
             };
             await prisma.category.create({ data: categoryData });
 
             // Act
-            const result = await categoryRepository.delete(categoryData.categories_id);
+            const result = await categoryRepository.delete(categoryData.category_id);
 
             // Assert
             expect(result).toBeDefined();
-            expect(result.categories_id).toBe(categoryData.categories_id);
+            expect(result.category_id).toBe(categoryData.category_id);
 
             // Verify the category was actually deleted
             const deletedCategory = await prisma.category.findUnique({
-                where: { categories_id: categoryData.categories_id }
+                where: { category_id: categoryData.category_id }
             });
             expect(deletedCategory).toBeNull();
         });

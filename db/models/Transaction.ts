@@ -1,8 +1,8 @@
 import { Decimal } from '@prisma/client/runtime/library';
 
 export interface Transaction {
-    transactions_id: string;
-    holdings_id: string;
+    transaction_id: string;
+    holding_id: string;
     buy: boolean;
     transaction_time: Date;
     amount: number;

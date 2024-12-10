@@ -2,23 +2,23 @@
 -- ***************************************************;
 
 
--- ************************************** TRANSACTIONS
+-- ************************************** transaction
 
-CREATE TABLE TRANSACTIONS
+CREATE TABLE transaction
 (
- TRANSACTIONS_ID     text NOT NULL,
- HOLDINGS_ID text NOT NULL,
- BUY                boolean NOT NULL,
- TRANSACTION_TIME   timestamp NOT NULL,
- AMOUNT             int NOT NULL,
- PRICE              decimal NOT NULL,
- COMMISSION         decimal NOT NULL,
- BROKER             text NOT NULL,
- CONSTRAINT PK_transactions PRIMARY KEY ( TRANSACTIONS_ID ),
- CONSTRAINT FK_61 FOREIGN KEY ( HOLDINGS_ID ) REFERENCES HOLDINGS ( HOLDINGS_ID )
+ transaction_id   text NOT NULL,
+ holding_id       text NOT NULL,
+ buy             boolean NOT NULL,
+ transaction_time timestamp NOT NULL,
+ amount          int NOT NULL,
+ price           decimal NOT NULL,
+ commission      decimal NOT NULL,
+ broker          text NOT NULL,
+ CONSTRAINT pk_transaction PRIMARY KEY ( transaction_id ),
+ CONSTRAINT fk_61 FOREIGN KEY ( holding_id ) REFERENCES holding ( holding_id )
 );
 
-CREATE INDEX fkIdx_62 ON TRANSACTIONS
+CREATE INDEX fkidx_62 ON transaction
 (
- HOLDINGS_ID
+ holding_id
 );

@@ -1,7 +1,7 @@
 import { Decimal } from '@prisma/client/runtime/library';
 
 export interface Quote {
-    quotes_id: string;
+    quote_id: string;
     isin: string;
     price: Decimal;
     currency: string;

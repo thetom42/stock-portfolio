@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  users_id   String       @id
+  user_id    String       @id
   name       String
   surname    String
   email      String       @unique
@@ -17,77 +17,77 @@ model User {
   join_date  DateTime     @db.Date
   portfolios Portfolio[]
 
-  @@map("users")
+  @@map("user")
 }
 
 model Category {
-  categories_id String    @id
-  name         String
-  stocks       Stock[]
+  category_id String    @id
+  name        String
+  stocks      Stock[]
 
-  @@map("categories")
+  @@map("category")
 }
 
 model Stock {
-  isin          String      @id
-  categories_id String
-  name          String
-  wkn           String
-  symbol        String
-  category      Category    @relation(fields: [categories_id], references: [categories_id])
-  quotes        Quote[]
-  holdings      Holding[]
+  isin        String      @id
+  category_id String
+  name        String
+  wkn         String
+  symbol      String
+  category    Category    @relation(fields: [category_id], references: [category_id])
+  quotes      Quote[]
+  holdings    Holding[]
 
-  @@map("stocks")
+  @@map("stock")
 }
 
 model Quote {
-  quotes_id    String   @id
-  isin         String
-  price        Decimal
-  currency     String
-  market_time  DateTime
-  exchange     String
-  stock        Stock    @relation(fields: [isin], references: [isin])
+  quote_id    String   @id
+  isin        String
+  price       Decimal
+  currency    String
+  market_time DateTime
+  exchange    String
+  stock       Stock    @relation(fields: [isin], references: [isin])
 
-  @@map("quotes")
+  @@map("quote")
 }
 
 model Portfolio {
-  portfolios_id String      @id
-  name          String
-  created_at    DateTime
-  users_id      String
-  user          User        @relation(fields: [users_id], references: [users_id])
-  holdings      Holding[]
+  portfolio_id String      @id
+  name         String
+  created_at   DateTime
+  user_id      String
+  user         User        @relation(fields: [user_id], references: [user_id])
+  holdings     Holding[]
 
-  @@map("portfolios")
+  @@map("portfolio")
 }
 
 model Holding {
-  holdings_id   String         @id
-  portfolios_id String
-  isin          String
-  quantity      Int
-  start_date    DateTime       @db.Date
-  end_date      DateTime?      @db.Date
-  portfolio     Portfolio      @relation(fields: [portfolios_id], references: [portfolios_id])
-  stock         Stock          @relation(fields: [isin], references: [isin])
-  transactions  Transaction[]
+  holding_id   String         @id
+  portfolio_id String
+  isin         String
+  quantity     Int
+  start_date   DateTime       @db.Date
+  end_date     DateTime?      @db.Date
+  portfolio    Portfolio      @relation(fields: [portfolio_id], references: [portfolio_id])
+  stock        Stock          @relation(fields: [isin], references: [isin])
+  transactions Transaction[]
 
-  @@map("holdings")
+  @@map("holding")
 }
 
 model Transaction {
-  transactions_id  String   @id
-  holdings_id      String
-  buy              Boolean
+  transaction_id  String   @id
+  holding_id      String
+  buy             Boolean
   transaction_time DateTime
-  amount           Int
-  price            Decimal
-  commission       Decimal
-  broker           String
-  holding          Holding  @relation(fields: [holdings_id], references: [holdings_id])
+  amount          Int
+  price           Decimal
+  commission      Decimal
+  broker          String
+  holding         Holding  @relation(fields: [holding_id], references: [holding_id])
 
-  @@map("transactions")
+  @@map("transaction")
 }

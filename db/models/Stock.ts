@@ -1,6 +1,6 @@
 export interface Stock {
     isin: string;
-    categories_id: string;
+    category_id: string;
     name: string;
     wkn: string;
     symbol: string;

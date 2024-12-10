@@ -25,7 +25,7 @@ describe('QuoteRepository', () => {
 
         // Create test category
         testCategory = {
-            categories_id: 'test-category-id',
+            category_id: 'test-category-id',
             name: 'Test Category'
         };
         await categoryRepository.create(testCategory);
@@ -33,7 +33,7 @@ describe('QuoteRepository', () => {
         // Create test stock
         testStock = {
             isin: 'TEST123456789',
-            categories_id: testCategory.categories_id,
+            category_id: testCategory.category_id,
             name: 'Test Stock',
             wkn: 'TEST123',
             symbol: 'TST'
@@ -45,7 +45,7 @@ describe('QuoteRepository', () => {
         it('should create a new quote', async () => {
             // Arrange
             const quoteData: CreateQuoteInput = {
-                quotes_id: 'test-quote-id',
+                quote_id: 'test-quote-id',
                 isin: testStock.isin,
                 price: 100.50,
                 currency: 'USD',
@@ -58,13 +58,13 @@ describe('QuoteRepository', () => {
 
             // Assert
             expect(result).toBeDefined();
-            expect(result.quotes_id).toBe(quoteData.quotes_id);
+            expect(result.quote_id).toBe(quoteData.quote_id);
             expect(result.price).toEqual(new Decimal(quoteData.price));
             expect(result.currency).toBe(quoteData.currency);
 
             // Verify the quote was actually saved
             const savedQuote = await prisma.quote.findUnique({
-                where: { quotes_id: quoteData.quotes_id }
+                where: { quote_id: quoteData.quote_id }
             });
             expect(savedQuote).toBeDefined();
             expect(savedQuote?.price).toEqual(new Decimal(quoteData.price));
@@ -73,7 +73,7 @@ describe('QuoteRepository', () => {
         it('should throw an error if stock does not exist', async () => {
             // Arrange
             const quoteData: CreateQuoteInput = {
-                quotes_id: 'test-quote-id',
+                quote_id: 'test-quote-id',
                 isin: 'non-existent-isin',
                 price: 100.50,
                 currency: 'USD',
@@ -93,7 +93,7 @@ describe('QuoteRepository', () => {
             // Arrange
             const quotes: CreateQuoteInput[] = [
                 {
-                    quotes_id: 'quote-1',
+                    quote_id: 'quote-1',
                     isin: testStock.isin,
                     price: 100.50,
                     currency: 'USD',
@@ -101,7 +101,7 @@ describe('QuoteRepository', () => {
                     exchange: 'NYSE'
                 },
                 {
-                    quotes_id: 'quote-2',
+                    quote_id: 'quote-2',
                     isin: testStock.isin,
                     price: 101.50,
                     currency: 'USD',
@@ -133,7 +133,7 @@ describe('QuoteRepository', () => {
             // Arrange
             const quotes: CreateQuoteInput[] = [
                 {
-                    quotes_id: 'quote-1',
+                    quote_id: 'quote-1',
                     isin: testStock.isin,
                     price: 100.50,
                     currency: 'USD',
@@ -141,7 +141,7 @@ describe('QuoteRepository', () => {
                     exchange: 'NYSE'
                 },
                 {
-                    quotes_id: 'quote-2',
+                    quote_id: 'quote-2',
                     isin: testStock.isin,
                     price: 101.50,
                     currency: 'USD',
@@ -156,7 +156,7 @@ describe('QuoteRepository', () => {
 
             // Assert
             expect(result).toBeDefined();
-            expect(result?.quotes_id).toBe('quote-2');
+            expect(result?.quote_id).toBe('quote-2');
             expect(result?.price).toEqual(new Decimal(101.50));
         });
 
@@ -173,7 +173,7 @@ describe('QuoteRepository', () => {
         it('should update a quote', async () => {
             // Arrange
             const quoteData: CreateQuoteInput = {
-                quotes_id: 'test-quote-id',
+                quote_id: 'test-quote-id',
                 isin: testStock.isin,
                 price: 100.50,
                 currency: 'USD',
@@ -188,7 +188,7 @@ describe('QuoteRepository', () => {
             };
 
             // Act
-            const result = await quoteRepository.update(quoteData.quotes_id, updateData);
+            const result = await quoteRepository.update(quoteData.quote_id, updateData);
 
             // Assert
             expect(result).toBeDefined();
@@ -198,7 +198,7 @@ describe('QuoteRepository', () => {
 
             // Verify the update was persisted
             const updatedQuote = await prisma.quote.findUnique({
-                where: { quotes_id: quoteData.quotes_id }
+                where: { quote_id: quoteData.quote_id }
             });
             expect(updatedQuote?.price).toEqual(new Decimal(updateData.price));
             expect(updatedQuote?.currency).toBe(updateData.currency);
@@ -216,7 +216,7 @@ describe('QuoteRepository', () => {
         it('should delete a quote', async () => {
             // Arrange
             const quoteData: CreateQuoteInput = {
-                quotes_id: 'test-quote-id',
+                quote_id: 'test-quote-id',
                 isin: testStock.isin,
                 price: 100.50,
                 currency: 'USD',
@@ -226,15 +226,15 @@ describe('QuoteRepository', () => {
             await quoteRepository.create(quoteData);
 
             // Act
-            const result = await quoteRepository.delete(quoteData.quotes_id);
+            const result = await quoteRepository.delete(quoteData.quote_id);
 
             // Assert
             expect(result).toBeDefined();
-            expect(result.quotes_id).toBe(quoteData.quotes_id);
+            expect(result.quote_id).toBe(quoteData.quote_id);
 
             // Verify the quote was actually deleted
             const deletedQuote = await prisma.quote.findUnique({
-                where: { quotes_id: quoteData.quotes_id }
+                where: { quote_id: quoteData.quote_id }
             });
             expect(deletedQuote).toBeNull();
         });

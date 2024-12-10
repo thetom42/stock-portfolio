@@ -19,7 +19,7 @@ describe('StockRepository', () => {
 
         // Create a test category
         testCategory = {
-            categories_id: 'test-category-id',
+            category_id: 'test-category-id',
             name: 'Test Category'
         };
         await categoryRepository.create(testCategory);
@@ -30,7 +30,7 @@ describe('StockRepository', () => {
             // Arrange
             const stockData: Stock = {
                 isin: 'TEST123456789',
-                categories_id: testCategory.categories_id,
+                category_id: testCategory.category_id,
                 name: 'Test Stock',
                 wkn: 'TEST123',
                 symbol: 'TST'
@@ -43,7 +43,7 @@ describe('StockRepository', () => {
             expect(result).toBeDefined();
             expect(result.isin).toBe(stockData.isin);
             expect(result.name).toBe(stockData.name);
-            expect(result.categories_id).toBe(stockData.categories_id);
+            expect(result.category_id).toBe(stockData.category_id);
 
             // Verify the stock was actually saved
             const savedStock = await prisma.stock.findUnique({
@@ -57,7 +57,7 @@ describe('StockRepository', () => {
             // Arrange
             const stockData: Stock = {
                 isin: 'TEST123456789',
-                categories_id: 'non-existent-category',
+                category_id: 'non-existent-category',
                 name: 'Test Stock',
                 wkn: 'TEST123',
                 symbol: 'TST'
@@ -73,7 +73,7 @@ describe('StockRepository', () => {
             // Arrange
             const stockData: Stock = {
                 isin: 'TEST123456789',
-                categories_id: testCategory.categories_id,
+                category_id: testCategory.category_id,
                 name: 'Test Stock',
                 wkn: 'TEST123',
                 symbol: 'TST'
@@ -91,7 +91,7 @@ describe('StockRepository', () => {
             // Arrange
             const stockData: Stock = {
                 isin: 'TEST123456789',
-                categories_id: testCategory.categories_id,
+                category_id: testCategory.category_id,
                 name: 'Test Stock',
                 wkn: 'TEST123',
                 symbol: 'TST'
@@ -113,7 +113,7 @@ describe('StockRepository', () => {
             // Arrange
             const stockData: Stock = {
                 isin: 'TEST123456789',
-                categories_id: testCategory.categories_id,
+                category_id: testCategory.category_id,
                 name: 'Test Stock',
                 wkn: 'TEST123',
                 symbol: 'TST'
@@ -137,7 +137,7 @@ describe('StockRepository', () => {
             // Arrange
             const stockData: Stock = {
                 isin: 'TEST123456789',
-                categories_id: testCategory.categories_id,
+                category_id: testCategory.category_id,
                 name: 'Test Stock',
                 wkn: 'TEST123',
                 symbol: 'TST'
@@ -168,14 +168,14 @@ describe('StockRepository', () => {
             const stocks = [
                 {
                     isin: 'TEST123456789',
-                    categories_id: testCategory.categories_id,
+                    category_id: testCategory.category_id,
                     name: 'Test Stock 1',
                     wkn: 'TEST123',
                     symbol: 'TST1'
                 },
                 {
                     isin: 'TEST987654321',
-                    categories_id: testCategory.categories_id,
+                    category_id: testCategory.category_id,
                     name: 'Test Stock 2',
                     wkn: 'TEST987',
                     symbol: 'TST2'
@@ -186,7 +186,7 @@ describe('StockRepository', () => {
             ));
 
             // Act
-            const result = await stockRepository.findByCategory(testCategory.categories_id);
+            const result = await stockRepository.findByCategory(testCategory.category_id);
 
             // Assert
             expect(result).toHaveLength(2);
@@ -197,7 +197,7 @@ describe('StockRepository', () => {
 
         it('should return empty array when category has no stocks', async () => {
             // Act
-            const result = await stockRepository.findByCategory(testCategory.categories_id);
+            const result = await stockRepository.findByCategory(testCategory.category_id);
 
             // Assert
             expect(result).toEqual([]);
@@ -209,7 +209,7 @@ describe('StockRepository', () => {
             // Arrange
             const stockData: Stock = {
                 isin: 'TEST123456789',
-                categories_id: testCategory.categories_id,
+                category_id: testCategory.category_id,
                 name: 'Test Stock',
                 wkn: 'TEST123',
                 symbol: 'TST'
@@ -226,7 +226,7 @@ describe('StockRepository', () => {
             // Assert
             expect(result).toBeDefined();
             expect(result.name).toBe(updateData.name);
-            expect(result.categories_id).toBe(stockData.categories_id); // Unchanged field
+            expect(result.category_id).toBe(stockData.category_id); // Unchanged field
 
             // Verify the update was persisted
             const updatedStock = await prisma.stock.findUnique({
@@ -246,7 +246,7 @@ describe('StockRepository', () => {
             // Arrange
             const stockData: Stock = {
                 isin: 'TEST123456789',
-                categories_id: testCategory.categories_id,
+                category_id: testCategory.category_id,
                 name: 'Test Stock',
                 wkn: 'TEST123',
                 symbol: 'TST'
@@ -254,7 +254,7 @@ describe('StockRepository', () => {
             await prisma.stock.create({ data: stockData });
 
             // Act & Assert
-            await expect(stockRepository.update(stockData.isin, { categories_id: 'non-existent-category' }))
+            await expect(stockRepository.update(stockData.isin, { category_id: 'non-existent-category' }))
                 .rejects
                 .toThrow('Category not found');
         });
@@ -265,7 +265,7 @@ describe('StockRepository', () => {
             // Arrange
             const stockData: Stock = {
                 isin: 'TEST123456789',
-                categories_id: testCategory.categories_id,
+                category_id: testCategory.category_id,
                 name: 'Test Stock',
                 wkn: 'TEST123',
                 symbol: 'TST'

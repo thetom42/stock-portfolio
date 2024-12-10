@@ -29,7 +29,7 @@ export class StockRepository {
 
   async findByCategory(categoryId: string): Promise<Stock[]> {
     return await this.prisma.stock.findMany({
-      where: { categories_id: categoryId }
+      where: { category_id: categoryId }
     });
   }
 

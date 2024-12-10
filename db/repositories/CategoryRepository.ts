@@ -19,7 +19,7 @@ export class CategoryRepository {
 
   async findById(id: string): Promise<Category | null> {
     return await this.prisma.category.findUnique({
-      where: { categories_id: id }
+      where: { category_id: id }
     });
   }
 
@@ -35,7 +35,7 @@ export class CategoryRepository {
       }
 
       return await this.prisma.category.update({
-        where: { categories_id: id },
+        where: { category_id: id },
         data: categoryData
       });
     } catch (error) {
@@ -49,7 +49,7 @@ export class CategoryRepository {
   async delete(id: string): Promise<Category> {
     try {
       return await this.prisma.category.delete({
-        where: { categories_id: id }
+        where: { category_id: id }
       });
     } catch (error) {
       if (error instanceof Error && error.message.includes('Record to delete does not exist')) {

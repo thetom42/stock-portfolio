@@ -2,21 +2,21 @@
 -- ***************************************************;
 
 
--- ************************************** QUOTES
+-- ************************************** quote
 
-CREATE TABLE QUOTES
+CREATE TABLE quote
 (
- QUOTES_ID    text NOT NULL,
- ISIN        text NOT NULL,
- PRICE       decimal NOT NULL,
- CURRENCY    text NOT NULL,
- MARKET_TIME timestamp NOT NULL,
- EXCHANGE    text NOT NULL,
- CONSTRAINT PK_quotes PRIMARY KEY ( QUOTES_ID ),
- CONSTRAINT FK_27 FOREIGN KEY ( ISIN ) REFERENCES STOCKS ( ISIN )
+ quote_id    text NOT NULL,
+ isin        text NOT NULL,
+ price       decimal NOT NULL,
+ currency    text NOT NULL,
+ market_time timestamp NOT NULL,
+ exchange    text NOT NULL,
+ CONSTRAINT pk_quote PRIMARY KEY ( quote_id ),
+ CONSTRAINT fk_27 FOREIGN KEY ( isin ) REFERENCES stock ( isin )
 );
 
-CREATE INDEX fkIdx_28 ON QUOTES
+CREATE INDEX fkidx_28 ON quote
 (
- ISIN
+ isin
 );

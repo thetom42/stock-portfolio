@@ -19,7 +19,7 @@ export class UserRepository {
 
   async findById(id: string): Promise<User | null> {
     return await this.prisma.user.findUnique({
-      where: { users_id: id }
+      where: { user_id: id }
     });
   }
 
@@ -37,7 +37,7 @@ export class UserRepository {
       }
 
       return await this.prisma.user.update({
-        where: { users_id: id },
+        where: { user_id: id },
         data: userData
       });
     } catch (error) {
@@ -51,7 +51,7 @@ export class UserRepository {
   async delete(id: string): Promise<User> {
     try {
       return await this.prisma.user.delete({
-        where: { users_id: id }
+        where: { user_id: id }
       });
     } catch (error) {
       if (error instanceof Error && error.message.includes('Record to delete does not exist')) {

@@ -1,6 +1,6 @@
 export interface Holding {
-    holdings_id: string;
-    portfolios_id: string;
+    holding_id: string;
+    portfolio_id: string;
     isin: string;
     quantity: number;
     start_date: Date;
