@@ -51,6 +51,22 @@ describe('CategoryRepository', () => {
                 .rejects
                 .toThrow('Category with this name already exists');
         });
+
+        it('should handle unexpected errors during creation', async () => {
+            // Arrange
+            const categoryData: Category = {
+                category_id: 'test-category-id',
+                name: 'Test Category'
+            };
+
+            // Mock prisma create to throw an unexpected error
+            jest.spyOn(prisma.category, 'create').mockRejectedValueOnce(new Error('Unexpected error'));
+
+            // Act & Assert
+            await expect(categoryRepository.create(categoryData))
+                .rejects
+                .toThrow('Unexpected error');
+        });
     });
 
     describe('findById', () => {
@@ -109,6 +125,27 @@ describe('CategoryRepository', () => {
             // Assert
             expect(result).toEqual([]);
         });
+
+        it('should return categories in ascending order by name', async () => {
+            // Arrange
+            const categories = [
+                { category_id: 'id-3', name: 'Category C' },
+                { category_id: 'id-1', name: 'Category A' },
+                { category_id: 'id-2', name: 'Category B' }
+            ];
+            await Promise.all(categories.map(category => 
+                prisma.category.create({ data: category })
+            ));
+
+            // Act
+            const result = await categoryRepository.findAll();
+
+            // Assert
+            expect(result).toHaveLength(3);
+            expect(result[0].name).toBe('Category A');
+            expect(result[1].name).toBe('Category B');
+            expect(result[2].name).toBe('Category C');
+        });
     });
 
     describe('update', () => {
@@ -163,6 +200,23 @@ describe('CategoryRepository', () => {
                 .rejects
                 .toThrow('Category with this name already exists');
         });
+
+        it('should handle unexpected errors during update', async () => {
+            // Arrange
+            const categoryData: Category = {
+                category_id: 'test-category-id',
+                name: 'Test Category'
+            };
+            await prisma.category.create({ data: categoryData });
+
+            // Mock prisma update to throw an unexpected error
+            jest.spyOn(prisma.category, 'update').mockRejectedValueOnce(new Error('Unexpected error'));
+
+            // Act & Assert
+            await expect(categoryRepository.update(categoryData.category_id, { name: 'New Name' }))
+                .rejects
+                .toThrow('Unexpected error');
+        });
     });
 
     describe('delete', () => {
@@ -193,6 +247,48 @@ describe('CategoryRepository', () => {
             await expect(categoryRepository.delete('non-existent-id'))
                 .rejects
                 .toThrow('Category not found');
+        });
+
+        it('should throw an error if category has associated stocks', async () => {
+            // Arrange
+            const categoryData: Category = {
+                category_id: 'test-category-id',
+                name: 'Test Category'
+            };
+            await prisma.category.create({ data: categoryData });
+
+            // Create an associated stock
+            await prisma.stock.create({
+                data: {
+                    isin: 'TEST123456789',
+                    name: 'Test Stock',
+                    symbol: 'TST',
+                    wkn: 'TEST123',
+                    category_id: categoryData.category_id
+                }
+            });
+
+            // Act & Assert
+            await expect(categoryRepository.delete(categoryData.category_id))
+                .rejects
+                .toThrow('Cannot delete category with associated stocks');
+        });
+
+        it('should handle unexpected errors during deletion', async () => {
+            // Arrange
+            const categoryData: Category = {
+                category_id: 'test-category-id',
+                name: 'Test Category'
+            };
+            await prisma.category.create({ data: categoryData });
+
+            // Mock prisma delete to throw an unexpected error
+            jest.spyOn(prisma.category, 'delete').mockRejectedValueOnce(new Error('Unexpected error'));
+
+            // Act & Assert
+            await expect(categoryRepository.delete(categoryData.category_id))
+                .rejects
+                .toThrow('Unexpected error');
         });
     });
 });

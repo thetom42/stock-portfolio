@@ -41,8 +41,14 @@ export class UserRepository {
         data: userData
       });
     } catch (error) {
-      if (error instanceof Error && error.message.includes('Record to update not found')) {
-        throw new Error('User not found');
+      if (error instanceof Error) {
+        if (error.message.includes('Record to update not found')) {
+          throw new Error('User not found');
+        }
+        if (error.message.includes('Unique constraint')) {
+          throw new Error('User with this email already exists');
+        }
+        throw error;
       }
       throw error;
     }

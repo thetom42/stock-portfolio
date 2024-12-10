@@ -10,8 +10,14 @@ export class PortfolioRepository {
         data: portfolio
       });
     } catch (error) {
-      if (error instanceof Error && error.message.includes('Unique constraint')) {
-        throw new Error('Portfolio already exists');
+      if (error instanceof Error) {
+        if (error.message.includes('foreign key')) {
+          throw new Error('User not found');
+        }
+        if (error.message.includes('Unique constraint')) {
+          throw new Error('Portfolio already exists');
+        }
+        throw error;
       }
       throw error;
     }
@@ -25,7 +31,10 @@ export class PortfolioRepository {
 
   async findByUserId(userId: string): Promise<Portfolio[]> {
     return await this.prisma.portfolio.findMany({
-      where: { user_id: userId }
+      where: { user_id: userId },
+      orderBy: {
+        name: 'asc'
+      }
     });
   }
 
@@ -41,8 +50,14 @@ export class PortfolioRepository {
         data: portfolioData
       });
     } catch (error) {
-      if (error instanceof Error && error.message.includes('Record to update not found')) {
-        throw new Error('Portfolio not found');
+      if (error instanceof Error) {
+        if (error.message.includes('Record to update not found')) {
+          throw new Error('Portfolio not found');
+        }
+        if (error.message.includes('foreign key')) {
+          throw new Error('User not found');
+        }
+        throw error;
       }
       throw error;
     }
@@ -50,12 +65,27 @@ export class PortfolioRepository {
 
   async delete(id: string): Promise<Portfolio> {
     try {
+      // Check if portfolio has any holdings
+      const holdings = await this.prisma.holding.findMany({
+        where: { portfolio_id: id }
+      });
+
+      if (holdings.length > 0) {
+        throw new Error('Cannot delete portfolio with associated holdings');
+      }
+
       return await this.prisma.portfolio.delete({
         where: { portfolio_id: id }
       });
     } catch (error) {
-      if (error instanceof Error && error.message.includes('Record to delete does not exist')) {
-        throw new Error('Portfolio not found');
+      if (error instanceof Error) {
+        if (error.message === 'Cannot delete portfolio with associated holdings') {
+          throw error;
+        }
+        if (error.message.includes('Record to delete does not exist')) {
+          throw new Error('Portfolio not found');
+        }
+        throw error;
       }
       throw error;
     }

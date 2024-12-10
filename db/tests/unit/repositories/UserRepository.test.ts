@@ -61,6 +61,27 @@ describe('UserRepository', () => {
         .rejects
         .toThrow('User with this email already exists');
     });
+
+    it('should handle unexpected errors during creation', async () => {
+      // Arrange
+      const userData: User = {
+        user_id: 'test-id',
+        name: 'John',
+        surname: 'Doe',
+        email: 'john.doe@example.com',
+        nickname: 'johnd',
+        password: 'hashedPassword',
+        join_date: new Date('2024-01-01'),
+      };
+
+      // Mock prisma create to throw an unexpected error
+      jest.spyOn(prisma.user, 'create').mockRejectedValueOnce(new Error('Unexpected error'));
+
+      // Act & Assert
+      await expect(userRepository.create(userData))
+        .rejects
+        .toThrow('Unexpected error');
+    });
   });
 
   describe('findById', () => {
@@ -93,6 +114,16 @@ describe('UserRepository', () => {
       // Assert
       expect(result).toBeNull();
     });
+
+    it('should handle unexpected errors during findById', async () => {
+      // Mock prisma findUnique to throw an unexpected error
+      jest.spyOn(prisma.user, 'findUnique').mockRejectedValueOnce(new Error('Unexpected error'));
+
+      // Act & Assert
+      await expect(userRepository.findById('test-id'))
+        .rejects
+        .toThrow('Unexpected error');
+    });
   });
 
   describe('findByEmail', () => {
@@ -124,6 +155,16 @@ describe('UserRepository', () => {
 
       // Assert
       expect(result).toBeNull();
+    });
+
+    it('should handle unexpected errors during findByEmail', async () => {
+      // Mock prisma findUnique to throw an unexpected error
+      jest.spyOn(prisma.user, 'findUnique').mockRejectedValueOnce(new Error('Unexpected error'));
+
+      // Act & Assert
+      await expect(userRepository.findByEmail('test@email.com'))
+        .rejects
+        .toThrow('Unexpected error');
     });
   });
 
@@ -169,6 +210,57 @@ describe('UserRepository', () => {
         .rejects
         .toThrow('User not found');
     });
+
+    it('should throw an error if updated email already exists', async () => {
+      // Arrange
+      const user1: User = {
+        user_id: 'user-1',
+        name: 'John',
+        surname: 'Doe',
+        email: 'john.doe@example.com',
+        nickname: 'johnd',
+        password: 'hashedPassword',
+        join_date: new Date('2024-01-01'),
+      };
+      const user2: User = {
+        user_id: 'user-2',
+        name: 'Jane',
+        surname: 'Doe',
+        email: 'jane.doe@example.com',
+        nickname: 'janed',
+        password: 'hashedPassword',
+        join_date: new Date('2024-01-01'),
+      };
+      await prisma.user.create({ data: user1 });
+      await prisma.user.create({ data: user2 });
+
+      // Act & Assert
+      await expect(userRepository.update(user2.user_id, { email: user1.email }))
+        .rejects
+        .toThrow('User with this email already exists');
+    });
+
+    it('should handle unexpected errors during update', async () => {
+      // Arrange
+      const userData: User = {
+        user_id: 'test-id',
+        name: 'John',
+        surname: 'Doe',
+        email: 'john.doe@example.com',
+        nickname: 'johnd',
+        password: 'hashedPassword',
+        join_date: new Date('2024-01-01'),
+      };
+      await prisma.user.create({ data: userData });
+
+      // Mock prisma update to throw an unexpected error
+      jest.spyOn(prisma.user, 'update').mockRejectedValueOnce(new Error('Unexpected error'));
+
+      // Act & Assert
+      await expect(userRepository.update(userData.user_id, { name: 'New Name' }))
+        .rejects
+        .toThrow('Unexpected error');
+    });
   });
 
   describe('delete', () => {
@@ -204,6 +296,28 @@ describe('UserRepository', () => {
       await expect(userRepository.delete('non-existent-id'))
         .rejects
         .toThrow('User not found');
+    });
+
+    it('should handle unexpected errors during deletion', async () => {
+      // Arrange
+      const userData: User = {
+        user_id: 'test-id',
+        name: 'John',
+        surname: 'Doe',
+        email: 'john.doe@example.com',
+        nickname: 'johnd',
+        password: 'hashedPassword',
+        join_date: new Date('2024-01-01'),
+      };
+      await prisma.user.create({ data: userData });
+
+      // Mock prisma delete to throw an unexpected error
+      jest.spyOn(prisma.user, 'delete').mockRejectedValueOnce(new Error('Unexpected error'));
+
+      // Act & Assert
+      await expect(userRepository.delete(userData.user_id))
+        .rejects
+        .toThrow('Unexpected error');
     });
   });
 });

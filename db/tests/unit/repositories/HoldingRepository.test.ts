@@ -167,6 +167,44 @@ describe('HoldingRepository', () => {
                 .rejects
                 .toThrow('Start date must be before end date');
         });
+
+        it('should throw an error if holding already exists', async () => {
+            // Arrange
+            const holdingData: Holding = {
+                holding_id: 'test-holding-id',
+                portfolio_id: testPortfolio.portfolio_id,
+                isin: testStock.isin,
+                quantity: 100,
+                start_date: new Date('2024-01-01'),
+                end_date: null
+            };
+            await holdingRepository.create(holdingData);
+
+            // Act & Assert
+            await expect(holdingRepository.create(holdingData))
+                .rejects
+                .toThrow('Holding already exists');
+        });
+
+        it('should handle unexpected errors during creation', async () => {
+            // Arrange
+            const holdingData: Holding = {
+                holding_id: 'test-holding-id',
+                portfolio_id: testPortfolio.portfolio_id,
+                isin: testStock.isin,
+                quantity: 100,
+                start_date: new Date('2024-01-01'),
+                end_date: null
+            };
+
+            // Mock prisma create to throw an unexpected error
+            jest.spyOn(prisma.holding, 'create').mockRejectedValueOnce(new Error('Unexpected error'));
+
+            // Act & Assert
+            await expect(holdingRepository.create(holdingData))
+                .rejects
+                .toThrow('Unexpected error');
+        });
     });
 
     describe('findByPortfolioId', () => {
@@ -199,6 +237,24 @@ describe('HoldingRepository', () => {
             expect(result).toHaveLength(2);
             expect(result[0].start_date.getTime()).toBeGreaterThan(result[1].start_date.getTime()); // Check descending order
         });
+
+        it('should return empty array when portfolio has no holdings', async () => {
+            // Act
+            const result = await holdingRepository.findByPortfolioId(testPortfolio.portfolio_id);
+
+            // Assert
+            expect(result).toEqual([]);
+        });
+
+        it('should handle unexpected errors during findByPortfolioId', async () => {
+            // Mock prisma findMany to throw an unexpected error
+            jest.spyOn(prisma.holding, 'findMany').mockRejectedValueOnce(new Error('Unexpected error'));
+
+            // Act & Assert
+            await expect(holdingRepository.findByPortfolioId(testPortfolio.portfolio_id))
+                .rejects
+                .toThrow('Unexpected error');
+        });
     });
 
     describe('findActiveByPortfolioId', () => {
@@ -230,6 +286,35 @@ describe('HoldingRepository', () => {
             // Assert
             expect(result).toHaveLength(1);
             expect(result[0].holding_id).toBe('holding-1');
+        });
+
+        it('should return empty array when portfolio has no active holdings', async () => {
+            // Arrange
+            const holding: Holding = {
+                holding_id: 'holding-1',
+                portfolio_id: testPortfolio.portfolio_id,
+                isin: testStock.isin,
+                quantity: 100,
+                start_date: new Date('2024-01-01'),
+                end_date: new Date('2024-01-02')
+            };
+            await holdingRepository.create(holding);
+
+            // Act
+            const result = await holdingRepository.findActiveByPortfolioId(testPortfolio.portfolio_id);
+
+            // Assert
+            expect(result).toEqual([]);
+        });
+
+        it('should handle unexpected errors during findActiveByPortfolioId', async () => {
+            // Mock prisma findMany to throw an unexpected error
+            jest.spyOn(prisma.holding, 'findMany').mockRejectedValueOnce(new Error('Unexpected error'));
+
+            // Act & Assert
+            await expect(holdingRepository.findActiveByPortfolioId(testPortfolio.portfolio_id))
+                .rejects
+                .toThrow('Unexpected error');
         });
     });
 
@@ -266,6 +351,13 @@ describe('HoldingRepository', () => {
             expect(updatedHolding?.end_date).toEqual(updateData.end_date);
         });
 
+        it('should throw an error if holding does not exist', async () => {
+            // Act & Assert
+            await expect(holdingRepository.update('non-existent-id', { quantity: 150 }))
+                .rejects
+                .toThrow('Holding not found');
+        });
+
         it('should throw an error if quantity is not positive', async () => {
             // Arrange
             const holdingData: Holding = {
@@ -282,6 +374,81 @@ describe('HoldingRepository', () => {
             await expect(holdingRepository.update(holdingData.holding_id, { quantity: 0 }))
                 .rejects
                 .toThrow('Quantity must be positive');
+        });
+
+        it('should throw an error if end date is before start date', async () => {
+            // Arrange
+            const holdingData: Holding = {
+                holding_id: 'test-holding-id',
+                portfolio_id: testPortfolio.portfolio_id,
+                isin: testStock.isin,
+                quantity: 100,
+                start_date: new Date('2024-01-02'),
+                end_date: null
+            };
+            await holdingRepository.create(holdingData);
+
+            // Act & Assert
+            await expect(holdingRepository.update(holdingData.holding_id, { end_date: new Date('2024-01-01') }))
+                .rejects
+                .toThrow('Start date must be before end date');
+        });
+
+        it('should throw an error if updated portfolio does not exist', async () => {
+            // Arrange
+            const holdingData: Holding = {
+                holding_id: 'test-holding-id',
+                portfolio_id: testPortfolio.portfolio_id,
+                isin: testStock.isin,
+                quantity: 100,
+                start_date: new Date('2024-01-01'),
+                end_date: null
+            };
+            await holdingRepository.create(holdingData);
+
+            // Act & Assert
+            await expect(holdingRepository.update(holdingData.holding_id, { portfolio_id: 'non-existent-portfolio' }))
+                .rejects
+                .toThrow('Portfolio not found');
+        });
+
+        it('should throw an error if updated stock does not exist', async () => {
+            // Arrange
+            const holdingData: Holding = {
+                holding_id: 'test-holding-id',
+                portfolio_id: testPortfolio.portfolio_id,
+                isin: testStock.isin,
+                quantity: 100,
+                start_date: new Date('2024-01-01'),
+                end_date: null
+            };
+            await holdingRepository.create(holdingData);
+
+            // Act & Assert
+            await expect(holdingRepository.update(holdingData.holding_id, { isin: 'non-existent-isin' }))
+                .rejects
+                .toThrow('Stock not found');
+        });
+
+        it('should handle unexpected errors during update', async () => {
+            // Arrange
+            const holdingData: Holding = {
+                holding_id: 'test-holding-id',
+                portfolio_id: testPortfolio.portfolio_id,
+                isin: testStock.isin,
+                quantity: 100,
+                start_date: new Date('2024-01-01'),
+                end_date: null
+            };
+            await holdingRepository.create(holdingData);
+
+            // Mock prisma update to throw an unexpected error
+            jest.spyOn(prisma.holding, 'update').mockRejectedValueOnce(new Error('Unexpected error'));
+
+            // Act & Assert
+            await expect(holdingRepository.update(holdingData.holding_id, { quantity: 150 }))
+                .rejects
+                .toThrow('Unexpected error');
         });
     });
 
@@ -309,6 +476,13 @@ describe('HoldingRepository', () => {
                 where: { holding_id: holdingData.holding_id }
             });
             expect(deletedHolding).toBeNull();
+        });
+
+        it('should throw an error if holding does not exist', async () => {
+            // Act & Assert
+            await expect(holdingRepository.delete('non-existent-id'))
+                .rejects
+                .toThrow('Holding not found');
         });
 
         it('should throw an error if holding has transactions', async () => {
@@ -341,6 +515,27 @@ describe('HoldingRepository', () => {
             await expect(holdingRepository.delete(holdingData.holding_id))
                 .rejects
                 .toThrow('Cannot delete holding with associated transactions');
+        });
+
+        it('should handle unexpected errors during deletion', async () => {
+            // Arrange
+            const holdingData: Holding = {
+                holding_id: 'test-holding-id',
+                portfolio_id: testPortfolio.portfolio_id,
+                isin: testStock.isin,
+                quantity: 100,
+                start_date: new Date('2024-01-01'),
+                end_date: null
+            };
+            await holdingRepository.create(holdingData);
+
+            // Mock prisma delete to throw an unexpected error
+            jest.spyOn(prisma.holding, 'delete').mockRejectedValueOnce(new Error('Unexpected error'));
+
+            // Act & Assert
+            await expect(holdingRepository.delete(holdingData.holding_id))
+                .rejects
+                .toThrow('Unexpected error');
         });
     });
 });

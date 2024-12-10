@@ -195,6 +195,128 @@ describe('TransactionRepository', () => {
                 .rejects
                 .toThrow('Commission cannot be negative');
         });
+
+        it('should throw an error if transaction already exists', async () => {
+            // Arrange
+            const transactionData: CreateTransactionInput = {
+                transaction_id: 'test-transaction-id',
+                holding_id: testHolding.holding_id,
+                buy: true,
+                transaction_time: new Date(),
+                amount: 50,
+                price: 100.50,
+                commission: 1.50,
+                broker: 'Test Broker'
+            };
+            await transactionRepository.create(transactionData);
+
+            // Act & Assert
+            await expect(transactionRepository.create(transactionData))
+                .rejects
+                .toThrow('Transaction already exists');
+        });
+
+        it('should handle Decimal price input', async () => {
+            // Arrange
+            const transactionData: CreateTransactionInput = {
+                transaction_id: 'test-transaction-id',
+                holding_id: testHolding.holding_id,
+                buy: true,
+                transaction_time: new Date(),
+                amount: 50,
+                price: new Decimal(100.50),
+                commission: 1.50,
+                broker: 'Test Broker'
+            };
+
+            // Act
+            const result = await transactionRepository.create(transactionData);
+
+            // Assert
+            expect(result).toBeDefined();
+            expect(result.price).toEqual(new Decimal(100.50));
+        });
+
+        it('should throw an error if string price is not positive', async () => {
+            // Arrange
+            const transactionData = {
+                transaction_id: 'test-transaction-id',
+                holding_id: testHolding.holding_id,
+                buy: true,
+                transaction_time: new Date(),
+                amount: 50,
+                price: '0' as any, // Type assertion to bypass TypeScript check
+                commission: 1.50,
+                broker: 'Test Broker'
+            };
+
+            // Act & Assert
+            await expect(transactionRepository.create(transactionData))
+                .rejects
+                .toThrow('Price must be positive');
+        });
+
+        it('should handle string commission input', async () => {
+            // Arrange
+            const transactionData = {
+                transaction_id: 'test-transaction-id',
+                holding_id: testHolding.holding_id,
+                buy: true,
+                transaction_time: new Date(),
+                amount: 50,
+                price: 100.50,
+                commission: '1.50' as any, // Type assertion to bypass TypeScript check
+                broker: 'Test Broker'
+            };
+
+            // Act
+            const result = await transactionRepository.create(transactionData);
+
+            // Assert
+            expect(result).toBeDefined();
+            expect(result.commission).toEqual(new Decimal(1.50));
+        });
+
+        it('should throw an error if string commission is negative', async () => {
+            // Arrange
+            const transactionData = {
+                transaction_id: 'test-transaction-id',
+                holding_id: testHolding.holding_id,
+                buy: true,
+                transaction_time: new Date(),
+                amount: 50,
+                price: 100.50,
+                commission: '-1.50' as any, // Type assertion to bypass TypeScript check
+                broker: 'Test Broker'
+            };
+
+            // Act & Assert
+            await expect(transactionRepository.create(transactionData))
+                .rejects
+                .toThrow('Commission cannot be negative');
+        });
+
+        it('should handle non-Error objects during creation', async () => {
+            // Arrange
+            const transactionData: CreateTransactionInput = {
+                transaction_id: 'test-transaction-id',
+                holding_id: testHolding.holding_id,
+                buy: true,
+                transaction_time: new Date(),
+                amount: 50,
+                price: 100.50,
+                commission: 1.50,
+                broker: 'Test Broker'
+            };
+
+            // Mock prisma create to throw a non-Error object
+            jest.spyOn(prisma.transaction, 'create').mockRejectedValueOnce('Some string error');
+
+            // Act & Assert
+            await expect(transactionRepository.create(transactionData))
+                .rejects
+                .toBe('Some string error');
+        });
     });
 
     describe('findById', () => {
@@ -227,6 +349,16 @@ describe('TransactionRepository', () => {
 
             // Assert
             expect(result).toBeNull();
+        });
+
+        it('should handle unexpected errors during findById', async () => {
+            // Mock prisma findUnique to throw an unexpected error
+            jest.spyOn(prisma.transaction, 'findUnique').mockRejectedValueOnce(new Error('Unexpected error'));
+
+            // Act & Assert
+            await expect(transactionRepository.findById('test-id'))
+                .rejects
+                .toThrow('Unexpected error');
         });
     });
 
@@ -274,6 +406,16 @@ describe('TransactionRepository', () => {
             // Assert
             expect(result).toEqual([]);
         });
+
+        it('should handle unexpected errors during findByHoldingId', async () => {
+            // Mock prisma findMany to throw an unexpected error
+            jest.spyOn(prisma.transaction, 'findMany').mockRejectedValueOnce(new Error('Unexpected error'));
+
+            // Act & Assert
+            await expect(transactionRepository.findByHoldingId(testHolding.holding_id))
+                .rejects
+                .toThrow('Unexpected error');
+        });
     });
 
     describe('update', () => {
@@ -318,6 +460,191 @@ describe('TransactionRepository', () => {
                 .rejects
                 .toThrow('Transaction not found');
         });
+
+        it('should throw an error if updated amount is not positive', async () => {
+            // Arrange
+            const transactionData: CreateTransactionInput = {
+                transaction_id: 'test-transaction-id',
+                holding_id: testHolding.holding_id,
+                buy: true,
+                transaction_time: new Date(),
+                amount: 50,
+                price: 100.50,
+                commission: 1.50,
+                broker: 'Test Broker'
+            };
+            await transactionRepository.create(transactionData);
+
+            // Act & Assert
+            await expect(transactionRepository.update(transactionData.transaction_id, { amount: 0 }))
+                .rejects
+                .toThrow('Amount must be positive');
+        });
+
+        it('should throw an error if updated price is not positive', async () => {
+            // Arrange
+            const transactionData: CreateTransactionInput = {
+                transaction_id: 'test-transaction-id',
+                holding_id: testHolding.holding_id,
+                buy: true,
+                transaction_time: new Date(),
+                amount: 50,
+                price: 100.50,
+                commission: 1.50,
+                broker: 'Test Broker'
+            };
+            await transactionRepository.create(transactionData);
+
+            // Act & Assert
+            await expect(transactionRepository.update(transactionData.transaction_id, { price: 0 }))
+                .rejects
+                .toThrow('Price must be positive');
+        });
+
+        it('should throw an error if updated commission is negative', async () => {
+            // Arrange
+            const transactionData: CreateTransactionInput = {
+                transaction_id: 'test-transaction-id',
+                holding_id: testHolding.holding_id,
+                buy: true,
+                transaction_time: new Date(),
+                amount: 50,
+                price: 100.50,
+                commission: 1.50,
+                broker: 'Test Broker'
+            };
+            await transactionRepository.create(transactionData);
+
+            // Act & Assert
+            await expect(transactionRepository.update(transactionData.transaction_id, { commission: -1.50 }))
+                .rejects
+                .toThrow('Commission cannot be negative');
+        });
+
+        it('should throw an error if updated holding does not exist', async () => {
+            // Arrange
+            const transactionData: CreateTransactionInput = {
+                transaction_id: 'test-transaction-id',
+                holding_id: testHolding.holding_id,
+                buy: true,
+                transaction_time: new Date(),
+                amount: 50,
+                price: 100.50,
+                commission: 1.50,
+                broker: 'Test Broker'
+            };
+            await transactionRepository.create(transactionData);
+
+            // Act & Assert
+            await expect(transactionRepository.update(transactionData.transaction_id, { holding_id: 'non-existent-holding' }))
+                .rejects
+                .toThrow('Holding not found');
+        });
+
+        it('should handle Decimal price input during update', async () => {
+            // Arrange
+            const transactionData: CreateTransactionInput = {
+                transaction_id: 'test-transaction-id',
+                holding_id: testHolding.holding_id,
+                buy: true,
+                transaction_time: new Date(),
+                amount: 50,
+                price: 100.50,
+                commission: 1.50,
+                broker: 'Test Broker'
+            };
+            await transactionRepository.create(transactionData);
+
+            // Act
+            const result = await transactionRepository.update(transactionData.transaction_id, { price: '150.75' as any });
+
+            // Assert
+            expect(result.price).toEqual(new Decimal(150.75));
+        });
+
+        it('should throw an error if updated string price is not positive', async () => {
+            // Arrange
+            const transactionData: CreateTransactionInput = {
+                transaction_id: 'test-transaction-id',
+                holding_id: testHolding.holding_id,
+                buy: true,
+                transaction_time: new Date(),
+                amount: 50,
+                price: 100.50,
+                commission: 1.50,
+                broker: 'Test Broker'
+            };
+            await transactionRepository.create(transactionData);
+
+            // Act & Assert
+            await expect(transactionRepository.update(transactionData.transaction_id, { price: '0' as any }))
+                .rejects
+                .toThrow('Price must be positive');
+        });
+
+        it('should handle string commission input during update', async () => {
+            // Arrange
+            const transactionData: CreateTransactionInput = {
+                transaction_id: 'test-transaction-id',
+                holding_id: testHolding.holding_id,
+                buy: true,
+                transaction_time: new Date(),
+                amount: 50,
+                price: 100.50,
+                commission: 1.50,
+                broker: 'Test Broker'
+            };
+            await transactionRepository.create(transactionData);
+
+            // Act
+            const result = await transactionRepository.update(transactionData.transaction_id, { commission: '2.50' as any });
+
+            // Assert
+            expect(result.commission).toEqual(new Decimal(2.50));
+        });
+
+        it('should throw an error if updated string commission is negative', async () => {
+            // Arrange
+            const transactionData: CreateTransactionInput = {
+                transaction_id: 'test-transaction-id',
+                holding_id: testHolding.holding_id,
+                buy: true,
+                transaction_time: new Date(),
+                amount: 50,
+                price: 100.50,
+                commission: 1.50,
+                broker: 'Test Broker'
+            };
+            await transactionRepository.create(transactionData);
+
+            // Act & Assert
+            await expect(transactionRepository.update(transactionData.transaction_id, { commission: '-1.50' as any }))
+                .rejects
+                .toThrow('Commission cannot be negative');
+        });
+
+        it('should handle non-Error objects during update', async () => {
+            // Arrange
+            const transactionData: CreateTransactionInput = {
+                transaction_id: 'test-transaction-id',
+                holding_id: testHolding.holding_id,
+                buy: true,
+                transaction_time: new Date(),
+                amount: 50,
+                price: 100.50,
+                commission: 1.50,
+                broker: 'Test Broker'
+            };
+            await transactionRepository.create(transactionData);
+
+            // Mock prisma update to throw a non-Error object
+            jest.spyOn(prisma.transaction, 'update').mockRejectedValueOnce('Some string error');
+
+            // Act & Assert
+            await expect(transactionRepository.update(transactionData.transaction_id, { amount: 75 }))
+                .rejects
+                .toBe('Some string error');
+        });
     });
 
     describe('delete', () => {
@@ -354,6 +681,29 @@ describe('TransactionRepository', () => {
             await expect(transactionRepository.delete('non-existent-id'))
                 .rejects
                 .toThrow('Transaction not found');
+        });
+
+        it('should handle unexpected errors during deletion', async () => {
+            // Arrange
+            const transactionData: CreateTransactionInput = {
+                transaction_id: 'test-transaction-id',
+                holding_id: testHolding.holding_id,
+                buy: true,
+                transaction_time: new Date(),
+                amount: 50,
+                price: 100.50,
+                commission: 1.50,
+                broker: 'Test Broker'
+            };
+            await transactionRepository.create(transactionData);
+
+            // Mock prisma delete to throw a non-Error object
+            jest.spyOn(prisma.transaction, 'delete').mockRejectedValueOnce('Some string error');
+
+            // Act & Assert
+            await expect(transactionRepository.delete(transactionData.transaction_id))
+                .rejects
+                .toBe('Some string error');
         });
     });
 });

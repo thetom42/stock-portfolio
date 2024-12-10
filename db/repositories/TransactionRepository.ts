@@ -6,12 +6,35 @@ export class TransactionRepository {
 
   async create(transaction: CreateTransactionInput): Promise<Transaction> {
     try {
+      // Validate amount
+      if (transaction.amount <= 0) {
+        throw new Error('Amount must be positive');
+      }
+
+      // Validate price
+      const price = typeof transaction.price === 'string' ? parseFloat(transaction.price) : Number(transaction.price);
+      if (price <= 0) {
+        throw new Error('Price must be positive');
+      }
+
+      // Validate commission
+      const commission = typeof transaction.commission === 'string' ? parseFloat(transaction.commission) : Number(transaction.commission);
+      if (commission < 0) {
+        throw new Error('Commission cannot be negative');
+      }
+
       return await this.prisma.transaction.create({
         data: transaction
       });
     } catch (error) {
-      if (error instanceof Error && error.message.includes('Unique constraint')) {
-        throw new Error('Transaction already exists');
+      if (error instanceof Error) {
+        if (error.message.includes('foreign key')) {
+          throw new Error('Holding not found');
+        }
+        if (error.message.includes('Unique constraint')) {
+          throw new Error('Transaction already exists');
+        }
+        throw error;
       }
       throw error;
     }
@@ -25,7 +48,10 @@ export class TransactionRepository {
 
   async findByHoldingId(holdingId: string): Promise<Transaction[]> {
     return await this.prisma.transaction.findMany({
-      where: { holding_id: holdingId }
+      where: { holding_id: holdingId },
+      orderBy: {
+        transaction_time: 'desc'
+      }
     });
   }
 
@@ -36,13 +62,40 @@ export class TransactionRepository {
         throw new Error('Transaction not found');
       }
 
+      // Validate amount if provided
+      if (transactionData.amount !== undefined && transactionData.amount <= 0) {
+        throw new Error('Amount must be positive');
+      }
+
+      // Validate price if provided
+      if (transactionData.price !== undefined) {
+        const price = typeof transactionData.price === 'string' ? parseFloat(transactionData.price) : Number(transactionData.price);
+        if (price <= 0) {
+          throw new Error('Price must be positive');
+        }
+      }
+
+      // Validate commission if provided
+      if (transactionData.commission !== undefined) {
+        const commission = typeof transactionData.commission === 'string' ? parseFloat(transactionData.commission) : Number(transactionData.commission);
+        if (commission < 0) {
+          throw new Error('Commission cannot be negative');
+        }
+      }
+
       return await this.prisma.transaction.update({
         where: { transaction_id: id },
         data: transactionData
       });
     } catch (error) {
-      if (error instanceof Error && error.message.includes('Record to update not found')) {
-        throw new Error('Transaction not found');
+      if (error instanceof Error) {
+        if (error.message.includes('Record to update not found')) {
+          throw new Error('Transaction not found');
+        }
+        if (error.message.includes('foreign key')) {
+          throw new Error('Holding not found');
+        }
+        throw error;
       }
       throw error;
     }

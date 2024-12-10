@@ -1,23 +1,33 @@
 import { PrismaClient } from '@prisma/client';
 import { PortfolioRepository } from '../../../repositories/PortfolioRepository';
 import { UserRepository } from '../../../repositories/UserRepository';
+import { CategoryRepository } from '../../../repositories/CategoryRepository';
+import { StockRepository } from '../../../repositories/StockRepository';
 import { Portfolio } from '../../../models/Portfolio';
 import { User } from '../../../models/User';
+import { Category } from '../../../models/Category';
+import { Stock } from '../../../models/Stock';
 import { getPrismaClient, clearDatabase } from '../../helpers/prisma';
 
 describe('PortfolioRepository', () => {
   let portfolioRepository: PortfolioRepository;
   let userRepository: UserRepository;
+  let categoryRepository: CategoryRepository;
+  let stockRepository: StockRepository;
   let prisma: PrismaClient;
   let testUser: User;
+  let testCategory: Category;
+  let testStock: Stock;
 
   beforeEach(async () => {
     prisma = getPrismaClient();
     portfolioRepository = new PortfolioRepository(prisma);
     userRepository = new UserRepository(prisma);
+    categoryRepository = new CategoryRepository(prisma);
+    stockRepository = new StockRepository(prisma);
     await clearDatabase();
 
-    // Create a test user
+    // Create test user
     testUser = {
       user_id: 'test-user-id',
       name: 'John',
@@ -28,6 +38,23 @@ describe('PortfolioRepository', () => {
       join_date: new Date('2024-01-01'),
     };
     await userRepository.create(testUser);
+
+    // Create test category
+    testCategory = {
+      category_id: 'test-category-id',
+      name: 'Test Category'
+    };
+    await categoryRepository.create(testCategory);
+
+    // Create test stock
+    testStock = {
+      isin: 'TEST123456789',
+      category_id: testCategory.category_id,
+      name: 'Test Stock',
+      wkn: 'TEST123',
+      symbol: 'TST'
+    };
+    await stockRepository.create(testStock);
   });
 
   describe('create', () => {
@@ -71,6 +98,58 @@ describe('PortfolioRepository', () => {
         .rejects
         .toThrow('User not found');
     });
+
+    it('should throw an error if portfolio already exists', async () => {
+      // Arrange
+      const portfolioData: Portfolio = {
+        portfolio_id: 'test-portfolio-id',
+        name: 'Test Portfolio',
+        created_at: new Date(),
+        user_id: testUser.user_id,
+      };
+      await portfolioRepository.create(portfolioData);
+
+      // Act & Assert
+      await expect(portfolioRepository.create(portfolioData))
+        .rejects
+        .toThrow('Portfolio already exists');
+    });
+
+    it('should handle unexpected errors during creation', async () => {
+      // Arrange
+      const portfolioData: Portfolio = {
+        portfolio_id: 'test-portfolio-id',
+        name: 'Test Portfolio',
+        created_at: new Date(),
+        user_id: testUser.user_id,
+      };
+
+      // Mock prisma create to throw an unexpected error
+      jest.spyOn(prisma.portfolio, 'create').mockRejectedValueOnce(new Error('Unexpected error'));
+
+      // Act & Assert
+      await expect(portfolioRepository.create(portfolioData))
+        .rejects
+        .toThrow('Unexpected error');
+    });
+
+    it('should handle non-Error objects during creation', async () => {
+      // Arrange
+      const portfolioData: Portfolio = {
+        portfolio_id: 'test-portfolio-id',
+        name: 'Test Portfolio',
+        created_at: new Date(),
+        user_id: testUser.user_id,
+      };
+
+      // Mock prisma create to throw a non-Error object
+      jest.spyOn(prisma.portfolio, 'create').mockRejectedValueOnce('Some string error');
+
+      // Act & Assert
+      await expect(portfolioRepository.create(portfolioData))
+        .rejects
+        .toBe('Some string error');
+    });
   });
 
   describe('findById', () => {
@@ -99,6 +178,16 @@ describe('PortfolioRepository', () => {
 
       // Assert
       expect(result).toBeNull();
+    });
+
+    it('should handle unexpected errors during findById', async () => {
+      // Mock prisma findUnique to throw an unexpected error
+      jest.spyOn(prisma.portfolio, 'findUnique').mockRejectedValueOnce(new Error('Unexpected error'));
+
+      // Act & Assert
+      await expect(portfolioRepository.findById('test-id'))
+        .rejects
+        .toThrow('Unexpected error');
     });
   });
 
@@ -138,6 +227,52 @@ describe('PortfolioRepository', () => {
       // Assert
       expect(result).toEqual([]);
     });
+
+    it('should return portfolios ordered by name', async () => {
+      // Arrange
+      const portfolios = [
+        {
+          portfolio_id: 'id-3',
+          name: 'Portfolio C',
+          created_at: new Date(),
+          user_id: testUser.user_id,
+        },
+        {
+          portfolio_id: 'id-1',
+          name: 'Portfolio A',
+          created_at: new Date(),
+          user_id: testUser.user_id,
+        },
+        {
+          portfolio_id: 'id-2',
+          name: 'Portfolio B',
+          created_at: new Date(),
+          user_id: testUser.user_id,
+        }
+      ];
+      await Promise.all(portfolios.map(portfolio => 
+        prisma.portfolio.create({ data: portfolio })
+      ));
+
+      // Act
+      const result = await portfolioRepository.findByUserId(testUser.user_id);
+
+      // Assert
+      expect(result).toHaveLength(3);
+      expect(result[0].name).toBe('Portfolio A');
+      expect(result[1].name).toBe('Portfolio B');
+      expect(result[2].name).toBe('Portfolio C');
+    });
+
+    it('should handle unexpected errors during findByUserId', async () => {
+      // Mock prisma findMany to throw an unexpected error
+      jest.spyOn(prisma.portfolio, 'findMany').mockRejectedValueOnce(new Error('Unexpected error'));
+
+      // Act & Assert
+      await expect(portfolioRepository.findByUserId(testUser.user_id))
+        .rejects
+        .toThrow('Unexpected error');
+    });
   });
 
   describe('update', () => {
@@ -176,6 +311,60 @@ describe('PortfolioRepository', () => {
         .rejects
         .toThrow('Portfolio not found');
     });
+
+    it('should throw an error if updated user does not exist', async () => {
+      // Arrange
+      const portfolioData: Portfolio = {
+        portfolio_id: 'test-portfolio-id',
+        name: 'Test Portfolio',
+        created_at: new Date(),
+        user_id: testUser.user_id,
+      };
+      await prisma.portfolio.create({ data: portfolioData });
+
+      // Act & Assert
+      await expect(portfolioRepository.update(portfolioData.portfolio_id, { user_id: 'non-existent-user' }))
+        .rejects
+        .toThrow('User not found');
+    });
+
+    it('should handle unexpected errors during update', async () => {
+      // Arrange
+      const portfolioData: Portfolio = {
+        portfolio_id: 'test-portfolio-id',
+        name: 'Test Portfolio',
+        created_at: new Date(),
+        user_id: testUser.user_id,
+      };
+      await prisma.portfolio.create({ data: portfolioData });
+
+      // Mock prisma update to throw an unexpected error
+      jest.spyOn(prisma.portfolio, 'update').mockRejectedValueOnce(new Error('Unexpected error'));
+
+      // Act & Assert
+      await expect(portfolioRepository.update(portfolioData.portfolio_id, { name: 'New Name' }))
+        .rejects
+        .toThrow('Unexpected error');
+    });
+
+    it('should handle non-Error objects during update', async () => {
+      // Arrange
+      const portfolioData: Portfolio = {
+        portfolio_id: 'test-portfolio-id',
+        name: 'Test Portfolio',
+        created_at: new Date(),
+        user_id: testUser.user_id,
+      };
+      await prisma.portfolio.create({ data: portfolioData });
+
+      // Mock prisma update to throw a non-Error object
+      jest.spyOn(prisma.portfolio, 'update').mockRejectedValueOnce('Some string error');
+
+      // Act & Assert
+      await expect(portfolioRepository.update(portfolioData.portfolio_id, { name: 'New Name' }))
+        .rejects
+        .toBe('Some string error');
+    });
   });
 
   describe('delete', () => {
@@ -208,6 +397,91 @@ describe('PortfolioRepository', () => {
       await expect(portfolioRepository.delete('non-existent-id'))
         .rejects
         .toThrow('Portfolio not found');
+    });
+
+    it('should throw an error if portfolio has associated holdings', async () => {
+      // Arrange
+      const portfolioData: Portfolio = {
+        portfolio_id: 'test-portfolio-id',
+        name: 'Test Portfolio',
+        created_at: new Date(),
+        user_id: testUser.user_id,
+      };
+      await prisma.portfolio.create({ data: portfolioData });
+
+      // Create an associated holding
+      await prisma.holding.create({
+        data: {
+          holding_id: 'test-holding-id',
+          portfolio_id: portfolioData.portfolio_id,
+          isin: testStock.isin,
+          quantity: 100,
+          start_date: new Date(),
+          end_date: null
+        }
+      });
+
+      // Act & Assert
+      await expect(portfolioRepository.delete(portfolioData.portfolio_id))
+        .rejects
+        .toThrow('Cannot delete portfolio with associated holdings');
+    });
+
+    it('should handle unexpected errors during deletion', async () => {
+      // Arrange
+      const portfolioData: Portfolio = {
+        portfolio_id: 'test-portfolio-id',
+        name: 'Test Portfolio',
+        created_at: new Date(),
+        user_id: testUser.user_id,
+      };
+      await prisma.portfolio.create({ data: portfolioData });
+
+      // Mock prisma delete to throw an unexpected error
+      jest.spyOn(prisma.portfolio, 'delete').mockRejectedValueOnce(new Error('Unexpected error'));
+
+      // Act & Assert
+      await expect(portfolioRepository.delete(portfolioData.portfolio_id))
+        .rejects
+        .toThrow('Unexpected error');
+    });
+
+    it('should handle non-Error objects during deletion', async () => {
+      // Arrange
+      const portfolioData: Portfolio = {
+        portfolio_id: 'test-portfolio-id',
+        name: 'Test Portfolio',
+        created_at: new Date(),
+        user_id: testUser.user_id,
+      };
+      await prisma.portfolio.create({ data: portfolioData });
+
+      // Mock prisma delete to throw a non-Error object
+      jest.spyOn(prisma.portfolio, 'delete').mockRejectedValueOnce('Some string error');
+
+      // Act & Assert
+      await expect(portfolioRepository.delete(portfolioData.portfolio_id))
+        .rejects
+        .toBe('Some string error');
+    });
+
+    it('should handle non-Error objects during holdings check', async () => {
+      // Arrange
+      const portfolioData: Portfolio = {
+        portfolio_id: 'test-portfolio-id',
+        name: 'Test Portfolio',
+        created_at: new Date(),
+        user_id: testUser.user_id,
+      };
+      await prisma.portfolio.create({ data: portfolioData });
+
+      // Mock prisma findMany to throw a non-Error object
+      jest.spyOn(prisma.holding, 'findMany').mockRejectedValueOnce('Some string error');
+
+      // Act & Assert
+      await expect(portfolioRepository.delete(portfolioData.portfolio_id))
+        .rejects
+        .toBe('Some string error');
     });
   });
 });

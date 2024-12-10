@@ -86,6 +86,97 @@ describe('QuoteRepository', () => {
                 .rejects
                 .toThrow('Stock not found');
         });
+
+        it('should throw an error if price is not positive', async () => {
+            // Arrange
+            const quoteData: CreateQuoteInput = {
+                quote_id: 'test-quote-id',
+                isin: testStock.isin,
+                price: 0,
+                currency: 'USD',
+                market_time: new Date(),
+                exchange: 'NYSE'
+            };
+
+            // Act & Assert
+            await expect(quoteRepository.create(quoteData))
+                .rejects
+                .toThrow('Price must be positive');
+        });
+
+        it('should throw an error if quote already exists', async () => {
+            // Arrange
+            const quoteData: CreateQuoteInput = {
+                quote_id: 'test-quote-id',
+                isin: testStock.isin,
+                price: 100.50,
+                currency: 'USD',
+                market_time: new Date(),
+                exchange: 'NYSE'
+            };
+            await quoteRepository.create(quoteData);
+
+            // Act & Assert
+            await expect(quoteRepository.create(quoteData))
+                .rejects
+                .toThrow('Quote already exists');
+        });
+
+        it('should handle string price input', async () => {
+            // Arrange
+            const quoteData = {
+                quote_id: 'test-quote-id',
+                isin: testStock.isin,
+                price: '100.50' as any, // Type assertion to bypass TypeScript check
+                currency: 'USD',
+                market_time: new Date(),
+                exchange: 'NYSE'
+            };
+
+            // Act
+            const result = await quoteRepository.create(quoteData);
+
+            // Assert
+            expect(result).toBeDefined();
+            expect(result.price).toEqual(new Decimal(100.50));
+        });
+
+        it('should throw an error if string price is not positive', async () => {
+            // Arrange
+            const quoteData = {
+                quote_id: 'test-quote-id',
+                isin: testStock.isin,
+                price: '0' as any, // Type assertion to bypass TypeScript check
+                currency: 'USD',
+                market_time: new Date(),
+                exchange: 'NYSE'
+            };
+
+            // Act & Assert
+            await expect(quoteRepository.create(quoteData))
+                .rejects
+                .toThrow('Price must be positive');
+        });
+
+        it('should handle non-Error objects during creation', async () => {
+            // Arrange
+            const quoteData: CreateQuoteInput = {
+                quote_id: 'test-quote-id',
+                isin: testStock.isin,
+                price: 100.50,
+                currency: 'USD',
+                market_time: new Date(),
+                exchange: 'NYSE'
+            };
+
+            // Mock prisma create to throw a non-Error object
+            jest.spyOn(prisma.quote, 'create').mockRejectedValueOnce('Some string error');
+
+            // Act & Assert
+            await expect(quoteRepository.create(quoteData))
+                .rejects
+                .toBe('Some string error');
+        });
     });
 
     describe('findByIsin', () => {
@@ -125,6 +216,16 @@ describe('QuoteRepository', () => {
 
             // Assert
             expect(result).toEqual([]);
+        });
+
+        it('should handle unexpected errors during find', async () => {
+            // Mock prisma findMany to throw an unexpected error
+            jest.spyOn(prisma.quote, 'findMany').mockRejectedValueOnce(new Error('Unexpected error'));
+
+            // Act & Assert
+            await expect(quoteRepository.findByIsin(testStock.isin))
+                .rejects
+                .toThrow('Unexpected error');
         });
     });
 
@@ -166,6 +267,16 @@ describe('QuoteRepository', () => {
 
             // Assert
             expect(result).toBeNull();
+        });
+
+        it('should handle unexpected errors during findLatest', async () => {
+            // Mock prisma findFirst to throw an unexpected error
+            jest.spyOn(prisma.quote, 'findFirst').mockRejectedValueOnce(new Error('Unexpected error'));
+
+            // Act & Assert
+            await expect(quoteRepository.findLatestByIsin(testStock.isin))
+                .rejects
+                .toThrow('Unexpected error');
         });
     });
 
@@ -210,6 +321,100 @@ describe('QuoteRepository', () => {
                 .rejects
                 .toThrow('Quote not found');
         });
+
+        it('should throw an error if updated price is not positive', async () => {
+            // Arrange
+            const quoteData: CreateQuoteInput = {
+                quote_id: 'test-quote-id',
+                isin: testStock.isin,
+                price: 100.50,
+                currency: 'USD',
+                market_time: new Date(),
+                exchange: 'NYSE'
+            };
+            await quoteRepository.create(quoteData);
+
+            // Act & Assert
+            await expect(quoteRepository.update(quoteData.quote_id, { price: 0 }))
+                .rejects
+                .toThrow('Price must be positive');
+        });
+
+        it('should throw an error if updated stock does not exist', async () => {
+            // Arrange
+            const quoteData: CreateQuoteInput = {
+                quote_id: 'test-quote-id',
+                isin: testStock.isin,
+                price: 100.50,
+                currency: 'USD',
+                market_time: new Date(),
+                exchange: 'NYSE'
+            };
+            await quoteRepository.create(quoteData);
+
+            // Act & Assert
+            await expect(quoteRepository.update(quoteData.quote_id, { isin: 'non-existent-isin' }))
+                .rejects
+                .toThrow('Stock not found');
+        });
+
+        it('should handle Decimal price input during update', async () => {
+            // Arrange
+            const quoteData: CreateQuoteInput = {
+                quote_id: 'test-quote-id',
+                isin: testStock.isin,
+                price: 100.50,
+                currency: 'USD',
+                market_time: new Date(),
+                exchange: 'NYSE'
+            };
+            await quoteRepository.create(quoteData);
+
+            // Act
+            const result = await quoteRepository.update(quoteData.quote_id, { price: new Decimal(150.75) });
+
+            // Assert
+            expect(result.price).toEqual(new Decimal(150.75));
+        });
+
+        it('should throw an error if updated Decimal price is not positive', async () => {
+            // Arrange
+            const quoteData: CreateQuoteInput = {
+                quote_id: 'test-quote-id',
+                isin: testStock.isin,
+                price: 100.50,
+                currency: 'USD',
+                market_time: new Date(),
+                exchange: 'NYSE'
+            };
+            await quoteRepository.create(quoteData);
+
+            // Act & Assert
+            await expect(quoteRepository.update(quoteData.quote_id, { price: new Decimal(0) }))
+                .rejects
+                .toThrow('Price must be positive');
+        });
+
+        it('should handle unexpected errors during update', async () => {
+            // Arrange
+            const quoteData: CreateQuoteInput = {
+                quote_id: 'test-quote-id',
+                isin: testStock.isin,
+                price: 100.50,
+                currency: 'USD',
+                market_time: new Date(),
+                exchange: 'NYSE'
+            };
+            await quoteRepository.create(quoteData);
+
+            // Mock prisma update to throw an unexpected error
+            jest.spyOn(prisma.quote, 'update').mockRejectedValueOnce(new Error('Unexpected error'));
+
+            // Act & Assert
+            await expect(quoteRepository.update(quoteData.quote_id, { price: 150.75 }))
+                .rejects
+                .toThrow('Unexpected error');
+        });
     });
 
     describe('delete', () => {
@@ -244,6 +449,27 @@ describe('QuoteRepository', () => {
             await expect(quoteRepository.delete('non-existent-id'))
                 .rejects
                 .toThrow('Quote not found');
+        });
+
+        it('should handle unexpected errors during deletion', async () => {
+            // Arrange
+            const quoteData: CreateQuoteInput = {
+                quote_id: 'test-quote-id',
+                isin: testStock.isin,
+                price: 100.50,
+                currency: 'USD',
+                market_time: new Date(),
+                exchange: 'NYSE'
+            };
+            await quoteRepository.create(quoteData);
+
+            // Mock prisma delete to throw an unexpected error
+            jest.spyOn(prisma.quote, 'delete').mockRejectedValueOnce(new Error('Unexpected error'));
+
+            // Act & Assert
+            await expect(quoteRepository.delete(quoteData.quote_id))
+                .rejects
+                .toThrow('Unexpected error');
         });
     });
 });
