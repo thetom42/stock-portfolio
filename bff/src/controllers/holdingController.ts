@@ -1,20 +1,20 @@
 import type { TypedResponse, NextFunction, AuthenticatedRequest } from '../types/express';
-import { CreateHoldingDTO, UpdateHoldingDTO } from '../models/Holding';
+import { CreateHoldingDTO, UpdateHoldingDTO, HoldingDetails, HoldingPerformance, HoldingValue, HoldingHistory } from '../models/Holding';
+import { Transaction } from '../../../db/models/Transaction';
 import * as holdingService from '../services/holdingService';
 
 // Define response types
-type HoldingResponse = { holding: any }; // TODO: Replace 'any' with proper Holding type
+type HoldingResponse = { holding: HoldingDetails };
 type ErrorResponse = { error: string };
-type PerformanceResponse = { performance: any }; // TODO: Replace 'any' with proper Performance type
-type TransactionsResponse = { transactions: any[] }; // TODO: Replace 'any' with proper Transaction type
-interface HoldingValue {
-  currentValue: number;
-  costBasis: number;
-  unrealizedGainLoss: number;
-  unrealizedGainLossPercentage: number;
-}
+type PerformanceResponse = { performance: {
+  totalReturn: number;
+  percentageReturn: number;
+  annualizedReturn: number;
+  holdingPeriod: number;
+} };
+type TransactionsResponse = { transactions: Transaction[] };
 type ValueResponse = { value: HoldingValue };
-type HistoryResponse = { history: any[] }; // TODO: Replace 'any' with proper History type
+type HistoryResponse = { history: HoldingHistory[] };
 
 export const createHolding = async (
   req: AuthenticatedRequest<{}, {}, CreateHoldingDTO>,

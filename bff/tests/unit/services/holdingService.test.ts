@@ -38,12 +38,12 @@ describe('HoldingService', () => {
   });
 
   const mockHolding = {
-    HOLDINGS_ID: '1',
-    PORTFOLIOS_ID: '1',
-    ISIN: 'US0378331005',
-    QUANTITY: 10,
-    START_DATE: new Date('2023-01-01'),
-    END_DATE: null
+    holding_id: '1',
+    portfolio_id: '1',
+    isin: 'US0378331005',
+    quantity: 10,
+    start_date: new Date('2023-01-01'),
+    end_date: null
   };
 
   const mockStock = {
@@ -68,10 +68,10 @@ describe('HoldingService', () => {
 
   describe('createHolding', () => {
     const mockCreateData: CreateHoldingDTO = {
-      PORTFOLIOS_ID: '1',
-      ISIN: 'US0378331005',
-      QUANTITY: 10,
-      PRICE: 150.50
+      portfolio_id: '1',
+      isin: 'US0378331005',
+      quantity: 10,
+      price: 150.50
     };
 
     it('should create a holding with initial transaction', async () => {
@@ -80,53 +80,53 @@ describe('HoldingService', () => {
       mockHoldingRepo.create.resolves(mockHolding);
       
       const mockTransaction: Transaction = {
-        TRANSACTIONS_ID: '1',
-        HOLDINGS_ID: '1',
-        BUY: true,
-        AMOUNT: 10,
-        PRICE: createDecimal(150.50),
-        TRANSACTION_TIME: new Date(),
-        COMMISSION: createDecimal(0),
-        BROKER: 'SYSTEM'
+        transaction_id: '1',
+        holding_id: '1',
+        buy: true,
+        amount: 10,
+        price: createDecimal(150.50),
+        transaction_time: new Date(),
+        commission: createDecimal(0),
+        broker: 'SYSTEM'
       };
       
       mockTransactionRepo.create.resolves(mockTransaction);
-      mockTransactionRepo.getTotalValue.resolves(createDecimal(1505.00));
+      mockTransactionRepo.findByHoldingId.resolves([mockTransaction]);
 
       const result = await holdingService.createHolding(mockCreateData);
 
       expect(result).to.deep.include({
-        HOLDINGS_ID: mockHolding.HOLDINGS_ID,
-        PORTFOLIOS_ID: mockHolding.PORTFOLIOS_ID,
-        ISIN: mockHolding.ISIN,
-        QUANTITY: mockHolding.QUANTITY,
+        id: mockHolding.holding_id,
+        portfolio_id: mockHolding.portfolio_id,
+        isin: mockHolding.isin,
+        quantity: mockHolding.quantity,
         stock: {
           symbol: mockStock.symbol,
           name: mockStock.name,
           currency: mockStock.currency
         },
         currentPrice: mockQuote.price,
-        totalValue: mockQuote.price * mockHolding.QUANTITY
+        totalValue: mockQuote.price * mockHolding.quantity
       });
 
       expect(mockHoldingRepo.create.firstCall.args[0]).to.deep.include({
-        HOLDINGS_ID: '',
-        PORTFOLIOS_ID: mockCreateData.PORTFOLIOS_ID,
-        ISIN: mockCreateData.ISIN,
-        QUANTITY: mockCreateData.QUANTITY,
-        END_DATE: null
+        holding_id: '',
+        portfolio_id: mockCreateData.portfolio_id,
+        isin: mockCreateData.isin,
+        quantity: mockCreateData.quantity,
+        end_date: null
       });
 
       const createTransactionCall = mockTransactionRepo.create.firstCall.args[0];
       expect(createTransactionCall).to.deep.include({
-        TRANSACTIONS_ID: '',
-        HOLDINGS_ID: mockHolding.HOLDINGS_ID,
-        BUY: true,
-        AMOUNT: mockCreateData.QUANTITY,
-        BROKER: 'SYSTEM'
+        transaction_id: '',
+        holding_id: mockHolding.holding_id,
+        buy: true,
+        amount: mockCreateData.quantity,
+        broker: 'SYSTEM'
       });
-      expect(createTransactionCall.PRICE.toString()).to.equal('150.5');
-      expect(createTransactionCall.COMMISSION.toString()).to.equal('0');
+      expect(createTransactionCall.price.toString()).to.equal('150.5');
+      expect(createTransactionCall.commission.toString()).to.equal('0');
     });
 
     it('should throw error if stock not found', async () => {
@@ -142,23 +142,22 @@ describe('HoldingService', () => {
       mockHoldingRepo.findById.resolves(mockHolding);
       stockServiceStub.resolves(mockStock);
       quoteServiceStub.resolves([mockQuote]);
-      mockTransactionRepo.getTotalValue.resolves(createDecimal(1505.00));
-      mockTransactionRepo.findByHolding.resolves([]);
+      mockTransactionRepo.findByHoldingId.resolves([]);
 
       const result = await holdingService.getHoldingById('1');
 
       expect(result).to.deep.include({
-        HOLDINGS_ID: mockHolding.HOLDINGS_ID,
-        PORTFOLIOS_ID: mockHolding.PORTFOLIOS_ID,
-        ISIN: mockHolding.ISIN,
-        QUANTITY: mockHolding.QUANTITY,
+        id: mockHolding.holding_id,
+        portfolio_id: mockHolding.portfolio_id,
+        isin: mockHolding.isin,
+        quantity: mockHolding.quantity,
         stock: {
           symbol: mockStock.symbol,
           name: mockStock.name,
           currency: mockStock.currency
         },
         currentPrice: mockQuote.price,
-        totalValue: mockQuote.price * mockHolding.QUANTITY
+        totalValue: mockQuote.price * mockHolding.quantity
       });
     });
 
@@ -172,27 +171,26 @@ describe('HoldingService', () => {
 
   describe('updateHolding', () => {
     const mockUpdateData: UpdateHoldingDTO = {
-      QUANTITY: 15
+      quantity: 15
     };
 
     const updatedMockHolding = {
       ...mockHolding,
-      QUANTITY: 15
+      quantity: 15
     };
 
     it('should update holding successfully', async () => {
-      mockHoldingRepo.updateQuantity.resolves(updatedMockHolding);
+      mockHoldingRepo.update.resolves(updatedMockHolding);
       stockServiceStub.resolves(mockStock);
       quoteServiceStub.resolves([mockQuote]);
-      mockTransactionRepo.getTotalValue.resolves(createDecimal(2257.50));
-      mockTransactionRepo.findByHolding.resolves([]);
+      mockTransactionRepo.findByHoldingId.resolves([]);
 
       const result = await holdingService.updateHolding('1', mockUpdateData);
 
-      expect(result.QUANTITY).to.equal(mockUpdateData.QUANTITY);
-      expect(mockHoldingRepo.updateQuantity.firstCall.args).to.deep.equal([
+      expect(result.quantity).to.equal(mockUpdateData.quantity);
+      expect(mockHoldingRepo.update.firstCall.args).to.deep.equal([
         '1',
-        mockUpdateData.QUANTITY
+        { quantity: mockUpdateData.quantity }
       ]);
     });
 
@@ -204,25 +202,18 @@ describe('HoldingService', () => {
 
   describe('closeHolding', () => {
     it('should close holding successfully', async () => {
-      mockHoldingRepo.closeHolding.resolves({} as any);
+      mockHoldingRepo.update.resolves({} as any);
 
       await holdingService.closeHolding('1');
 
-      expect(mockHoldingRepo.closeHolding.calledWith('1', sinon.match.date)).to.be.true;
+      expect(mockHoldingRepo.update.calledWith('1', { end_date: sinon.match.date })).to.be.true;
     });
 
     it('should throw error if holding not found', async () => {
-      mockHoldingRepo.closeHolding.rejects(new Error('Holding not found'));
+      mockHoldingRepo.update.rejects(new Error('Holding not found'));
 
       await expect(holdingService.closeHolding('999'))
         .to.be.rejectedWith('Holding not found');
-    });
-
-    it('should throw error if holding is already closed', async () => {
-      mockHoldingRepo.closeHolding.rejects(new Error('Holding is already closed'));
-
-      await expect(holdingService.closeHolding('1'))
-        .to.be.rejectedWith('Holding is already closed');
     });
   });
 
@@ -231,8 +222,7 @@ describe('HoldingService', () => {
       mockHoldingRepo.findById.resolves(mockHolding);
       stockServiceStub.resolves(mockStock);
       quoteServiceStub.resolves([mockQuote]);
-      mockTransactionRepo.getTotalValue.resolves(createDecimal(1505.00));
-      mockTransactionRepo.findByHolding.resolves([]);
+      mockTransactionRepo.findByHoldingId.resolves([]);
 
       const result = await holdingService.getHoldingPerformance('1');
 
@@ -258,24 +248,24 @@ describe('HoldingService', () => {
 
   describe('getHoldingTransactions', () => {
     const mockTransactions = [{
-      TRANSACTIONS_ID: '1',
-      HOLDINGS_ID: '1',
-      BUY: true,
-      AMOUNT: 10,
-      PRICE: createDecimal(150.50),
-      TRANSACTION_TIME: new Date(),
-      COMMISSION: createDecimal(5.00),
-      BROKER: 'Example Broker'
+      transaction_id: '1',
+      holding_id: '1',
+      buy: true,
+      amount: 10,
+      price: createDecimal(150.50),
+      transaction_time: new Date(),
+      commission: createDecimal(5.00),
+      broker: 'Example Broker'
     }];
 
     it('should return transactions for a holding', async () => {
       mockHoldingRepo.findById.resolves(mockHolding);
-      mockTransactionRepo.findByHolding.resolves(mockTransactions);
+      mockTransactionRepo.findByHoldingId.resolves(mockTransactions);
 
       const result = await holdingService.getHoldingTransactions('1');
 
       expect(result).to.deep.equal(mockTransactions);
-      expect(mockTransactionRepo.findByHolding.calledWith('1')).to.be.true;
+      expect(mockTransactionRepo.findByHoldingId.calledWith('1')).to.be.true;
     });
 
     it('should throw error if holding not found', async () => {
@@ -291,8 +281,16 @@ describe('HoldingService', () => {
       mockHoldingRepo.findById.resolves(mockHolding);
       stockServiceStub.resolves(mockStock);
       quoteServiceStub.resolves([mockQuote]);
-      mockTransactionRepo.getTotalValue.resolves(createDecimal(1505.00));
-      mockTransactionRepo.findByHolding.resolves([]);
+      mockTransactionRepo.findByHoldingId.resolves([{
+        transaction_id: '1',
+        holding_id: '1',
+        buy: true,
+        amount: 10,
+        price: createDecimal(150.50),
+        transaction_time: new Date(),
+        commission: createDecimal(0),
+        broker: 'SYSTEM'
+      }]);
 
       const result = await holdingService.getHoldingValue('1');
 
@@ -302,7 +300,7 @@ describe('HoldingService', () => {
         'unrealizedGainLoss',
         'unrealizedGainLossPercentage'
       ]);
-      expect(result.currentValue).to.equal(mockQuote.price * mockHolding.QUANTITY);
+      expect(result.currentValue).to.equal(mockQuote.price * mockHolding.quantity);
       expect(result.costBasis).to.equal(1505.00);
     });
 
@@ -351,7 +349,7 @@ describe('HoldingService', () => {
 
       expect(result).to.be.an('array');
       expect(result[0]).to.have.all.keys(['date', 'price', 'value']);
-      expect(result[0].value).to.equal(mockHistoricalQuotes.quotes[0].close * mockHolding.QUANTITY);
+      expect(result[0].value).to.equal(mockHistoricalQuotes.quotes[0].close * mockHolding.quantity);
     });
 
     it('should throw error if holding not found', async () => {

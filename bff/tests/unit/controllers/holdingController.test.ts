@@ -25,12 +25,12 @@ describe('HoldingController', () => {
   });
 
   const mockHoldingDetails: HoldingDetails = {
-    HOLDINGS_ID: '1',
-    PORTFOLIOS_ID: '1',
-    ISIN: 'US0378331005',
-    QUANTITY: 10,
-    START_DATE: new Date(),
-    END_DATE: null,
+    holding_id: '1',
+    portfolio_id: '1',
+    isin: 'US0378331005',
+    quantity: 10,
+    start_date: new Date(),
+    end_date: null,
     stock: {
       symbol: 'AAPL',
       name: 'Apple Inc.',
@@ -44,10 +44,10 @@ describe('HoldingController', () => {
 
   describe('createHolding', () => {
     const mockCreateData: CreateHoldingDTO = {
-      PORTFOLIOS_ID: '1',
-      ISIN: 'US0378331005',
-      QUANTITY: 10,
-      PRICE: 150.50
+      portfolio_id: '1',
+      isin: 'US0378331005',
+      quantity: 10,
+      price: 150.50
     };
 
     it('should create a holding and return 201 status', async () => {
@@ -136,12 +136,12 @@ describe('HoldingController', () => {
 
   describe('updateHolding', () => {
     const mockUpdateData: UpdateHoldingDTO = {
-      QUANTITY: 15
+      quantity: 15
     };
 
     const updatedMockHolding: HoldingDetails = {
       ...mockHoldingDetails,
-      QUANTITY: 15,
+      quantity: 15,
       totalValue: 2257.50 // 15 * 150.50
     };
 
@@ -272,14 +272,14 @@ describe('HoldingController', () => {
 
   describe('getHoldingTransactions', () => {
     const mockTransactions = [{
-      TRANSACTIONS_ID: '1',
-      HOLDINGS_ID: '1',
-      BUY: true,
-      AMOUNT: 10,
-      PRICE: new Decimal(150.50),
-      TRANSACTION_TIME: new Date(),
-      COMMISSION: new Decimal(5.00),
-      BROKER: 'Example Broker'
+      transaction_id: '1',
+      holding_id: '1',
+      buy: true,
+      amount: 10,
+      price: new Decimal(150.50),
+      transaction_time: new Date(),
+      commission: new Decimal(5.00),
+      broker: 'Example Broker'
     }];
 
     it('should return holding transactions', async () => {

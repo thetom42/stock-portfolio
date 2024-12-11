@@ -6,6 +6,8 @@ import { HoldingRepository } from '../../../db/repositories/HoldingRepository';
 import { TransactionRepository } from '../../../db/repositories/TransactionRepository';
 import { QuoteInterval } from '../models/Quote';
 import { Decimal } from '@prisma/client/runtime/library';
+import { Holding } from '../../../db/models/Holding';
+import { CreateTransactionInput } from '../../../db/models/Transaction';
 
 // Initialize repositories
 const prisma = getPrismaClient();
@@ -22,26 +24,26 @@ export const setTransactionRepository = (repo: any) => {
 };
 
 // Helper function to map DB Holding to API response
-const mapDBHoldingToDetails = async (dbHolding: any): Promise<HoldingDetails> => {
-  const stock = await stockService.getStockByISIN(dbHolding.ISIN);
-  const quotes = await quoteService.getLatestQuotes([dbHolding.ISIN]);
+const mapDBHoldingToDetails = async (dbHolding: Holding): Promise<HoldingDetails> => {
+  const stock = await stockService.getStockByISIN(dbHolding.isin);
+  const quotes = await quoteService.getLatestQuotes([dbHolding.isin]);
   
   const currentPrice = quotes[0]?.price || 0;
-  const totalValue = currentPrice * dbHolding.QUANTITY;
+  const totalValue = currentPrice * dbHolding.quantity;
 
   // Calculate gain/loss using transaction history
-  const transactions = await transactionRepository.findByHolding(dbHolding.HOLDINGS_ID);
-  const totalCost = await transactionRepository.getTotalValue(dbHolding.HOLDINGS_ID);
+  const transactions = await transactionRepository.findByHoldingId(dbHolding.holding_id);
+  const totalCost = await calculateTotalValue(dbHolding.holding_id);
   const gainLoss = totalValue - Number(totalCost);
   const gainLossPercentage = Number(totalCost) > 0 ? (gainLoss / Number(totalCost)) * 100 : 0;
 
   return {
-    HOLDINGS_ID: dbHolding.HOLDINGS_ID,
-    PORTFOLIOS_ID: dbHolding.PORTFOLIOS_ID,
-    ISIN: dbHolding.ISIN,
-    QUANTITY: dbHolding.QUANTITY,
-    START_DATE: dbHolding.START_DATE,
-    END_DATE: dbHolding.END_DATE,
+    holding_id: dbHolding.holding_id,
+    portfolio_id: dbHolding.portfolio_id,
+    isin: dbHolding.isin,
+    quantity: dbHolding.quantity,
+    start_date: dbHolding.start_date,
+    end_date: dbHolding.end_date,
     stock: {
       symbol: stock?.symbol || '',
       name: stock?.name || '',
@@ -54,37 +56,47 @@ const mapDBHoldingToDetails = async (dbHolding: any): Promise<HoldingDetails> =>
   };
 };
 
+// Helper function to calculate total value
+const calculateTotalValue = async (holdingId: string): Promise<Decimal> => {
+  const transactions = await transactionRepository.findByHoldingId(holdingId);
+  return transactions.reduce((total, t) => {
+    const value = t.price.mul(t.amount);
+    return t.buy ? total.add(value) : total.sub(value);
+  }, new Decimal(0));
+};
+
 export const createHolding = async (
   holdingData: CreateHoldingDTO
 ): Promise<HoldingDetails> => {
   try {
     // First verify the stock exists
-    const stock = await stockService.getStockByISIN(holdingData.ISIN);
+    const stock = await stockService.getStockByISIN(holdingData.isin);
     if (!stock) {
       throw new Error('Stock not found');
     }
 
     // Create the holding using repository
     const dbHolding = await holdingRepository.create({
-      HOLDINGS_ID: '', // Will be generated
-      PORTFOLIOS_ID: holdingData.PORTFOLIOS_ID,
-      ISIN: holdingData.ISIN,
-      QUANTITY: holdingData.QUANTITY,
-      START_DATE: new Date(),
-      END_DATE: null
+      holding_id: '', // Will be generated
+      portfolio_id: holdingData.portfolio_id,
+      isin: holdingData.isin,
+      quantity: holdingData.quantity,
+      start_date: new Date(),
+      end_date: null
     });
 
     // Create initial transaction using repository
-    await transactionRepository.create({
-      TRANSACTIONS_ID: '', // Will be generated
-      HOLDINGS_ID: dbHolding.HOLDINGS_ID,
-      BUY: true, // Initial transaction is always a buy
-      AMOUNT: holdingData.QUANTITY,
-      PRICE: new Decimal(holdingData.PRICE),
-      TRANSACTION_TIME: new Date(),
-      COMMISSION: new Decimal(0),
-      BROKER: 'SYSTEM'
-    });
+    const transactionInput: CreateTransactionInput = {
+      transaction_id: '', // Will be generated
+      holding_id: dbHolding.holding_id,
+      buy: true, // Initial transaction is always a buy
+      amount: holdingData.quantity,
+      price: new Decimal(holdingData.price),
+      transaction_time: new Date(),
+      commission: new Decimal(0),
+      broker: 'SYSTEM'
+    };
+    await transactionRepository.create(transactionInput);
 
     return await mapDBHoldingToDetails(dbHolding);
   } catch (error) {
@@ -110,7 +122,7 @@ export const getHoldingById = async (
 export const getHoldingsByPortfolioId = async (
   portfolioId: string
 ): Promise<HoldingDetails[]> => {
-  const holdings = await holdingRepository.findActiveByPortfolio(portfolioId);
+  const holdings = await holdingRepository.findActiveByPortfolioId(portfolioId);
   return Promise.all(holdings.map(mapDBHoldingToDetails));
 };
 
@@ -119,10 +131,12 @@ export const updateHolding = async (
   updateData: UpdateHoldingDTO
 ): Promise<HoldingDetails> => {
   try {
-    if (updateData.QUANTITY === undefined) {
+    if (updateData.quantity === undefined) {
       throw new Error('Quantity is required for update');
     }
-    const updatedHolding = await holdingRepository.updateQuantity(holdingId, updateData.QUANTITY);
+    const updatedHolding = await holdingRepository.update(holdingId, {
+      quantity: updateData.quantity
+    });
     return await mapDBHoldingToDetails(updatedHolding);
   } catch (error) {
     if (error instanceof Error) {
@@ -134,7 +148,9 @@ export const updateHolding = async (
 
 export const closeHolding = async (holdingId: string): Promise<void> => {
   try {
-    await holdingRepository.closeHolding(holdingId, new Date());
+    await holdingRepository.update(holdingId, {
+      end_date: new Date()
+    });
   } catch (error) {
     if (error instanceof Error) {
       throw error;
@@ -149,8 +165,8 @@ export const getHoldingPerformance = async (holdingId: string) => {
     throw new Error('Holding not found');
   }
 
-  const transactions = await transactionRepository.findByHolding(holdingId);
-  const totalCost = await transactionRepository.getTotalValue(holdingId);
+  const transactions = await transactionRepository.findByHoldingId(holdingId);
+  const totalCost = await calculateTotalValue(holdingId);
   const holdingDetails = await mapDBHoldingToDetails(holding);
 
   const totalReturn = holdingDetails.gainLoss;
@@ -158,7 +174,7 @@ export const getHoldingPerformance = async (holdingId: string) => {
 
   // Calculate holding period in days
   const holdingPeriod = Math.floor(
-    (new Date().getTime() - holding.START_DATE.getTime()) / (1000 * 60 * 60 * 24)
+    (new Date().getTime() - holding.start_date.getTime()) / (1000 * 60 * 60 * 24)
   );
 
   // Calculate annualized return
@@ -181,7 +197,7 @@ export const getHoldingTransactions = async (holdingId: string) => {
     throw new Error('Holding not found');
   }
 
-  return await transactionRepository.findByHolding(holdingId);
+  return await transactionRepository.findByHoldingId(holdingId);
 };
 
 export const getHoldingValue = async (holdingId: string) => {
@@ -191,7 +207,7 @@ export const getHoldingValue = async (holdingId: string) => {
   }
 
   const holdingDetails = await mapDBHoldingToDetails(holding);
-  const totalCost = await transactionRepository.getTotalValue(holdingId);
+  const totalCost = await calculateTotalValue(holdingId);
 
   return {
     currentValue: holdingDetails.totalValue,
@@ -213,12 +229,12 @@ export const getHoldingHistory = async (holdingId: string) => {
     range: '1y'
   };
   
-  const quoteHistory = await quoteService.getHistoricalQuotes(holding.ISIN, interval);
+  const quoteHistory = await quoteService.getHistoricalQuotes(holding.isin, interval);
 
   // Map quotes to holding history entries
   return quoteHistory.quotes.map(quote => ({
     date: quote.date,
     price: quote.close,
-    value: quote.close * holding.QUANTITY
+    value: quote.close * holding.quantity
   }));
 };

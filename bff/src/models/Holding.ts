@@ -2,24 +2,24 @@ import { Transaction } from './Transaction';
 
 // Base interface matching DB model
 export interface Holding {
-    HOLDINGS_ID: string;
-    PORTFOLIOS_ID: string;
-    ISIN: string;
-    QUANTITY: number;
-    START_DATE: Date;
-    END_DATE: Date | null;
+    holding_id: string;
+    portfolio_id: string;
+    isin: string;
+    quantity: number;
+    start_date: Date;
+    end_date: Date | null;
 }
 
 // DTOs for API requests
 export interface CreateHoldingDTO {
-    PORTFOLIOS_ID: string;
-    ISIN: string;
-    QUANTITY: number;
-    PRICE: number;
+    portfolio_id: string;
+    isin: string;
+    quantity: number;
+    price: number;
 }
 
 export interface UpdateHoldingDTO {
-    QUANTITY?: number;
+    quantity?: number;
 }
 
 // Extended interfaces for API responses
@@ -44,19 +44,14 @@ export interface HoldingPerformance {
 }
 
 export interface HoldingValue {
-    quantity: number;
-    costBasis: number;
-    averageCost: number;
     currentValue: number;
+    costBasis: number;
     unrealizedGainLoss: number;
+    unrealizedGainLossPercentage: number;
 }
 
 export interface HoldingHistory {
     date: Date;
-    buy: boolean;
-    amount: number;
     price: number;
     value: number;
-    commission?: number;
-    broker?: string;
 }
