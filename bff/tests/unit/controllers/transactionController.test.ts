@@ -25,22 +25,22 @@ describe('TransactionController', () => {
 
   describe('createTransaction', () => {
     const mockCreateData: CreateTransactionDTO = {
-      AMOUNT: 10,
-      PRICE: 150.50,
-      BUY: true,
-      COMMISSION: 9.99,
-      BROKER: 'Test Broker'
+      amount: 10,
+      price: 150.50,
+      buy: true,
+      commission: 9.99,
+      broker: 'Test Broker'
     };
 
     const mockCreatedTransaction: Transaction = {
-      TRANSACTIONS_ID: '1',
-      HOLDINGS_ID: '1',
-      BUY: mockCreateData.BUY,
-      AMOUNT: mockCreateData.AMOUNT,
-      PRICE: mockCreateData.PRICE,
-      COMMISSION: mockCreateData.COMMISSION!,
-      BROKER: mockCreateData.BROKER!,
-      TRANSACTION_TIME: new Date()
+      id: '1',
+      holding_id: '1',
+      buy: mockCreateData.buy,
+      amount: mockCreateData.amount,
+      price: mockCreateData.price,
+      commission: mockCreateData.commission!,
+      broker: mockCreateData.broker!,
+      transaction_time: new Date()
     };
 
     it('should create a buy transaction successfully', async () => {
@@ -101,14 +101,14 @@ describe('TransactionController', () => {
 
   describe('getTransactionsByHolding', () => {
     const mockTransaction: Transaction = {
-      TRANSACTIONS_ID: '1',
-      HOLDINGS_ID: '1',
-      BUY: true,
-      AMOUNT: 10,
-      PRICE: 150.50,
-      COMMISSION: 9.99,
-      BROKER: 'Test Broker',
-      TRANSACTION_TIME: new Date()
+      id: '1',
+      holding_id: '1',
+      buy: true,
+      amount: 10,
+      price: 150.50,
+      commission: 9.99,
+      broker: 'Test Broker',
+      transaction_time: new Date()
     };
 
     const mockPaginatedTransactions: PaginatedTransactions = {

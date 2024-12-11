@@ -1,22 +1,22 @@
 // Base interface matching DB model
 export interface Transaction {
-    TRANSACTIONS_ID: string;
-    HOLDINGS_ID: string;
-    BUY: boolean;
-    TRANSACTION_TIME: Date;
-    AMOUNT: number;
-    PRICE: number;
-    COMMISSION: number;
-    BROKER: string;
+    id: string;
+    holding_id: string;
+    buy: boolean;
+    transaction_time: Date;
+    amount: number;
+    price: number;
+    commission: number;
+    broker: string;
 }
 
 // DTO for API requests
 export interface CreateTransactionDTO {
-    AMOUNT: number;
-    PRICE: number;
-    BUY: boolean;
-    COMMISSION?: number;
-    BROKER?: string;
+    amount: number;
+    price: number;
+    buy: boolean;
+    commission?: number;
+    broker?: string;
 }
 
 // Query parameters for transaction filtering

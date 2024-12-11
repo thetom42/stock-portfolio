@@ -37,40 +37,40 @@ describe('TransactionService', () => {
 
   describe('createTransaction', () => {
     const mockCreateData: CreateTransactionDTO = {
-      BUY: true,
-      AMOUNT: 100,
-      PRICE: 150.50,
-      COMMISSION: 7.99,
-      BROKER: 'TEST_BROKER'
+      buy: true,
+      amount: 100,
+      price: 150.50,
+      commission: 7.99,
+      broker: 'TEST_BROKER'
     };
 
     const mockHolding = {
-      HOLDINGS_ID: holdingId,
-      PORTFOLIOS_ID: portfolioId,
-      QUANTITY: 100,
-      ISIN: 'US0378331005'
+      holding_id: holdingId,
+      portfolio_id: portfolioId,
+      quantity: 100,
+      isin: 'US0378331005'
     };
 
     const mockDBTransaction = {
-      TRANSACTIONS_ID: 'trans123',
-      HOLDINGS_ID: holdingId,
-      BUY: mockCreateData.BUY,
-      TRANSACTION_TIME: new Date(),
-      AMOUNT: mockCreateData.AMOUNT,
-      PRICE: new Decimal(mockCreateData.PRICE),
-      COMMISSION: new Decimal(mockCreateData.COMMISSION || 0),
-      BROKER: mockCreateData.BROKER || 'SYSTEM'
+      transaction_id: 'trans123',
+      holding_id: holdingId,
+      buy: mockCreateData.buy,
+      transaction_time: new Date(),
+      amount: mockCreateData.amount,
+      price: new Decimal(mockCreateData.price),
+      commission: new Decimal(mockCreateData.commission || 0),
+      broker: mockCreateData.broker || 'SYSTEM'
     };
 
     const mockBFFTransaction: Transaction = {
-      TRANSACTIONS_ID: mockDBTransaction.TRANSACTIONS_ID,
-      HOLDINGS_ID: mockDBTransaction.HOLDINGS_ID,
-      BUY: mockDBTransaction.BUY,
-      TRANSACTION_TIME: mockDBTransaction.TRANSACTION_TIME,
-      AMOUNT: mockDBTransaction.AMOUNT,
-      PRICE: Number(mockDBTransaction.PRICE),
-      COMMISSION: Number(mockDBTransaction.COMMISSION),
-      BROKER: mockDBTransaction.BROKER
+      id: mockDBTransaction.transaction_id,
+      holding_id: mockDBTransaction.holding_id,
+      buy: mockDBTransaction.buy,
+      transaction_time: mockDBTransaction.transaction_time,
+      amount: mockDBTransaction.amount,
+      price: Number(mockDBTransaction.price),
+      commission: Number(mockDBTransaction.commission),
+      broker: mockDBTransaction.broker
     };
 
     beforeEach(() => {
@@ -83,45 +83,45 @@ describe('TransactionService', () => {
 
     it('should create a buy transaction successfully', async () => {
       mockHoldingRepo.findById.resolves(mockHolding);
-      mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
+      mockPortfolioRepo.findById.resolves({ user_id: userId });
       mockTransactionRepo.create.resolves(mockDBTransaction);
-      mockHoldingRepo.update.resolves({ ...mockHolding, QUANTITY: 200 });
+      mockHoldingRepo.update.resolves({ ...mockHolding, quantity: 200 });
 
       const result = await transactionService.createTransaction(userId, holdingId, mockCreateData);
 
       expect(result).to.deep.equal(mockBFFTransaction);
-      sinon.assert.calledWith(mockHoldingRepo.update, holdingId, { QUANTITY: mockHolding.QUANTITY + mockCreateData.AMOUNT });
+      sinon.assert.calledWith(mockHoldingRepo.update, holdingId, { quantity: mockHolding.quantity + mockCreateData.amount });
     });
 
     it('should create a sell transaction successfully', async () => {
-      const sellData = { ...mockCreateData, BUY: false, AMOUNT: 50 };
+      const sellData = { ...mockCreateData, buy: false, amount: 50 };
       const sellDBTransaction = { 
         ...mockDBTransaction, 
-        BUY: false, 
-        AMOUNT: 50 
+        buy: false, 
+        amount: 50 
       };
       const sellBFFTransaction: Transaction = {
         ...mockBFFTransaction,
-        BUY: false,
-        AMOUNT: 50
+        buy: false,
+        amount: 50
       };
 
       mockHoldingRepo.findById.resolves(mockHolding);
-      mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
+      mockPortfolioRepo.findById.resolves({ user_id: userId });
       mockTransactionRepo.create.resolves(sellDBTransaction);
-      mockHoldingRepo.update.resolves({ ...mockHolding, QUANTITY: 50 });
+      mockHoldingRepo.update.resolves({ ...mockHolding, quantity: 50 });
 
       const result = await transactionService.createTransaction(userId, holdingId, sellData);
 
       expect(result).to.deep.equal(sellBFFTransaction);
-      sinon.assert.calledWith(mockHoldingRepo.update, holdingId, { QUANTITY: mockHolding.QUANTITY - sellData.AMOUNT });
+      sinon.assert.calledWith(mockHoldingRepo.update, holdingId, { quantity: mockHolding.quantity - sellData.amount });
     });
 
     it('should throw error if selling more than owned', async () => {
-      const sellData = { ...mockCreateData, BUY: false, AMOUNT: 150 };
+      const sellData = { ...mockCreateData, buy: false, amount: 150 };
 
       mockHoldingRepo.findById.resolves(mockHolding);
-      mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
+      mockPortfolioRepo.findById.resolves({ user_id: userId });
 
       await expect(transactionService.createTransaction(userId, holdingId, sellData))
         .to.be.rejectedWith('Insufficient holding quantity for sell transaction');
@@ -139,7 +139,7 @@ describe('TransactionService', () => {
 
     it('should throw error if user not authorized', async () => {
       mockHoldingRepo.findById.resolves(mockHolding);
-      mockPortfolioRepo.findById.resolves({ USERS_ID: 'different-user' });
+      mockPortfolioRepo.findById.resolves({ user_id: 'different-user' });
 
       await expect(transactionService.createTransaction(userId, holdingId, mockCreateData))
         .to.be.rejectedWith('Unauthorized');
@@ -149,25 +149,25 @@ describe('TransactionService', () => {
   describe('getTransactionById', () => {
     const transactionId = 'trans123';
     const mockDBTransaction = {
-      TRANSACTIONS_ID: transactionId,
-      HOLDINGS_ID: holdingId,
-      BUY: true,
-      TRANSACTION_TIME: new Date(),
-      AMOUNT: 100,
-      PRICE: new Decimal('150.50'),
-      COMMISSION: new Decimal('7.99'),
-      BROKER: 'TEST_BROKER'
+      transaction_id: transactionId,
+      holding_id: holdingId,
+      buy: true,
+      transaction_time: new Date(),
+      amount: 100,
+      price: new Decimal('150.50'),
+      commission: new Decimal('7.99'),
+      broker: 'TEST_BROKER'
     };
 
     const mockBFFTransaction: Transaction = {
-      TRANSACTIONS_ID: mockDBTransaction.TRANSACTIONS_ID,
-      HOLDINGS_ID: mockDBTransaction.HOLDINGS_ID,
-      BUY: mockDBTransaction.BUY,
-      TRANSACTION_TIME: mockDBTransaction.TRANSACTION_TIME,
-      AMOUNT: mockDBTransaction.AMOUNT,
-      PRICE: Number(mockDBTransaction.PRICE),
-      COMMISSION: Number(mockDBTransaction.COMMISSION),
-      BROKER: mockDBTransaction.BROKER
+      id: mockDBTransaction.transaction_id,
+      holding_id: mockDBTransaction.holding_id,
+      buy: mockDBTransaction.buy,
+      transaction_time: mockDBTransaction.transaction_time,
+      amount: mockDBTransaction.amount,
+      price: Number(mockDBTransaction.price),
+      commission: Number(mockDBTransaction.commission),
+      broker: mockDBTransaction.broker
     };
 
     beforeEach(() => {
@@ -178,8 +178,8 @@ describe('TransactionService', () => {
 
     it('should return transaction if authorized', async () => {
       mockTransactionRepo.findById.resolves(mockDBTransaction);
-      mockHoldingRepo.findById.resolves({ PORTFOLIOS_ID: portfolioId });
-      mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
+      mockHoldingRepo.findById.resolves({ portfolio_id: portfolioId });
+      mockPortfolioRepo.findById.resolves({ user_id: userId });
 
       const result = await transactionService.getTransactionById(userId, transactionId);
 
@@ -203,8 +203,8 @@ describe('TransactionService', () => {
 
     it('should throw error if user not authorized', async () => {
       mockTransactionRepo.findById.resolves(mockDBTransaction);
-      mockHoldingRepo.findById.resolves({ PORTFOLIOS_ID: portfolioId });
-      mockPortfolioRepo.findById.resolves({ USERS_ID: 'different-user' });
+      mockHoldingRepo.findById.resolves({ portfolio_id: portfolioId });
+      mockPortfolioRepo.findById.resolves({ user_id: 'different-user' });
 
       await expect(transactionService.getTransactionById(userId, transactionId))
         .to.be.rejectedWith('Unauthorized');
@@ -214,48 +214,48 @@ describe('TransactionService', () => {
   describe('getTransactionsByHolding', () => {
     const mockDBTransactions = [
       {
-        TRANSACTIONS_ID: 'trans1',
-        HOLDINGS_ID: holdingId,
-        BUY: true,
-        TRANSACTION_TIME: new Date('2023-01-01'),
-        AMOUNT: 100,
-        PRICE: new Decimal('150.50'),
-        COMMISSION: new Decimal('7.99'),
-        BROKER: 'TEST_BROKER'
+        transaction_id: 'trans1',
+        holding_id: holdingId,
+        buy: true,
+        transaction_time: new Date('2023-01-01'),
+        amount: 100,
+        price: new Decimal('150.50'),
+        commission: new Decimal('7.99'),
+        broker: 'TEST_BROKER'
       },
       {
-        TRANSACTIONS_ID: 'trans2',
-        HOLDINGS_ID: holdingId,
-        BUY: false,
-        TRANSACTION_TIME: new Date('2023-06-01'),
-        AMOUNT: 50,
-        PRICE: new Decimal('200.00'),
-        COMMISSION: new Decimal('7.99'),
-        BROKER: 'TEST_BROKER'
+        transaction_id: 'trans2',
+        holding_id: holdingId,
+        buy: false,
+        transaction_time: new Date('2023-06-01'),
+        amount: 50,
+        price: new Decimal('200.00'),
+        commission: new Decimal('7.99'),
+        broker: 'TEST_BROKER'
       }
     ];
 
     const mockBFFTransactions: Transaction[] = mockDBTransactions.map(t => ({
-      TRANSACTIONS_ID: t.TRANSACTIONS_ID,
-      HOLDINGS_ID: t.HOLDINGS_ID,
-      BUY: t.BUY,
-      TRANSACTION_TIME: t.TRANSACTION_TIME,
-      AMOUNT: t.AMOUNT,
-      PRICE: Number(t.PRICE),
-      COMMISSION: Number(t.COMMISSION),
-      BROKER: t.BROKER
+      id: t.transaction_id,
+      holding_id: t.holding_id,
+      buy: t.buy,
+      transaction_time: t.transaction_time,
+      amount: t.amount,
+      price: Number(t.price),
+      commission: Number(t.commission),
+      broker: t.broker
     }));
 
     beforeEach(() => {
       mockHoldingRepo.findById.reset();
       mockPortfolioRepo.findById.reset();
-      mockTransactionRepo.findByHolding.reset();
+      mockTransactionRepo.findByHoldingId.reset();
     });
 
     it('should return transactions with default params', async () => {
-      mockHoldingRepo.findById.resolves({ PORTFOLIOS_ID: portfolioId });
-      mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
-      mockTransactionRepo.findByHolding.resolves(mockDBTransactions);
+      mockHoldingRepo.findById.resolves({ portfolio_id: portfolioId });
+      mockPortfolioRepo.findById.resolves({ user_id: userId });
+      mockTransactionRepo.findByHoldingId.resolves(mockDBTransactions);
 
       const result = await transactionService.getTransactionsByHolding(userId, holdingId);
 
@@ -272,14 +272,14 @@ describe('TransactionService', () => {
         endDate: '2023-03-01'
       };
 
-      mockHoldingRepo.findById.resolves({ PORTFOLIOS_ID: portfolioId });
-      mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
-      mockTransactionRepo.findByHolding.resolves(mockDBTransactions);
+      mockHoldingRepo.findById.resolves({ portfolio_id: portfolioId });
+      mockPortfolioRepo.findById.resolves({ user_id: userId });
+      mockTransactionRepo.findByHoldingId.resolves(mockDBTransactions);
 
       const result = await transactionService.getTransactionsByHolding(userId, holdingId, queryParams);
 
       expect(result.transactions).to.have.lengthOf(1);
-      expect(result.transactions[0].TRANSACTIONS_ID).to.equal('trans1');
+      expect(result.transactions[0].id).to.equal('trans1');
     });
 
     it('should handle filtering by transaction type', async () => {
@@ -287,14 +287,14 @@ describe('TransactionService', () => {
         type: 'SELL'
       };
 
-      mockHoldingRepo.findById.resolves({ PORTFOLIOS_ID: portfolioId });
-      mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
-      mockTransactionRepo.findByHolding.resolves(mockDBTransactions);
+      mockHoldingRepo.findById.resolves({ portfolio_id: portfolioId });
+      mockPortfolioRepo.findById.resolves({ user_id: userId });
+      mockTransactionRepo.findByHoldingId.resolves(mockDBTransactions);
 
       const result = await transactionService.getTransactionsByHolding(userId, holdingId, queryParams);
 
       expect(result.transactions).to.have.lengthOf(1);
-      expect(result.transactions[0].BUY).to.be.false;
+      expect(result.transactions[0].buy).to.be.false;
     });
 
     it('should handle sorting', async () => {
@@ -303,13 +303,13 @@ describe('TransactionService', () => {
         order: 'desc'
       };
 
-      mockHoldingRepo.findById.resolves({ PORTFOLIOS_ID: portfolioId });
-      mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
-      mockTransactionRepo.findByHolding.resolves(mockDBTransactions);
+      mockHoldingRepo.findById.resolves({ portfolio_id: portfolioId });
+      mockPortfolioRepo.findById.resolves({ user_id: userId });
+      mockTransactionRepo.findByHoldingId.resolves(mockDBTransactions);
 
       const result = await transactionService.getTransactionsByHolding(userId, holdingId, queryParams);
 
-      expect(result.transactions[0].PRICE).to.be.greaterThan(result.transactions[1].PRICE);
+      expect(result.transactions[0].price).to.be.greaterThan(result.transactions[1].price);
     });
 
     it('should handle pagination', async () => {
@@ -318,9 +318,9 @@ describe('TransactionService', () => {
         limit: 1
       };
 
-      mockHoldingRepo.findById.resolves({ PORTFOLIOS_ID: portfolioId });
-      mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
-      mockTransactionRepo.findByHolding.resolves(mockDBTransactions);
+      mockHoldingRepo.findById.resolves({ portfolio_id: portfolioId });
+      mockPortfolioRepo.findById.resolves({ user_id: userId });
+      mockTransactionRepo.findByHoldingId.resolves(mockDBTransactions);
 
       const result = await transactionService.getTransactionsByHolding(userId, holdingId, queryParams);
 
@@ -334,49 +334,49 @@ describe('TransactionService', () => {
 
   describe('getTransactionsByPortfolio', () => {
     const mockHoldings = [
-      { HOLDINGS_ID: 'holding1', PORTFOLIOS_ID: portfolioId },
-      { HOLDINGS_ID: 'holding2', PORTFOLIOS_ID: portfolioId }
+      { holding_id: 'holding1', portfolio_id: portfolioId },
+      { holding_id: 'holding2', portfolio_id: portfolioId }
     ];
 
     const mockDBTransactions = [
       {
-        TRANSACTIONS_ID: 'trans1',
-        HOLDINGS_ID: 'holding1',
-        BUY: true,
-        TRANSACTION_TIME: new Date('2023-01-01'),
-        AMOUNT: 100,
-        PRICE: new Decimal('150.50'),
-        COMMISSION: new Decimal('7.99'),
-        BROKER: 'TEST_BROKER'
+        transaction_id: 'trans1',
+        holding_id: 'holding1',
+        buy: true,
+        transaction_time: new Date('2023-01-01'),
+        amount: 100,
+        price: new Decimal('150.50'),
+        commission: new Decimal('7.99'),
+        broker: 'TEST_BROKER'
       },
       {
-        TRANSACTIONS_ID: 'trans2',
-        HOLDINGS_ID: 'holding2',
-        BUY: false,
-        TRANSACTION_TIME: new Date('2023-06-01'),
-        AMOUNT: 50,
-        PRICE: new Decimal('200.00'),
-        COMMISSION: new Decimal('7.99'),
-        BROKER: 'TEST_BROKER'
+        transaction_id: 'trans2',
+        holding_id: 'holding2',
+        buy: false,
+        transaction_time: new Date('2023-06-01'),
+        amount: 50,
+        price: new Decimal('200.00'),
+        commission: new Decimal('7.99'),
+        broker: 'TEST_BROKER'
       }
     ];
 
     beforeEach(() => {
       mockPortfolioRepo.findById.reset();
-      mockHoldingRepo.findByPortfolio.reset();
-      mockTransactionRepo.findByHolding.reset();
+      mockHoldingRepo.findByPortfolioId.reset();
+      mockTransactionRepo.findByHoldingId.reset();
     });
 
     it('should return transactions for all holdings', async () => {
-      mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
-      mockHoldingRepo.findByPortfolio.resolves(mockHoldings);
-      mockTransactionRepo.findByHolding.resolves([mockDBTransactions[0]]);
+      mockPortfolioRepo.findById.resolves({ user_id: userId });
+      mockHoldingRepo.findByPortfolioId.resolves(mockHoldings);
+      mockTransactionRepo.findByHoldingId.resolves([mockDBTransactions[0]]);
 
       const result = await transactionService.getTransactionsByPortfolio(userId, portfolioId);
 
       expect(result.transactions).to.have.lengthOf(2);
-      sinon.assert.calledWith(mockTransactionRepo.findByHolding, 'holding1');
-      sinon.assert.calledWith(mockTransactionRepo.findByHolding, 'holding2');
+      sinon.assert.calledWith(mockTransactionRepo.findByHoldingId, 'holding1');
+      sinon.assert.calledWith(mockTransactionRepo.findByHoldingId, 'holding2');
     });
 
     it('should handle filtering and sorting', async () => {
@@ -386,23 +386,23 @@ describe('TransactionService', () => {
         order: 'asc'
       };
 
-      mockPortfolioRepo.findById.resolves({ USERS_ID: userId });
-      mockHoldingRepo.findByPortfolio.resolves(mockHoldings);
-      mockTransactionRepo.findByHolding.resolves([mockDBTransactions[0]]);
+      mockPortfolioRepo.findById.resolves({ user_id: userId });
+      mockHoldingRepo.findByPortfolioId.resolves(mockHoldings);
+      mockTransactionRepo.findByHoldingId.resolves([mockDBTransactions[0]]);
 
       const result = await transactionService.getTransactionsByPortfolio(userId, portfolioId, queryParams);
 
       expect(result.transactions).to.have.lengthOf(2);
-      expect(result.transactions[0].BUY).to.be.true;
+      expect(result.transactions[0].buy).to.be.true;
     });
 
     it('should throw error if user not authorized', async () => {
-      mockPortfolioRepo.findById.resolves({ USERS_ID: 'different-user' });
+      mockPortfolioRepo.findById.resolves({ user_id: 'different-user' });
 
       await expect(transactionService.getTransactionsByPortfolio(userId, portfolioId))
         .to.be.rejectedWith('Unauthorized');
 
-      sinon.assert.notCalled(mockHoldingRepo.findByPortfolio);
+      sinon.assert.notCalled(mockHoldingRepo.findByPortfolioId);
     });
   });
 });
