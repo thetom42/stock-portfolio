@@ -1,14 +1,14 @@
 import type { TypedRequest, TypedResponse, NextFunction } from '../types/express';
-import { Category } from '../../../db/models/Category';
+import { Category, CategoryResponse } from '../models/Category';
 import * as categoryService from '../services/categoryService';
 
-type CategoryResponse = { category: Category };
-type CategoriesResponse = { categories: Category[] };
+type CategoryResponseType = { category: CategoryResponse };
+type CategoriesResponseType = { categories: CategoryResponse[] };
 type ErrorResponse = { error: string };
 
 export const createCategory = async (
     req: TypedRequest<{}, {}, Category>,
-    res: TypedResponse<CategoryResponse | ErrorResponse>,
+    res: TypedResponse<CategoryResponseType | ErrorResponse>,
     next: NextFunction
 ) => {
     try {
@@ -25,7 +25,7 @@ export const createCategory = async (
 
 export const getCategoryById = async (
     req: TypedRequest<{ id: string }>,
-    res: TypedResponse<CategoryResponse | ErrorResponse>,
+    res: TypedResponse<CategoryResponseType | ErrorResponse>,
     next: NextFunction
 ) => {
     try {
@@ -41,7 +41,7 @@ export const getCategoryById = async (
 
 export const getAllCategories = async (
     req: TypedRequest,
-    res: TypedResponse<CategoriesResponse>,
+    res: TypedResponse<CategoriesResponseType>,
     next: NextFunction
 ) => {
     try {
@@ -54,7 +54,7 @@ export const getAllCategories = async (
 
 export const updateCategory = async (
     req: TypedRequest<{ id: string }, {}, Partial<Category>>,
-    res: TypedResponse<CategoryResponse | ErrorResponse>,
+    res: TypedResponse<CategoryResponseType | ErrorResponse>,
     next: NextFunction
 ) => {
     try {

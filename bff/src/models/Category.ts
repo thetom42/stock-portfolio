@@ -1,12 +1,12 @@
 // Base interface matching DB model
 export interface Category {
-    CATEGORIES_ID: string;
-    NAME: string;
+    category_id: string;
+    name: string;
 }
 
 // DTO for API requests
 export interface CreateCategoryDTO {
-    NAME: string;
+    name: string;
 }
 
 // DTO for API responses
@@ -17,5 +17,5 @@ export interface CategoryResponse extends Category {
 
 // DTO for updating categories
 export interface UpdateCategoryDTO {
-    NAME?: string;
+    name?: string;
 }

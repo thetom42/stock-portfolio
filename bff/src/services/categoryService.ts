@@ -4,8 +4,8 @@ import { getPrismaClient } from '../utils/database';
 
 // Helper function to map DB Category to BFF Category
 const mapDBCategoryToBFF = (dbCategory: any): CategoryResponse => ({
-  CATEGORIES_ID: dbCategory.CATEGORIES_ID,
-  NAME: dbCategory.NAME
+  category_id: dbCategory.category_id,
+  name: dbCategory.name
 });
 
 // Repository factory
@@ -26,8 +26,8 @@ export const setCategoryRepository = (repo: CategoryRepository) => {
 export const createCategory = async (categoryData: CreateCategoryDTO): Promise<CategoryResponse> => {
   try {
     const dbCategory = await getCategoryRepository().create({
-      CATEGORIES_ID: '', // Will be generated
-      NAME: categoryData.NAME
+      category_id: '', // Will be generated
+      name: categoryData.name
     });
 
     return mapDBCategoryToBFF(dbCategory);
@@ -60,7 +60,7 @@ export const updateCategory = async (
 ): Promise<CategoryResponse> => {
   try {
     const updatedCategory = await getCategoryRepository().update(categoryId, {
-      NAME: updateData.NAME
+      name: updateData.name
     });
 
     return mapDBCategoryToBFF(updatedCategory);

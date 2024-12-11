@@ -20,12 +20,12 @@ describe('CategoryService', () => {
 
   describe('createCategory', () => {
     const mockCreateData: CreateCategoryDTO = {
-      NAME: 'Test Category'
+      name: 'Test Category'
     };
 
     const mockCreatedCategory = {
-      CATEGORIES_ID: '1',
-      NAME: 'Test Category'
+      category_id: '1',
+      name: 'Test Category'
     };
 
     it('should create a category successfully', async () => {
@@ -35,8 +35,8 @@ describe('CategoryService', () => {
 
       expect(result).to.deep.equal(mockCreatedCategory);
       expect(mockCategoryRepo.create.firstCall.args[0]).to.deep.include({
-        CATEGORIES_ID: '',
-        NAME: mockCreateData.NAME
+        category_id: '',
+        name: mockCreateData.name
       });
     });
 
@@ -50,8 +50,8 @@ describe('CategoryService', () => {
 
   describe('getCategoryById', () => {
     const mockCategory = {
-      CATEGORIES_ID: '1',
-      NAME: 'Test Category'
+      category_id: '1',
+      name: 'Test Category'
     };
 
     it('should return category if found', async () => {
@@ -74,8 +74,8 @@ describe('CategoryService', () => {
 
   describe('getAllCategories', () => {
     const mockCategories = [
-      { CATEGORIES_ID: '1', NAME: 'Category 1' },
-      { CATEGORIES_ID: '2', NAME: 'Category 2' }
+      { category_id: '1', name: 'Category 1' },
+      { category_id: '2', name: 'Category 2' }
     ];
 
     it('should return all categories', async () => {
@@ -98,12 +98,12 @@ describe('CategoryService', () => {
 
   describe('updateCategory', () => {
     const mockUpdateData: UpdateCategoryDTO = {
-      NAME: 'Updated Category'
+      name: 'Updated Category'
     };
 
     const mockUpdatedCategory = {
-      CATEGORIES_ID: '1',
-      NAME: 'Updated Category'
+      category_id: '1',
+      name: 'Updated Category'
     };
 
     it('should update category successfully', async () => {
@@ -114,7 +114,7 @@ describe('CategoryService', () => {
       expect(result).to.deep.equal(mockUpdatedCategory);
       expect(mockCategoryRepo.update.firstCall.args).to.deep.equal([
         '1',
-        { NAME: mockUpdateData.NAME }
+        { name: mockUpdateData.name }
       ]);
     });
 

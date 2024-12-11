@@ -25,12 +25,12 @@ describe('CategoryController', () => {
 
   describe('createCategory', () => {
     const mockCreateData: CreateCategoryDTO = {
-      NAME: 'Technology'
+      name: 'Technology'
     };
 
     const mockCreatedCategory: Category = {
-      CATEGORIES_ID: '1',
-      NAME: mockCreateData.NAME
+      category_id: '1',
+      name: mockCreateData.name
     };
 
     it('should create a category and return 201 status', async () => {
@@ -66,12 +66,12 @@ describe('CategoryController', () => {
   describe('getAllCategories', () => {
     const mockCategories: Category[] = [
       {
-        CATEGORIES_ID: '1',
-        NAME: 'Technology'
+        category_id: '1',
+        name: 'Technology'
       },
       {
-        CATEGORIES_ID: '2',
-        NAME: 'Healthcare'
+        category_id: '2',
+        name: 'Healthcare'
       }
     ];
 
@@ -97,8 +97,8 @@ describe('CategoryController', () => {
 
   describe('getCategoryById', () => {
     const mockCategory: Category = {
-      CATEGORIES_ID: '1',
-      NAME: 'Technology'
+      category_id: '1',
+      name: 'Technology'
     };
 
     it('should return category if found', async () => {
