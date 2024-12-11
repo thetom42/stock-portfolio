@@ -6,24 +6,24 @@ import * as holdingService from './holdingService';
 // Helper function to map DB Portfolio to API response
 const mapDBPortfolioToDetails = async (dbPortfolio: any): Promise<PortfolioDetails> => {
   // Get holdings for this portfolio
-  const holdings = await holdingService.getHoldingsByPortfolioId(dbPortfolio.PORTFOLIOS_ID);
+  const holdings = await holdingService.getHoldingsByPortfolioId(dbPortfolio.portfolio_id);
   
   // Calculate portfolio totals
   let totalValue = 0;
   let totalCost = 0;
 
   const portfolioHoldings: PortfolioHolding[] = holdings.map(holding => {
-    const currentValue = holding.currentPrice * holding.QUANTITY;
+    const currentValue = holding.currentPrice * holding.quantity;
     totalValue += currentValue;
     // Note: This is a simplified cost calculation. In reality, we'd need to consider all transactions
-    const cost = holding.currentPrice * holding.QUANTITY; // Placeholder
+    const cost = holding.currentPrice * holding.quantity; // Placeholder
     totalCost += cost;
 
     return {
-      id: holding.HOLDINGS_ID,
-      stockId: holding.ISIN,
-      quantity: holding.QUANTITY,
-      averageCost: cost / holding.QUANTITY,
+      id: holding.holding_id,
+      stockId: holding.isin,
+      quantity: holding.quantity,
+      averageCost: cost / holding.quantity,
       currentValue,
       gainLoss: currentValue - cost,
       gainLossPercentage: ((currentValue - cost) / cost) * 100
@@ -34,12 +34,12 @@ const mapDBPortfolioToDetails = async (dbPortfolio: any): Promise<PortfolioDetai
   const totalGainLossPercentage = totalCost > 0 ? (totalGainLoss / totalCost) * 100 : 0;
 
   return {
-    id: dbPortfolio.PORTFOLIOS_ID,
-    userId: dbPortfolio.USERS_ID,
-    name: dbPortfolio.NAME,
+    id: dbPortfolio.portfolio_id,
+    userId: dbPortfolio.user_id,
+    name: dbPortfolio.name,
     description: '', // Not stored in DB
-    createdAt: dbPortfolio.CREATED_AT,
-    updatedAt: dbPortfolio.CREATED_AT, // Using CREATED_AT as we don't have UPDATED_AT
+    createdAt: dbPortfolio.created_at,
+    updatedAt: dbPortfolio.created_at, // Using created_at as we don't have updated_at
     totalValue,
     totalGainLoss,
     totalGainLossPercentage,
@@ -61,10 +61,10 @@ export const createPortfolio = async (
 ): Promise<PortfolioDetails> => {
   try {
     const dbPortfolio = await portfolioRepository.create({
-      PORTFOLIOS_ID: '', // Will be generated
-      USERS_ID: userId,
-      NAME: portfolioData.name,
-      CREATED_AT: new Date()
+      portfolio_id: '', // Will be generated
+      user_id: userId,
+      name: portfolioData.name,
+      created_at: new Date()
     });
 
     return await mapDBPortfolioToDetails(dbPortfolio);
@@ -108,7 +108,7 @@ export const updatePortfolio = async (
     }
 
     const updatedPortfolio = await portfolioRepository.update(portfolioId, {
-      NAME: updateData.name
+      name: updateData.name
     });
 
     return await mapDBPortfolioToDetails(updatedPortfolio);

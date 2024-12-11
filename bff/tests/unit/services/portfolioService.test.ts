@@ -36,10 +36,10 @@ describe('PortfolioService', () => {
     };
 
     const mockDBPortfolio = {
-      PORTFOLIOS_ID: '1',
-      USERS_ID: 'user1',
-      NAME: 'Test Portfolio',
-      CREATED_AT: new Date()
+      portfolio_id: '1',
+      user_id: 'user1',
+      name: 'Test Portfolio',
+      created_at: new Date()
     };
 
     it('should create a portfolio successfully', async () => {
@@ -48,9 +48,9 @@ describe('PortfolioService', () => {
       const result = await portfolioService.createPortfolio('user1', mockCreateData);
 
       expect(result).to.deep.include({
-        id: mockDBPortfolio.PORTFOLIOS_ID,
-        userId: mockDBPortfolio.USERS_ID,
-        name: mockDBPortfolio.NAME,
+        id: mockDBPortfolio.portfolio_id,
+        userId: mockDBPortfolio.user_id,
+        name: mockDBPortfolio.name,
         description: '',
         totalValue: 0,
         totalGainLoss: 0,
@@ -63,12 +63,12 @@ describe('PortfolioService', () => {
       expect(result.updatedAt).to.be.instanceOf(Date);
 
       expect(mockPortfolioRepo.create.firstCall.args[0]).to.deep.include({
-        PORTFOLIOS_ID: '',
-        USERS_ID: 'user1',
-        NAME: mockCreateData.name
+        portfolio_id: '',
+        user_id: 'user1',
+        name: mockCreateData.name
       });
-      // Verify CREATED_AT is a Date without comparing exact values
-      expect(mockPortfolioRepo.create.firstCall.args[0].CREATED_AT).to.be.instanceOf(Date);
+      // Verify created_at is a Date without comparing exact values
+      expect(mockPortfolioRepo.create.firstCall.args[0].created_at).to.be.instanceOf(Date);
     });
 
     it('should throw error if user not found', async () => {
@@ -89,10 +89,10 @@ describe('PortfolioService', () => {
 
   describe('getPortfolioById', () => {
     const mockDBPortfolio = {
-      PORTFOLIOS_ID: '1',
-      USERS_ID: 'user1',
-      NAME: 'Test Portfolio',
-      CREATED_AT: new Date()
+      portfolio_id: '1',
+      user_id: 'user1',
+      name: 'Test Portfolio',
+      created_at: new Date()
     };
 
     it('should return portfolio if found', async () => {
@@ -101,9 +101,9 @@ describe('PortfolioService', () => {
       const result = await portfolioService.getPortfolioById('1');
 
       expect(result).to.deep.include({
-        id: mockDBPortfolio.PORTFOLIOS_ID,
-        userId: mockDBPortfolio.USERS_ID,
-        name: mockDBPortfolio.NAME,
+        id: mockDBPortfolio.portfolio_id,
+        userId: mockDBPortfolio.user_id,
+        name: mockDBPortfolio.name,
         description: '',
         totalValue: 0,
         totalGainLoss: 0,
@@ -130,15 +130,15 @@ describe('PortfolioService', () => {
       
       const mockHoldings = [
         {
-          HOLDINGS_ID: 'h1',
-          ISIN: 'stock1',
-          QUANTITY: 10,
+          holding_id: 'h1',
+          isin: 'stock1',
+          quantity: 10,
           currentPrice: 100 // Mock current price
         },
         {
-          HOLDINGS_ID: 'h2',
-          ISIN: 'stock2',
-          QUANTITY: 5,
+          holding_id: 'h2',
+          isin: 'stock2',
+          quantity: 5,
           currentPrice: 200 // Mock current price
         }
       ];
@@ -170,15 +170,15 @@ describe('PortfolioService', () => {
     };
 
     const mockDBPortfolio = {
-      PORTFOLIOS_ID: '1',
-      USERS_ID: 'user1',
-      NAME: 'Test Portfolio',
-      CREATED_AT: new Date()
+      portfolio_id: '1',
+      user_id: 'user1',
+      name: 'Test Portfolio',
+      created_at: new Date()
     };
 
     const mockUpdatedDBPortfolio = {
       ...mockDBPortfolio,
-      NAME: 'Updated Portfolio'
+      name: 'Updated Portfolio'
     };
 
     it('should update portfolio successfully', async () => {
@@ -188,9 +188,9 @@ describe('PortfolioService', () => {
       const result = await portfolioService.updatePortfolio('1', mockUpdateData);
 
       expect(result).to.deep.include({
-        id: mockUpdatedDBPortfolio.PORTFOLIOS_ID,
-        userId: mockUpdatedDBPortfolio.USERS_ID,
-        name: mockUpdatedDBPortfolio.NAME,
+        id: mockUpdatedDBPortfolio.portfolio_id,
+        userId: mockUpdatedDBPortfolio.user_id,
+        name: mockUpdatedDBPortfolio.name,
         description: '',
         totalValue: 0,
         totalGainLoss: 0,
@@ -204,7 +204,7 @@ describe('PortfolioService', () => {
 
       expect(mockPortfolioRepo.update.firstCall.args).to.deep.equal([
         '1',
-        { NAME: mockUpdateData.name }
+        { name: mockUpdateData.name }
       ]);
     });
 
@@ -251,23 +251,23 @@ describe('PortfolioService', () => {
 
   describe('getPortfolioSummary', () => {
     const mockDBPortfolio = {
-      PORTFOLIOS_ID: '1',
-      USERS_ID: 'user1',
-      NAME: 'Test Portfolio',
-      CREATED_AT: new Date()
+      portfolio_id: '1',
+      user_id: 'user1',
+      name: 'Test Portfolio',
+      created_at: new Date()
     };
 
     const mockHoldings = [
       {
-        HOLDINGS_ID: 'h1',
-        ISIN: 'AAPL',
-        QUANTITY: 10,
+        holding_id: 'h1',
+        isin: 'AAPL',
+        quantity: 10,
         currentPrice: 150
       },
       {
-        HOLDINGS_ID: 'h2',
-        ISIN: 'MSFT',
-        QUANTITY: 5,
+        holding_id: 'h2',
+        isin: 'MSFT',
+        quantity: 5,
         currentPrice: 200
       }
     ];
@@ -301,10 +301,10 @@ describe('PortfolioService', () => {
 
   describe('getPortfolioPerformance', () => {
     const mockDBPortfolio = {
-      PORTFOLIOS_ID: '1',
-      USERS_ID: 'user1',
-      NAME: 'Test Portfolio',
-      CREATED_AT: new Date()
+      portfolio_id: '1',
+      user_id: 'user1',
+      name: 'Test Portfolio',
+      created_at: new Date()
     };
 
     it('should return portfolio performance if found', async () => {
@@ -334,17 +334,17 @@ describe('PortfolioService', () => {
 
   describe('getPortfolioHoldings', () => {
     const mockDBPortfolio = {
-      PORTFOLIOS_ID: '1',
-      USERS_ID: 'user1',
-      NAME: 'Test Portfolio',
-      CREATED_AT: new Date()
+      portfolio_id: '1',
+      user_id: 'user1',
+      name: 'Test Portfolio',
+      created_at: new Date()
     };
 
     const mockHoldings = [
       {
-        HOLDINGS_ID: 'h1',
-        ISIN: 'AAPL',
-        QUANTITY: 10,
+        holding_id: 'h1',
+        isin: 'AAPL',
+        quantity: 10,
         currentPrice: 150
       }
     ];
@@ -379,10 +379,10 @@ describe('PortfolioService', () => {
 
   describe('getPortfolioAllocation', () => {
     const mockDBPortfolio = {
-      PORTFOLIOS_ID: '1',
-      USERS_ID: 'user1',
-      NAME: 'Test Portfolio',
-      CREATED_AT: new Date()
+      portfolio_id: '1',
+      user_id: 'user1',
+      name: 'Test Portfolio',
+      created_at: new Date()
     };
 
     it('should return portfolio allocation if found', async () => {
@@ -414,10 +414,10 @@ describe('PortfolioService', () => {
 
   describe('getPortfolioReturns', () => {
     const mockDBPortfolio = {
-      PORTFOLIOS_ID: '1',
-      USERS_ID: 'user1',
-      NAME: 'Test Portfolio',
-      CREATED_AT: new Date()
+      portfolio_id: '1',
+      user_id: 'user1',
+      name: 'Test Portfolio',
+      created_at: new Date()
     };
 
     it('should return portfolio returns if found', async () => {
@@ -448,10 +448,10 @@ describe('PortfolioService', () => {
 
   describe('getPortfolioHistory', () => {
     const mockDBPortfolio = {
-      PORTFOLIOS_ID: '1',
-      USERS_ID: 'user1',
-      NAME: 'Test Portfolio',
-      CREATED_AT: new Date()
+      portfolio_id: '1',
+      user_id: 'user1',
+      name: 'Test Portfolio',
+      created_at: new Date()
     };
 
     it('should return portfolio history if found', async () => {
