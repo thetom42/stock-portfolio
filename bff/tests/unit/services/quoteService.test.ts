@@ -19,11 +19,11 @@ use(chaiAsPromised);
 
 describe('QuoteService', () => {
   const mockStock: Stock = {
-    ISIN: 'US0378331005',
-    CATEGORIES_ID: '1',
-    NAME: 'Apple Inc.',
-    WKN: '865985',
-    SYMBOL: 'AAPL'
+    isin: 'US0378331005',
+    category_id: '1',
+    name: 'Apple Inc.',
+    wkn: '865985',
+    symbol: 'AAPL'
   };
 
   const mockYahooQuote: YahooFinanceQuote = {
@@ -78,64 +78,64 @@ describe('QuoteService', () => {
 
   describe('getRealTimeQuote', () => {
     it('should return real-time quote for valid stock', async () => {
-      mockStockRepo.findByISIN.resolves(mockStock);
+      mockStockRepo.findByIsin.resolves(mockStock);
       const mockDBQuote = {
-        QUOTES_ID: '123',
-        ISIN: mockStock.ISIN,
-        PRICE: new Decimal(mockYahooQuote.price),
-        CURRENCY: mockYahooQuote.currency,
-        MARKET_TIME: new Date(mockYahooQuote.timestamp),
-        EXCHANGE: mockYahooQuote.exchange
+        id: '123',
+        isin: mockStock.isin,
+        price: new Decimal(mockYahooQuote.price),
+        currency: mockYahooQuote.currency,
+        market_time: new Date(mockYahooQuote.timestamp),
+        exchange: mockYahooQuote.exchange
       };
       mockQuoteRepo.create.resolves(mockDBQuote);
-      mockQuoteRepo.findLatestByStock.resolves(null);
+      mockQuoteRepo.findLatestByIsin.resolves(null);
 
-      const result = await quoteService.getRealTimeQuote(mockStock.ISIN);
+      const result = await quoteService.getRealTimeQuote(mockStock.isin);
 
       expect(result).to.have.property('price', mockYahooQuote.price);
       expect(result).to.have.property('change');
       expect(result).to.have.property('changePercent');
       expect(result).to.have.property('timestamp');
-      sinon.assert.calledWith(mockStockRepo.findByISIN, mockStock.ISIN);
+      sinon.assert.calledWith(mockStockRepo.findByIsin, mockStock.isin);
     });
 
     it('should use cached quote if not stale', async () => {
-      mockStockRepo.findByISIN.resolves(mockStock);
+      mockStockRepo.findByIsin.resolves(mockStock);
       const freshQuote = {
-        QUOTES_ID: '123',
-        ISIN: mockStock.ISIN,
-        PRICE: new Decimal(150.50),
-        CURRENCY: 'USD',
-        MARKET_TIME: new Date(), // Current time
-        EXCHANGE: 'NASDAQ'
+        id: '123',
+        isin: mockStock.isin,
+        price: new Decimal(150.50),
+        currency: 'USD',
+        market_time: new Date(), // Current time
+        exchange: 'NASDAQ'
       };
-      mockQuoteRepo.findLatestByStock.resolves(freshQuote);
+      mockQuoteRepo.findLatestByIsin.resolves(freshQuote);
 
-      const result = await quoteService.getRealTimeQuote(mockStock.ISIN);
+      const result = await quoteService.getRealTimeQuote(mockStock.isin);
 
-      expect(result).to.have.property('price', Number(freshQuote.PRICE));
+      expect(result).to.have.property('price', Number(freshQuote.price));
       const yahooService = yahooFinanceService.getYahooFinanceService() as any;
       sinon.assert.notCalled(yahooService.getRealTimeQuote);
     });
 
     it('should fetch new quote if cached quote is stale', async () => {
-      mockStockRepo.findByISIN.resolves(mockStock);
+      mockStockRepo.findByIsin.resolves(mockStock);
       const staleQuote = {
-        QUOTES_ID: '123',
-        ISIN: mockStock.ISIN,
-        PRICE: new Decimal(150.50),
-        CURRENCY: 'USD',
-        MARKET_TIME: new Date(Date.now() - 20 * 60 * 1000), // 20 minutes old
-        EXCHANGE: 'NASDAQ'
+        id: '123',
+        isin: mockStock.isin,
+        price: new Decimal(150.50),
+        currency: 'USD',
+        market_time: new Date(Date.now() - 20 * 60 * 1000), // 20 minutes old
+        exchange: 'NASDAQ'
       };
-      mockQuoteRepo.findLatestByStock.resolves(staleQuote);
+      mockQuoteRepo.findLatestByIsin.resolves(staleQuote);
       mockQuoteRepo.create.resolves({
         ...staleQuote,
-        PRICE: new Decimal(mockYahooQuote.price),
-        MARKET_TIME: new Date(mockYahooQuote.timestamp)
+        price: new Decimal(mockYahooQuote.price),
+        market_time: new Date(mockYahooQuote.timestamp)
       });
 
-      const result = await quoteService.getRealTimeQuote(mockStock.ISIN);
+      const result = await quoteService.getRealTimeQuote(mockStock.isin);
 
       expect(result).to.have.property('price', mockYahooQuote.price);
       const yahooService = yahooFinanceService.getYahooFinanceService() as any;
@@ -143,19 +143,19 @@ describe('QuoteService', () => {
     });
 
     it('should throw error if stock not found', async () => {
-      mockStockRepo.findByISIN.resolves(null);
+      mockStockRepo.findByIsin.resolves(null);
 
       await expect(quoteService.getRealTimeQuote('invalid-isin'))
         .to.be.rejectedWith('Stock not found');
     });
 
     it('should handle Yahoo Finance API errors', async () => {
-      mockStockRepo.findByISIN.resolves(mockStock);
-      mockQuoteRepo.findLatestByStock.resolves(null);
+      mockStockRepo.findByIsin.resolves(mockStock);
+      mockQuoteRepo.findLatestByIsin.resolves(null);
       const yahooService = yahooFinanceService.getYahooFinanceService() as any;
       yahooService.getRealTimeQuote.rejects(new Error('API Error'));
 
-      await expect(quoteService.getRealTimeQuote(mockStock.ISIN))
+      await expect(quoteService.getRealTimeQuote(mockStock.isin))
         .to.be.rejectedWith('Failed to fetch quote data');
     });
   });
@@ -167,32 +167,32 @@ describe('QuoteService', () => {
     };
 
     it('should return historical quotes for valid stock', async () => {
-      mockStockRepo.findByISIN.resolves(mockStock);
+      mockStockRepo.findByIsin.resolves(mockStock);
 
-      const result = await quoteService.getHistoricalQuotes(mockStock.ISIN, interval);
+      const result = await quoteService.getHistoricalQuotes(mockStock.isin, interval);
 
-      expect(result).to.have.property('symbol', mockStock.SYMBOL);
+      expect(result).to.have.property('symbol', mockStock.symbol);
       expect(result).to.have.property('interval', interval.interval);
       expect(result).to.have.property('quotes').that.is.an('array');
       expect(result.quotes[0]).to.have.all.keys(
         'date', 'open', 'high', 'low', 'close', 'adjustedClose', 'volume'
       );
-      sinon.assert.calledWith(mockStockRepo.findByISIN, mockStock.ISIN);
+      sinon.assert.calledWith(mockStockRepo.findByIsin, mockStock.isin);
     });
 
     it('should throw error if stock not found', async () => {
-      mockStockRepo.findByISIN.resolves(null);
+      mockStockRepo.findByIsin.resolves(null);
 
       await expect(quoteService.getHistoricalQuotes('invalid-isin', interval))
         .to.be.rejectedWith('Stock not found');
     });
 
     it('should handle Yahoo Finance API errors', async () => {
-      mockStockRepo.findByISIN.resolves(mockStock);
+      mockStockRepo.findByIsin.resolves(mockStock);
       const yahooService = yahooFinanceService.getYahooFinanceService() as any;
       yahooService.getHistoricalQuotes.rejects(new Error('API Error'));
 
-      await expect(quoteService.getHistoricalQuotes(mockStock.ISIN, interval))
+      await expect(quoteService.getHistoricalQuotes(mockStock.isin, interval))
         .to.be.rejectedWith('Failed to fetch historical data');
     });
   });
@@ -200,76 +200,76 @@ describe('QuoteService', () => {
   describe('getLatestQuotes', () => {
     it('should return latest quotes for multiple stocks', async () => {
       const mockDBQuote = {
-        QUOTES_ID: '123',
-        ISIN: mockStock.ISIN,
-        PRICE: new Decimal(150.50),
-        CURRENCY: 'USD',
-        MARKET_TIME: new Date(),
-        EXCHANGE: 'NASDAQ'
+        id: '123',
+        isin: mockStock.isin,
+        price: new Decimal(150.50),
+        currency: 'USD',
+        market_time: new Date(),
+        exchange: 'NASDAQ'
       };
-      mockQuoteRepo.findLatestByStock.resolves(mockDBQuote);
+      mockQuoteRepo.findLatestByIsin.resolves(mockDBQuote);
 
-      const result = await quoteService.getLatestQuotes([mockStock.ISIN]);
+      const result = await quoteService.getLatestQuotes([mockStock.isin]);
 
       expect(result).to.be.an('array');
       expect(result[0]).to.deep.include({
-        id: mockDBQuote.QUOTES_ID,
-        stockId: mockDBQuote.ISIN,
-        price: Number(mockDBQuote.PRICE),
-        currency: mockDBQuote.CURRENCY
+        id: mockDBQuote.id,
+        stockId: mockDBQuote.isin,
+        price: Number(mockDBQuote.price),
+        currency: mockDBQuote.currency
       });
-      sinon.assert.calledWith(mockQuoteRepo.findLatestByStock, mockStock.ISIN);
+      sinon.assert.calledWith(mockQuoteRepo.findLatestByIsin, mockStock.isin);
     });
 
     it('should return empty array for empty input', async () => {
       // Reset the spy count before this specific test
-      mockQuoteRepo.findLatestByStock.resetHistory();
+      mockQuoteRepo.findLatestByIsin.resetHistory();
       
       const result = await quoteService.getLatestQuotes([]);
       expect(result).to.be.an('array').that.is.empty;
-      sinon.assert.notCalled(mockQuoteRepo.findLatestByStock);
+      sinon.assert.notCalled(mockQuoteRepo.findLatestByIsin);
     });
   });
 
   describe('getIntradayQuotes', () => {
     it('should return intraday quotes for valid stock', async () => {
-      mockStockRepo.findByISIN.resolves(mockStock);
+      mockStockRepo.findByIsin.resolves(mockStock);
       const mockDBQuote = {
-        QUOTES_ID: '123',
-        ISIN: mockStock.ISIN,
-        PRICE: new Decimal(mockIntradayQuote.price),
-        CURRENCY: 'USD',
-        MARKET_TIME: new Date(mockIntradayQuote.timestamp),
-        EXCHANGE: 'YAHOO'
+        id: '123',
+        isin: mockStock.isin,
+        price: new Decimal(mockIntradayQuote.price),
+        currency: 'USD',
+        market_time: new Date(mockIntradayQuote.timestamp),
+        exchange: 'YAHOO'
       };
       mockQuoteRepo.create.resolves(mockDBQuote);
 
-      const result = await quoteService.getIntradayQuotes(mockStock.ISIN);
+      const result = await quoteService.getIntradayQuotes(mockStock.isin);
 
       expect(result).to.be.an('array');
       expect(result[0]).to.deep.include({
-        id: mockDBQuote.QUOTES_ID,
-        stockId: mockDBQuote.ISIN,
-        price: Number(mockDBQuote.PRICE),
-        currency: mockDBQuote.CURRENCY,
-        timestamp: mockDBQuote.MARKET_TIME
+        id: mockDBQuote.id,
+        stockId: mockDBQuote.isin,
+        price: Number(mockDBQuote.price),
+        currency: mockDBQuote.currency,
+        timestamp: mockDBQuote.market_time
       });
-      sinon.assert.calledWith(mockStockRepo.findByISIN, mockStock.ISIN);
+      sinon.assert.calledWith(mockStockRepo.findByIsin, mockStock.isin);
     });
 
     it('should throw error if stock not found', async () => {
-      mockStockRepo.findByISIN.resolves(null);
+      mockStockRepo.findByIsin.resolves(null);
 
       await expect(quoteService.getIntradayQuotes('invalid-isin'))
         .to.be.rejectedWith('Stock not found');
     });
 
     it('should handle Yahoo Finance API errors', async () => {
-      mockStockRepo.findByISIN.resolves(mockStock);
+      mockStockRepo.findByIsin.resolves(mockStock);
       const yahooService = yahooFinanceService.getYahooFinanceService() as any;
       yahooService.getIntradayQuotes.rejects(new Error('API Error'));
 
-      await expect(quoteService.getIntradayQuotes(mockStock.ISIN))
+      await expect(quoteService.getIntradayQuotes(mockStock.isin))
         .to.be.rejectedWith('Failed to fetch intraday data');
     });
   });
@@ -280,40 +280,40 @@ describe('QuoteService', () => {
 
     it('should return quote history for valid date range', async () => {
       const mockDBQuotes = [{
-        QUOTES_ID: '123',
-        ISIN: mockStock.ISIN,
-        PRICE: new Decimal(150.50),
-        CURRENCY: 'USD',
-        MARKET_TIME: new Date(),
-        EXCHANGE: 'NASDAQ'
+        id: '123',
+        isin: mockStock.isin,
+        price: new Decimal(150.50),
+        currency: 'USD',
+        market_time: new Date(),
+        exchange: 'NASDAQ'
       }];
-      mockQuoteRepo.findByStockAndTimeRange.resolves(mockDBQuotes);
+      mockQuoteRepo.findByDateRange.resolves(mockDBQuotes);
 
       const result = await quoteService.getQuoteHistory(
-        mockStock.ISIN,
+        mockStock.isin,
         startDate,
         endDate
       );
 
       expect(result).to.be.an('array');
       expect(result[0]).to.deep.include({
-        id: mockDBQuotes[0].QUOTES_ID,
-        stockId: mockDBQuotes[0].ISIN,
-        price: Number(mockDBQuotes[0].PRICE),
-        currency: mockDBQuotes[0].CURRENCY
+        id: mockDBQuotes[0].id,
+        stockId: mockDBQuotes[0].isin,
+        price: Number(mockDBQuotes[0].price),
+        currency: mockDBQuotes[0].currency
       });
-      sinon.assert.calledWith(mockQuoteRepo.findByStockAndTimeRange, 
-        mockStock.ISIN, 
+      sinon.assert.calledWith(mockQuoteRepo.findByDateRange, 
+        mockStock.isin, 
         startDate, 
         endDate
       );
     });
 
     it('should return empty array if no quotes found', async () => {
-      mockQuoteRepo.findByStockAndTimeRange.resolves([]);
+      mockQuoteRepo.findByDateRange.resolves([]);
 
       const result = await quoteService.getQuoteHistory(
-        mockStock.ISIN,
+        mockStock.isin,
         startDate,
         endDate
       );

@@ -100,7 +100,7 @@ export const getPortfolioQuotes = async (
     // Verify portfolio ownership
     const portfolio = await portfolioRepository.findById(portfolioId);
     
-    if (!portfolio || portfolio.USERS_ID !== userId) {
+    if (!portfolio || portfolio.user_id !== userId) {
       return res.status(403).json({ error: 'Unauthorized' });
     }
     
@@ -109,7 +109,7 @@ export const getPortfolioQuotes = async (
     
     // Get latest quotes for all holdings
     const quotes = await Promise.all(
-      holdings.map(holding => quoteService.getLatestQuotes([holding.ISIN]))
+      holdings.map(holding => quoteService.getLatestQuotes([holding.isin]))
     );
     
     // Flatten and filter out empty results, preserve Quote interface
@@ -145,9 +145,9 @@ export const getHoldingQuotes = async (
       return res.status(404).json({ error: 'Holding not found' });
     }
     
-    const portfolio = await portfolioRepository.findById(holding.PORTFOLIOS_ID);
+    const portfolio = await portfolioRepository.findById(holding.portfolio_id);
     
-    if (!portfolio || portfolio.USERS_ID !== userId) {
+    if (!portfolio || portfolio.user_id !== userId) {
       return res.status(403).json({ error: 'Unauthorized' });
     }
     
@@ -156,7 +156,7 @@ export const getHoldingQuotes = async (
       interval: '1d',
       range
     };
-    const history = await quoteService.getHistoricalQuotes(holding.ISIN, interval);
+    const history = await quoteService.getHistoricalQuotes(holding.isin, interval);
     
     res.status(200).json({ quotes: history.quotes });
   } catch (error) {
