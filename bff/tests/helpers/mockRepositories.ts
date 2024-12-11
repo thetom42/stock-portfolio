@@ -47,9 +47,9 @@ export const mockQuoteRepo = {
 } as unknown as QuoteRepository & { [K in keyof QuoteRepository]: sinon.SinonStub };
 
 export const mockStockRepo = {
-  findByISIN: sinon.stub(),
+  findByIsin: sinon.stub(),
   findBySymbol: sinon.stub(),
-  findByWKN: sinon.stub(),
+  findByWkn: sinon.stub(),
   findAll: sinon.stub(),
   findByCategory: sinon.stub(),
   create: sinon.stub(),

@@ -12,11 +12,11 @@ import { YahooFinanceQuote, YahooFinanceSearchResult } from '../../../src/servic
 
 describe('StockService', () => {
   const mockStock = {
-    ISIN: 'US0378331005',
-    SYMBOL: 'AAPL',
-    NAME: 'Apple Inc.',
-    WKN: '123456',
-    CATEGORIES_ID: 'tech-category'
+    isin: 'US0378331005',
+    symbol: 'AAPL',
+    name: 'Apple Inc.',
+    wkn: '123456',
+    category_id: 'tech-category'
   };
 
   const mockYahooQuote: YahooFinanceQuote = {
@@ -55,25 +55,25 @@ describe('StockService', () => {
 
   describe('getStockByISIN', () => {
     it('should return stock when found', async () => {
-      mockStockRepo.findByISIN.resolves(mockStock);
+      mockStockRepo.findByIsin.resolves(mockStock);
 
-      const result = await stockService.getStockByISIN(mockStock.ISIN);
+      const result = await stockService.getStockByISIN(mockStock.isin);
 
       expect(result).to.not.be.null;
       expect(result).to.deep.include({
-        id: mockStock.ISIN,
-        symbol: mockStock.SYMBOL,
-        name: mockStock.NAME
+        id: mockStock.isin,
+        symbol: mockStock.symbol,
+        name: mockStock.name
       });
-      sinon.assert.calledWith(mockStockRepo.findByISIN, mockStock.ISIN);
+      sinon.assert.calledWith(mockStockRepo.findByIsin, mockStock.isin);
     });
 
     it('should return null when stock not found', async () => {
-      mockStockRepo.findByISIN.resolves(null);
+      mockStockRepo.findByIsin.resolves(null);
 
       const result = await stockService.getStockByISIN('invalid-isin');
       expect(result).to.be.null;
-      sinon.assert.calledWith(mockStockRepo.findByISIN, 'invalid-isin');
+      sinon.assert.calledWith(mockStockRepo.findByIsin, 'invalid-isin');
     });
   });
 
@@ -81,15 +81,15 @@ describe('StockService', () => {
     it('should return stock when found', async () => {
       mockStockRepo.findBySymbol.resolves(mockStock);
 
-      const result = await stockService.getStockBySymbol(mockStock.SYMBOL);
+      const result = await stockService.getStockBySymbol(mockStock.symbol);
 
       expect(result).to.not.be.null;
       expect(result).to.deep.include({
-        id: mockStock.ISIN,
-        symbol: mockStock.SYMBOL,
-        name: mockStock.NAME
+        id: mockStock.isin,
+        symbol: mockStock.symbol,
+        name: mockStock.name
       });
-      sinon.assert.calledWith(mockStockRepo.findBySymbol, mockStock.SYMBOL);
+      sinon.assert.calledWith(mockStockRepo.findBySymbol, mockStock.symbol);
     });
 
     it('should return null when stock not found', async () => {
@@ -103,25 +103,25 @@ describe('StockService', () => {
 
   describe('getStockByWKN', () => {
     it('should return stock when found', async () => {
-      mockStockRepo.findByWKN.resolves(mockStock);
+      mockStockRepo.findByWkn.resolves(mockStock);
 
-      const result = await stockService.getStockByWKN(mockStock.WKN);
+      const result = await stockService.getStockByWKN(mockStock.wkn);
 
       expect(result).to.not.be.null;
       expect(result).to.deep.include({
-        id: mockStock.ISIN,
-        symbol: mockStock.SYMBOL,
-        name: mockStock.NAME
+        id: mockStock.isin,
+        symbol: mockStock.symbol,
+        name: mockStock.name
       });
-      sinon.assert.calledWith(mockStockRepo.findByWKN, mockStock.WKN);
+      sinon.assert.calledWith(mockStockRepo.findByWkn, mockStock.wkn);
     });
 
     it('should return null when stock not found', async () => {
-      mockStockRepo.findByWKN.resolves(null);
+      mockStockRepo.findByWkn.resolves(null);
 
       const result = await stockService.getStockByWKN('invalid-wkn');
       expect(result).to.be.null;
-      sinon.assert.calledWith(mockStockRepo.findByWKN, 'invalid-wkn');
+      sinon.assert.calledWith(mockStockRepo.findByWkn, 'invalid-wkn');
     });
   });
 
@@ -133,9 +133,9 @@ describe('StockService', () => {
 
       expect(result).to.be.an('array');
       expect(result[0]).to.deep.include({
-        id: mockStock.ISIN,
-        symbol: mockStock.SYMBOL,
-        name: mockStock.NAME
+        id: mockStock.isin,
+        symbol: mockStock.symbol,
+        name: mockStock.name
       });
       sinon.assert.called(mockStockRepo.findAll);
     });
@@ -157,9 +157,9 @@ describe('StockService', () => {
 
       expect(result).to.be.an('array');
       expect(result[0]).to.deep.include({
-        id: mockStock.ISIN,
-        symbol: mockStock.SYMBOL,
-        name: mockStock.NAME
+        id: mockStock.isin,
+        symbol: mockStock.symbol,
+        name: mockStock.name
       });
       sinon.assert.calledWith(mockStockRepo.findByCategory, 'tech-category');
     });
@@ -198,46 +198,46 @@ describe('StockService', () => {
 
   describe('getStockDetails', () => {
     it('should return detailed stock information when found', async () => {
-      mockStockRepo.findByISIN.resolves(mockStock);
+      mockStockRepo.findByIsin.resolves(mockStock);
 
-      const result = await stockService.getStockDetails(mockStock.ISIN);
+      const result = await stockService.getStockDetails(mockStock.isin);
 
       expect(result).to.not.be.null;
       expect(result).to.deep.include({
-        id: mockStock.ISIN,
-        symbol: mockStock.SYMBOL,
-        name: mockStock.NAME,
+        id: mockStock.isin,
+        symbol: mockStock.symbol,
+        name: mockStock.name,
         currentPrice: mockYahooQuote.price,
         currency: mockYahooQuote.currency,
         exchange: mockYahooQuote.exchange
       });
       expect(result).to.have.property('priceChange');
       expect(result).to.have.property('priceChangePercentage');
-      sinon.assert.calledWith(mockStockRepo.findByISIN, mockStock.ISIN);
+      sinon.assert.calledWith(mockStockRepo.findByIsin, mockStock.isin);
     });
 
     it('should return null when stock not found', async () => {
-      mockStockRepo.findByISIN.resolves(null);
+      mockStockRepo.findByIsin.resolves(null);
 
       const result = await stockService.getStockDetails('invalid-isin');
       expect(result).to.be.null;
-      sinon.assert.calledWith(mockStockRepo.findByISIN, 'invalid-isin');
+      sinon.assert.calledWith(mockStockRepo.findByIsin, 'invalid-isin');
     });
 
     it('should return basic stock info when Yahoo Finance fails', async () => {
-      mockStockRepo.findByISIN.resolves(mockStock);
+      mockStockRepo.findByIsin.resolves(mockStock);
       const yahooService = yahooFinanceService.getYahooFinanceService() as any;
       yahooService.getRealTimeQuote.rejects(new Error('Yahoo Finance error'));
 
-      const result = await stockService.getStockDetails(mockStock.ISIN);
+      const result = await stockService.getStockDetails(mockStock.isin);
 
       expect(result).to.not.be.null;
       expect(result).to.deep.include({
-        id: mockStock.ISIN,
-        symbol: mockStock.SYMBOL,
-        name: mockStock.NAME
+        id: mockStock.isin,
+        symbol: mockStock.symbol,
+        name: mockStock.name
       });
-      sinon.assert.calledWith(mockStockRepo.findByISIN, mockStock.ISIN);
+      sinon.assert.calledWith(mockStockRepo.findByIsin, mockStock.isin);
     });
   });
 
@@ -255,16 +255,16 @@ describe('StockService', () => {
       const result = await stockService.createStock('tech-category', createData);
 
       expect(result).to.deep.include({
-        id: mockStock.ISIN,
-        symbol: mockStock.SYMBOL,
-        name: mockStock.NAME
+        id: mockStock.isin,
+        symbol: mockStock.symbol,
+        name: mockStock.name
       });
       sinon.assert.calledWith(mockStockRepo.create, {
-        ISIN: createData.isin,
-        CATEGORIES_ID: 'tech-category',
-        NAME: createData.name,
-        WKN: createData.wkn,
-        SYMBOL: createData.symbol
+        isin: createData.isin,
+        category_id: 'tech-category',
+        name: createData.name,
+        wkn: createData.wkn,
+        symbol: createData.symbol
       });
     });
   });
@@ -276,19 +276,19 @@ describe('StockService', () => {
     };
 
     it('should update stock when found', async () => {
-      const updatedStock = { ...mockStock, NAME: updateData.name, CATEGORIES_ID: updateData.categoryId };
+      const updatedStock = { ...mockStock, name: updateData.name, category_id: updateData.categoryId };
       mockStockRepo.update.resolves(updatedStock);
 
-      const result = await stockService.updateStock(mockStock.ISIN, updateData);
+      const result = await stockService.updateStock(mockStock.isin, updateData);
 
       expect(result).to.not.be.null;
       expect(result).to.deep.include({
-        id: mockStock.ISIN,
+        id: mockStock.isin,
         name: updateData.name
       });
-      sinon.assert.calledWith(mockStockRepo.update, mockStock.ISIN, {
-        NAME: updateData.name,
-        CATEGORIES_ID: updateData.categoryId
+      sinon.assert.calledWith(mockStockRepo.update, mockStock.isin, {
+        name: updateData.name,
+        category_id: updateData.categoryId
       });
     });
 
@@ -298,8 +298,8 @@ describe('StockService', () => {
       const result = await stockService.updateStock('invalid-isin', updateData);
       expect(result).to.be.null;
       sinon.assert.calledWith(mockStockRepo.update, 'invalid-isin', {
-        NAME: updateData.name,
-        CATEGORIES_ID: updateData.categoryId
+        name: updateData.name,
+        category_id: updateData.categoryId
       });
     });
   });
@@ -308,8 +308,8 @@ describe('StockService', () => {
     it('should delete stock successfully', async () => {
       mockStockRepo.delete.resolves();
 
-      await stockService.deleteStock(mockStock.ISIN);
-      sinon.assert.calledWith(mockStockRepo.delete, mockStock.ISIN);
+      await stockService.deleteStock(mockStock.isin);
+      sinon.assert.calledWith(mockStockRepo.delete, mockStock.isin);
     });
   });
 });

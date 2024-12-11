@@ -14,10 +14,10 @@ export const setStockRepository = (repo: any) => {
 
 // Helper function to map DB Stock to BFF Stock
 const mapDBStockToBFF = (dbStock: any, yahooQuote?: any): Stock => ({
-  id: dbStock.ISIN,
-  symbol: dbStock.SYMBOL,
-  isin: dbStock.ISIN,
-  name: dbStock.NAME,
+  id: dbStock.isin,
+  symbol: dbStock.symbol,
+  isin: dbStock.isin,
+  name: dbStock.name,
   currency: yahooQuote?.currency || 'USD', // Use Yahoo data if available
   exchange: yahooQuote?.exchange || 'DEFAULT', // Use Yahoo data if available
   country: 'US', // Default since DB doesn't store this
@@ -27,7 +27,7 @@ const mapDBStockToBFF = (dbStock: any, yahooQuote?: any): Stock => ({
 
 // Get stock by ISIN
 export const getStockByISIN = async (isin: string): Promise<Stock | null> => {
-  const stock = await stockRepository.findByISIN(isin);
+  const stock = await stockRepository.findByIsin(isin);
   
   if (!stock) {
     return null;
@@ -49,7 +49,7 @@ export const getStockBySymbol = async (symbol: string): Promise<Stock | null> =>
 
 // Get stock by WKN
 export const getStockByWKN = async (wkn: string): Promise<Stock | null> => {
-  const stock = await stockRepository.findByWKN(wkn);
+  const stock = await stockRepository.findByWkn(wkn);
   
   if (!stock) {
     return null;
@@ -92,14 +92,14 @@ export const searchStocks = async (query: string): Promise<StockSearchResult[]> 
 export const getStockDetails = async (isin: string): Promise<StockDetails | null> => {
   const yahooFinance = getYahooFinanceService();
 
-  const stock = await stockRepository.findByISIN(isin);
+  const stock = await stockRepository.findByIsin(isin);
   if (!stock) {
     return null;
   }
 
   // Get real-time quote from Yahoo Finance
   try {
-    const quote = await yahooFinance.getRealTimeQuote(stock.ISIN);
+    const quote = await yahooFinance.getRealTimeQuote(stock.isin);
     const stockWithYahooData = mapDBStockToBFF(stock, quote);
     
     return {
@@ -121,11 +121,11 @@ export const createStock = async (
   stockData: { isin: string; name: string; wkn: string; symbol: string }
 ): Promise<Stock> => {
   const dbStock = await stockRepository.create({
-    ISIN: stockData.isin,
-    CATEGORIES_ID: categoryId,
-    NAME: stockData.name,
-    WKN: stockData.wkn,
-    SYMBOL: stockData.symbol
+    isin: stockData.isin,
+    category_id: categoryId,
+    name: stockData.name,
+    wkn: stockData.wkn,
+    symbol: stockData.symbol
   });
 
   return mapDBStockToBFF(dbStock);
@@ -137,10 +137,10 @@ export const updateStock = async (
   updateData: Partial<{ name: string; wkn: string; symbol: string; categoryId: string }>
 ): Promise<Stock | null> => {
   const dbStock = await stockRepository.update(isin, {
-    ...(updateData.name && { NAME: updateData.name }),
-    ...(updateData.wkn && { WKN: updateData.wkn }),
-    ...(updateData.symbol && { SYMBOL: updateData.symbol }),
-    ...(updateData.categoryId && { CATEGORIES_ID: updateData.categoryId })
+    ...(updateData.name && { name: updateData.name }),
+    ...(updateData.wkn && { wkn: updateData.wkn }),
+    ...(updateData.symbol && { symbol: updateData.symbol }),
+    ...(updateData.categoryId && { category_id: updateData.categoryId })
   });
 
   return dbStock ? mapDBStockToBFF(dbStock) : null;
