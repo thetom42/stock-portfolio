@@ -17,22 +17,22 @@ describe('UserService', () => {
   });
 
   const mockUser = {
-    USERS_ID: 'user123',
-    EMAIL: 'test@example.com',
-    NAME: 'John',
-    SURNAME: 'Doe',
-    NICKNAME: 'John',
-    PASSWORD: createHash('sha256').update('password123').digest('hex'),
-    JOIN_DATE: new Date()
+    user_id: 'user123',
+    email: 'test@example.com',
+    name: 'John',
+    surname: 'Doe',
+    nickname: 'John',
+    password: createHash('sha256').update('password123').digest('hex'),
+    join_date: new Date()
   };
 
   const mockBFFUser: User = {
-    id: mockUser.USERS_ID,
-    email: mockUser.EMAIL,
-    firstName: mockUser.NAME,
-    lastName: mockUser.SURNAME,
-    createdAt: mockUser.JOIN_DATE,
-    updatedAt: mockUser.JOIN_DATE
+    id: mockUser.user_id,
+    email: mockUser.email,
+    firstName: mockUser.name,
+    lastName: mockUser.surname,
+    createdAt: mockUser.join_date,
+    updatedAt: mockUser.join_date
   };
 
   describe('createUser', () => {
@@ -110,10 +110,10 @@ describe('UserService', () => {
     it('should update user successfully', async () => {
       const updatedUser = {
         ...mockUser,
-        NAME: 'Jane',
-        SURNAME: 'Smith',
-        EMAIL: 'jane@example.com',
-        NICKNAME: 'Jane'
+        name: 'Jane',
+        surname: 'Smith',
+        email: 'jane@example.com',
+        nickname: 'Jane'
       };
 
       mockUserRepo.update.resolves(updatedUser);

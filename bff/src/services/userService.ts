@@ -14,12 +14,12 @@ export const setUserRepository = (repo: any) => {
 
 // Helper function to map DB User to BFF User
 const mapDBUserToBFF = (dbUser: any): User => ({
-  id: dbUser.USERS_ID,
-  email: dbUser.EMAIL,
-  firstName: dbUser.NAME,
-  lastName: dbUser.SURNAME,
-  createdAt: dbUser.JOIN_DATE,
-  updatedAt: dbUser.JOIN_DATE // DB doesn't have updated_at, using JOIN_DATE
+  id: dbUser.user_id,
+  email: dbUser.email,
+  firstName: dbUser.name,
+  lastName: dbUser.surname,
+  createdAt: dbUser.join_date,
+  updatedAt: dbUser.join_date // DB doesn't have updated_at, using join_date
 });
 
 // Helper function to hash password
@@ -33,13 +33,13 @@ export const createUser = async (userData: CreateUserDTO): Promise<User> => {
     const hashedPassword = hashPassword(userData.password);
 
     const dbUser = await userRepository.create({
-      USERS_ID: '', // Will be generated
-      EMAIL: userData.email,
-      NAME: userData.firstName,
-      SURNAME: userData.lastName,
-      NICKNAME: userData.firstName, // Using firstName as nickname
-      PASSWORD: hashedPassword,
-      JOIN_DATE: new Date()
+      user_id: '', // Will be generated
+      email: userData.email,
+      name: userData.firstName,
+      surname: userData.lastName,
+      nickname: userData.firstName, // Using firstName as nickname
+      password: hashedPassword,
+      join_date: new Date()
     });
 
     return mapDBUserToBFF(dbUser);
@@ -78,10 +78,10 @@ export const updateUser = async (
   try {
     // Build update data
     const updateFields: any = {
-      ...(updateData.email && { EMAIL: updateData.email }),
-      ...(updateData.firstName && { NAME: updateData.firstName }),
-      ...(updateData.lastName && { SURNAME: updateData.lastName }),
-      ...(updateData.firstName && { NICKNAME: updateData.firstName }) // Update nickname if firstName changes
+      ...(updateData.email && { email: updateData.email }),
+      ...(updateData.firstName && { name: updateData.firstName }),
+      ...(updateData.lastName && { surname: updateData.lastName }),
+      ...(updateData.firstName && { nickname: updateData.firstName }) // Update nickname if firstName changes
     };
 
     const updatedUser = await userRepository.update(userId, updateFields);
@@ -116,7 +116,7 @@ export const validateUserCredentials = async (
 
   // Verify password
   const hashedPassword = hashPassword(credentials.password);
-  if (hashedPassword !== user.PASSWORD) {
+  if (hashedPassword !== user.password) {
     return null;
   }
 
