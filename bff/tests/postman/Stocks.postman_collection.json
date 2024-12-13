@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Stock Portfolio BFF - Stocks",
-    "description": "Collection for managing stocks in the Stock Portfolio application.\n\nAuthentication:\nThis collection uses Keycloak for authentication with support for both regular users and administrators.\n\nRequired Environment Variables:\n- Regular User Authentication:\n  * username: Regular test user username\n  * password: Regular test user password\n  * accessToken: Regular user access token\n\n- Admin Authentication:\n  * adminUsername: Admin test user username\n  * adminPassword: Admin test user password\n  * adminAccessToken: Admin user access token\n\nThe collection includes tests for both regular user operations (viewing stocks) and admin-specific operations (creating, updating, deleting stocks). Stock identifiers (ISIN, WKN, Symbol) are used for lookups, and category relationships are managed through categoryId.",
+    "description": "Collection for managing stocks in the Stock Portfolio application.\n\nAuthentication:\nThis collection uses Keycloak for authentication with support for both regular users and administrators.\n\nRequired Environment Variables:\n- Regular User Authentication:\n  * username: Regular test user username\n  * password: Regular test user password\n  * accessToken: Regular user access token\n\n- Admin Authentication:\n  * adminUsername: Admin test user username\n  * adminPassword: Admin test user password\n  * adminAccessToken: Admin user access token\n\nThe collection includes tests for both regular user operations (viewing stocks) and admin-specific operations (creating, updating, deleting stocks). Stock identifiers (isin, wkn, symbol) are used for lookups, and category relationships are managed through categoryId.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "event": [
@@ -275,7 +275,7 @@
           }
         },
         {
-          "name": "Get Stock by ISIN",
+          "name": "Get Stock by Isin",
           "event": [
             {
               "listen": "test",

@@ -129,7 +129,7 @@ export const validateTransactionCreation = [
 
 // Category validation rules
 export const validateCategoryCreation = [
-  body('NAME')
+  body('name')
     .trim()
     .isLength({ min: 1 })
     .withMessage('Category name is required'),
@@ -137,7 +137,7 @@ export const validateCategoryCreation = [
 ] as const;
 
 export const validateCategoryUpdate = [
-  body('NAME')
+  body('name')
     .trim()
     .isLength({ min: 1 })
     .withMessage('Category name is required'),
@@ -216,7 +216,7 @@ export const validateUUID = (paramName: string) => [
   handleValidationErrors
 ] as const;
 
-export const validateISIN = (paramName: string) => [
+export const validateIsin = (paramName: string) => [
   param(paramName)
     .trim()
     .isLength({ min: 12, max: 12 })
@@ -225,7 +225,7 @@ export const validateISIN = (paramName: string) => [
   handleValidationErrors
 ] as const;
 
-export const validateWKN = (paramName: string) => [
+export const validateWkn = (paramName: string) => [
   param(paramName)
     .trim()
     .custom((value) => {

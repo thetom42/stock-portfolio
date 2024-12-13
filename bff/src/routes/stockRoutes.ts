@@ -3,8 +3,8 @@ import { protect } from '../config/keycloak';
 import * as stockController from '../controllers/stockController';
 import {
     validateUUID,
-    validateISIN,
-    validateWKN,
+    validateIsin,
+    validateWkn,
     validateStockCreation,
     validateStockUpdate,
     validateStockSearch,
@@ -40,8 +40,8 @@ router.post('/',
 
 // Get stock by ISIN
 router.get('/isin/:isin',
-    validateISIN('isin'),
-    stockController.getStockByISIN
+    validateIsin('isin'),
+    stockController.getStockByIsin
 );
 
 // Get stock by Symbol
@@ -58,26 +58,26 @@ router.get('/symbol/:symbol',
 
 // Get stock by WKN
 router.get('/wkn/:wkn',
-    validateWKN('wkn'),
-    stockController.getStockByWKN
+    validateWkn('wkn'),
+    stockController.getStockByWkn
 );
 
 // Get detailed stock information
 router.get('/details/:isin',
-    validateISIN('isin'),
+    validateIsin('isin'),
     stockController.getStockDetails
 );
 
 // Update stock
 router.put('/:isin',
-    validateISIN('isin'),
+    validateIsin('isin'),
     validateStockUpdate,
     stockController.updateStock
 );
 
 // Delete stock
 router.delete('/:isin',
-    validateISIN('isin'),
+    validateIsin('isin'),
     stockController.deleteStock
 );
 

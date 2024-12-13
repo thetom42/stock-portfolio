@@ -11141,4 +11141,2329 @@ db/tests/unit/repositories/StockRepository.test.ts
 # VSCode Open Tabs
 db/tests/unit/repositories/StockRepository.test.ts
 </environment_details>
+[TASK RESUMPTION] This task was interrupted 8 minutes ago. It may or may not be complete, so please reassess the task context. Be aware that the project state may have changed since then. The current working directory is now '/Users/the/src/repos/thetom42/github/stock-portfolio'. If the task has not been completed, retry the last step before interruption and proceed with completing the task.
+
+Note: If you previously attempted a tool use that the user did not provide a result for, you should assume the tool use was not successful and assess whether you should retry. If the last tool was a browser_action, the browser has been closed and you must launch a new browser if needed.
+<environment_details>
+# VSCode Visible Files
+bff/prisma/schema.prisma
+
+# VSCode Open Tabs
+bff/prisma/schema.prisma
+
+# Current Working Directory (/Users/the/src/repos/thetom42/github/stock-portfolio) Files
+.gitignore
+.gitlab-ci.yml
+CHANGELOG.md
+docker-compose.yaml
+extract_cost_info.py
+package.json
+README.md
+bff/
+bff/.env.sample
+bff/.env.test
+bff/.gitignore
+bff/.npmignore
+bff/design.md
+bff/Dockerfile
+bff/package.json
+bff/README.md
+bff/tsconfig.docker.json
+bff/tsconfig.json
+bff/prisma/
+bff/prisma/schema.prisma
+bff/spec/
+bff/spec/stock-portfolio.yaml
+bff/src/
+bff/src/app.ts
+bff/src/config/
+bff/src/controllers/
+bff/src/middleware/
+bff/src/models/
+bff/src/routes/
+bff/src/services/
+bff/src/types/
+bff/src/utils/
+bff/tests/
+bff/tests/setup.ts
+bff/tests/helpers/
+bff/tests/integration/
+bff/tests/postman/
+bff/tests/unit/
+cline/
+cline/bff-design/
+cline/bff-design/01-Create BFF Design Document.md
+cline/bff-design/02-Create BFF File Structure.md
+cline/bff-implementation/
+cline/bff-implementation/09 Implement whole BFF layer.md
+cline/bff-implementation/10 Write Unittests for BFF.md
+cline/bff-implementation/11 Write missing services for BFF layer.md
+cline/bff-implementation/12 Write missing unittests in BFF layer.md
+cline/bff-implementation/13 Write Missing Routes, Controller, Services.md
+cline/bff-implementation/14 Write Missing Models.md
+cline/bff-implementation/15 Adapt Existing Unittests and Write Missing tests.md
+cline/bff-implementation/16 Adapt Tests for HoldingService and PortfolioService.md
+cline/bff-implementation/34 Fix Import Errors.md
+cline/bff-implementation/36 Add Missing Methods to Holdings.md
+cline/bff-implementation/37 Add Missing Methods to Portfolio.md
+cline/bff-implementation/38 Fix Build Errors.md
+cline/bff-implementation/39 Refactor the Messed Up Express Types.md
+cline/bff-implementation/64 Adapt Category Entity to Singular and Lowercase.md
+cline/bff-implementation/65 Adapt Quote Entity to Singular and Lowercase.md
+cline/bff-implementation/66 Adapt Stock Entity to Singular and Lowercase.md
+cline/bff-implementation/67 Adapt Transaction Entity to Singular and Lowercase.md
+cline/bff-implementation/68 Adapt Holding Entity to Singular and Lowercase.md
+cline/bff-implementation/69 Adapt Portfolio Entity to Singular and Lowercase.md
+cline/bff-implementation/70 Adapt User Entity to Singular and Lowercase.md
+cline/bff-specification/
+cline/bff-specification/18 Create Rest API Specification.md
+cline/bff-specification/48 Review of API Specification and Improvement Suggestions.md
+cline/bff-testing/
+cline/bff-testing/17 Adapt Postman Collection.md
+cline/bff-testing/18 Fix Unittest Errors.md
+cline/bff-testing/20 Prepare for Local Debugging.md
+cline/bff-testing/21 Fix Errors in Test Execution and in Unittests.md
+cline/bff-testing/22 Detours and Meanders.md
+cline/bff-testing/23 Fixing the Broken BFF Services.md
+cline/bff-testing/24 Establish a Solid Mocking Strategy and Implement it.md
+cline/bff-testing/25 Finish Unit Tests Step By Step Config and Middleware.md
+cline/bff-testing/26 Finish Unit Tests Step By Step Services Part 1.md
+cline/bff-testing/27 Finish Unit Tests Step By Step Services Part 2.md
+cline/bff-testing/28 Finish Unit Tests Step By Step Services Part 3.md
+cline/bff-testing/29 Finish Unit Tests Step By Step Services Fix QuoteService.md
+cline/bff-testing/30 Finish Unix Tests Step By Step Services Last Part.md
+cline/bff-testing/31 Finish Unit Tests Step By Step Controllers Part 1.md
+cline/bff-testing/32 Finish Unit Tests Step By Step Controllers Part 2.md
+cline/bff-testing/33 Finish Unit Tests Step By Step Controllers Final Part.md
+cline/bff-testing/35 Finish Unittests Step By Step Utils.md
+cline/bff-testing/40 Split Up Postman Collection and Add Missing routes.md
+cline/bff-testing/41 Review Postman Collection for Categories.md
+cline/bff-testing/42 Review Postman Collection for Holdings.md
+cline/bff-testing/43 Review Postman Collection for Portfolios.md
+cline/bff-testing/44 Review Postman Collection for Quotes.md
+cline/bff-testing/45 Review Postman Collection for Stocks.md
+cline/bff-testing/46 Review Postman Collection for Transactions.md
+cline/bff-testing/47 Fix Issues in QuoteController unittests.md
+cline/bff-testing/50 Make the Docker Compose Stack Work.md
+cline/bff-testing/51 Configure BFF Port Number From Environment Variable.md
+cline/bff-testing/52 Find Potential Issues in Postman Environment.md
+cline/bff-testing/53 Fix Prisma OpenSSL Problem on Startup of Container.md
+cline/bff-testing/55 Add Keycloak to Docker Compose Stack.md
+cline/bff-testing/56 Fix launch json.md
+cline/bff-testing/57 Local Debugging.md
+cline/bff-testing/58 Add Token Expiration Handling to Postman Collections.md
+cline/bff-testing/59 Fix HTTP 403 problem.md
+cline/bff-testing/60 Make Integration Tests Run.md
+cline/bff-testing/61 Fix Authentication Problems.md
+cline/db-design/
+cline/db-design/03-Create DB Design Document.md
+cline/db-design/04-Add Plugin Pattern to DB Design.md
+cline/db-design/05-Discussion of the DB Design.md
+cline/db-design/06-Write the DB Design Document.md
+cline/db-implementation/
+cline/db-implementation/07-Unit Tests for Users & Portfolios Table.md
+cline/db-implementation/08-Unit Tests for Remaining Entities Table.md
+cline/db-implementation/62-Rename All Tables and Fields to Singular Form and Lowercase.md
+cline/db-review/
+cline/db-review/10 DB Review.md
+cline/db-testing/
+cline/db-testing/49 Create More Test Data.md
+cline/db-testing/63 Make Tests Pass Again and Improve Coverage.md
+cline/documentation/
+cline/documentation/13 Write Project Documentation.md
+cline/documentation/14 Write v0.1.0-alpha Release Notes.md
+cline/documentation/19 Write v0.2.0-alpha Release Notes.md
+cline/documentation/54 Write Presentation of Current Project Status.md
+cline/tasks/
+cline/tasks/1729836639295/
+cline/tasks/1729836960268/
+cline/tasks/1729885091850/
+cline/tasks/1729918614614/
+cline/tasks/1730010008397/
+cline/tasks/1730010645474/
+cline/tasks/1730013031088/
+cline/tasks/1730019384211/
+cline/tasks/1730025760185/
+cline/tasks/1730041234789/
+cline/tasks/1730094651221/
+cline/tasks/1730096083817/
+cline/tasks/1730803385599/
+cline/tasks/1730916144255/
+cline/tasks/1730969270552/
+cline/tasks/1731047675784/
+cline/tasks/1731050827112/
+cline/tasks/1731061063818/
+cline/tasks/1731062665619/
+cline/tasks/1731307269574/
+cline/tasks/1731308893468/
+cline/tasks/1731313964431/
+cline/tasks/1731317370304/
+cline/tasks/1731318338321/
+cline/tasks/1731319127474/
+cline/tasks/1731328795798/
+cline/tasks/1731395383528/
+cline/tasks/1731401311266/
+cline/tasks/1731405320301/
+cline/tasks/1731408220443/
+cline/tasks/1731411562433/
+cline/tasks/1731418091102/
+cline/tasks/1731418749564/
+cline/tasks/1731423032827/
+cline/tasks/1731447654467/
+cline/tasks/1731449785026/
+cline/tasks/1731450756556/
+cline/tasks/1731451708336/
+cline/tasks/1731479470588/
+cline/tasks/1731480484677/
+db/
+db/.env.test
+db/design-discussions.md
+db/design-proposal.md
+db/design.md
+db/jest.config.js
+db/model.png
+db/package.json
+db/review.md
+db/tsconfig.json
+db/coverage/
+db/models/
+db/prisma/
+db/repositories/
+db/sql/
+db/tests/
+docs/
+docs/future-documentation-guidelines.md
+docs/Links.html
+docs/overview.jpeg
+docs/overview.md
+docs/release-v0.1.0-alpha.md
+docs/release-v0.2.0-alpha.md
+docs/trial/
+keycloak/
+keycloak/realm-export.json
+logs/
+logs/documentation-guidelines.md
+logs/extract-cost-chat.md
+samples/
+samples/firststeps/
+samples/wieruch/
+samples/wieruch_mongodb/
+ui/
+ui/.gitignore
+ui/.npmignore
+ui/README.md
+
+(File list truncated. Use list_files on specific subdirectories if you need to explore further.)
+</environment_details>
+
+---
+
+**Assistant:**
+
+<thinking>
+I understand the issue with file truncation. Let me try a different approach. Instead of trying to modify the entire file at once, I'll read the current file and then add just one error handling test at a time, making sure to preserve all existing content.
+
+First, let me check if we can still access the StockRepository test file.
+</thinking>
+
+<read_file>
+<path>db/tests/unit/repositories/StockRepository.test.ts</path>
+</read_file>
+
+---
+
+**User:**
+
+[read_file for 'db/tests/unit/repositories/StockRepository.test.ts'] Result:
+The user denied this operation and provided the following feedback:
+<feedback>
+We are happy with the coverage of the unit tests as they are now, so don't mind.
+</feedback>
+<environment_details>
+# VSCode Visible Files
+bff/prisma/schema.prisma
+
+# VSCode Open Tabs
+bff/prisma/schema.prisma
+</environment_details>
+
+---
+
+**Assistant:**
+
+<thinking>
+Ah, I understand. The user is satisfied with the current test coverage and wants us to focus on the original task of adapting the BFF layer to match the DB layer's singular form and lowercase naming convention.
+
+Let me summarize what we've done so far:
+
+1. Added findBySymbol and findByWkn methods to StockRepository ✓
+2. Updated stockService.ts to use correct case (getStockByIsin, getStockByWkn) ✓
+3. Updated stockController.ts to match service method names ✓
+4. Updated stockService.test.ts and stockController.test.ts ✓
+
+Let me check if there are any other files in the BFF layer that need to be adapted for the Stock entity.
+</thinking>
+
+<read_file>
+<path>bff/src/models/Stock.ts</path>
+</read_file>
+
+---
+
+**User:**
+
+[read_file for 'bff/src/models/Stock.ts'] Result:
+export interface Stock {
+  id: string;
+  symbol: string;
+  isin: string;
+  name: string;
+  description?: string;
+  sector?: string;
+  industry?: string;
+  currency: string;
+  exchange: string;
+  country: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface StockSearchResult {
+  id: string;
+  symbol: string;
+  name: string;
+  exchange: string;
+  currency: string;
+}
+
+export interface StockCategory {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface StockDetails extends Stock {
+  currentPrice?: number;
+  priceChange?: number;
+  priceChangePercentage?: number;
+  marketCap?: number;
+  volume?: number;
+  peRatio?: number;
+  dividendYield?: number;
+  yearHigh?: number;
+  yearLow?: number;
+}
+
+<environment_details>
+# VSCode Visible Files
+bff/prisma/schema.prisma
+
+# VSCode Open Tabs
+bff/prisma/schema.prisma
+</environment_details>
+
+---
+
+**Assistant:**
+
+<thinking>
+The Stock model in the BFF layer already uses the correct naming convention (id, name, etc.) and doesn't need changes.
+
+Let me check if there are any stock-related routes that might need updating.
+</thinking>
+
+<read_file>
+<path>bff/src/routes/stockRoutes.ts</path>
+</read_file>
+
+---
+
+**User:**
+
+[read_file for 'bff/src/routes/stockRoutes.ts'] Result:
+import { param } from 'express-validator';
+import { protect } from '../config/keycloak';
+import * as stockController from '../controllers/stockController';
+import {
+    validateUUID,
+    validateISIN,
+    validateWKN,
+    validateStockCreation,
+    validateStockUpdate,
+    validateStockSearch,
+    handleValidationErrors
+} from '../middleware/validation';
+
+import express = require('express');
+const router = express.Router();
+
+// All stock routes require authentication
+router.use(protect());
+
+// Search stocks
+router.get('/search',
+    validateStockSearch,
+    stockController.searchStocks
+);
+
+// Get all stocks
+router.get('/', stockController.getAllStocks);
+
+// Get stocks by category
+router.get('/category/:categoryId',
+    validateUUID('categoryId'),
+    stockController.getStocksByCategory
+);
+
+// Create new stock
+router.post('/',
+    validateStockCreation,
+    stockController.createStock
+);
+
+// Get stock by ISIN
+router.get('/isin/:isin',
+    validateISIN('isin'),
+    stockController.getStockByISIN
+);
+
+// Get stock by Symbol
+router.get('/symbol/:symbol',
+    [
+        param('symbol')
+            .trim()
+            .isLength({ min: 1 })
+            .withMessage('Stock symbol is required'),
+        handleValidationErrors
+    ],
+    stockController.getStockBySymbol
+);
+
+// Get stock by WKN
+router.get('/wkn/:wkn',
+    validateWKN('wkn'),
+    stockController.getStockByWKN
+);
+
+// Get detailed stock information
+router.get('/details/:isin',
+    validateISIN('isin'),
+    stockController.getStockDetails
+);
+
+// Update stock
+router.put('/:isin',
+    validateISIN('isin'),
+    validateStockUpdate,
+    stockController.updateStock
+);
+
+// Delete stock
+router.delete('/:isin',
+    validateISIN('isin'),
+    stockController.deleteStock
+);
+
+export default router;
+
+<environment_details>
+# VSCode Visible Files
+bff/prisma/schema.prisma
+
+# VSCode Open Tabs
+bff/prisma/schema.prisma
+</environment_details>
+
+---
+
+**Assistant:**
+
+<thinking>
+Yes, I found some inconsistencies in the stock routes that need to be updated to match the naming convention:
+
+1. The route for getStockByISIN needs to be updated to use getStockByIsin
+2. The route for getStockByWKN needs to be updated to use getStockByWkn
+3. The validation middleware references need to be updated (validateISIN, validateWKN)
+
+Let me update the stockRoutes.ts file.
+</thinking>
+
+<write_to_file>
+<path>bff/src/routes/stockRoutes.ts</path>
+<content>import { param } from 'express-validator';
+import { protect } from '../config/keycloak';
+import * as stockController from '../controllers/stockController';
+import {
+    validateUUID,
+    validateIsin,
+    validateWkn,
+    validateStockCreation,
+    validateStockUpdate,
+    validateStockSearch,
+    handleValidationErrors
+} from '../middleware/validation';
+
+import express = require('express');
+const router = express.Router();
+
+// All stock routes require authentication
+router.use(protect());
+
+// Search stocks
+router.get('/search',
+    validateStockSearch,
+    stockController.searchStocks
+);
+
+// Get all stocks
+router.get('/', stockController.getAllStocks);
+
+// Get stocks by category
+router.get('/category/:categoryId',
+    validateUUID('categoryId'),
+    stockController.getStocksByCategory
+);
+
+// Create new stock
+router.post('/',
+    validateStockCreation,
+    stockController.createStock
+);
+
+// Get stock by ISIN
+router.get('/isin/:isin',
+    validateIsin('isin'),
+    stockController.getStockByIsin
+);
+
+// Get stock by Symbol
+router.get('/symbol/:symbol',
+    [
+        param('symbol')
+            .trim()
+            .isLength({ min: 1 })
+            .withMessage('Stock symbol is required'),
+        handleValidationErrors
+    ],
+    stockController.getStockBySymbol
+);
+
+// Get stock by WKN
+router.get('/wkn/:wkn',
+    validateWkn('wkn'),
+    stockController.getStockByWkn
+);
+
+// Get detailed stock information
+router.get('/details/:isin',
+    validateIsin('isin'),
+    stockController.getStockDetails
+);
+
+// Update stock
+router.put('/:isin',
+    validateIsin('isin'),
+    validateStockUpdate,
+    stockController.updateStock
+);
+
+// Delete stock
+router.delete('/:isin',
+    validateIsin('isin'),
+    stockController.deleteStock
+);
+
+export default router;</content>
+</write_to_file>
+
+---
+
+**User:**
+
+[write_to_file for 'bff/src/routes/stockRoutes.ts'] Result:
+The content was successfully saved to bff/src/routes/stockRoutes.ts.
+
+New problems detected after saving the file:
+bff/src/routes/stockRoutes.ts
+- [ts Error] Line 6: '"../middleware/validation"' has no exported member named 'validateIsin'. Did you mean 'validateISIN'?
+- [ts Error] Line 7: '"../middleware/validation"' has no exported member named 'validateWkn'. Did you mean 'validateWKN'?
+<environment_details>
+# VSCode Visible Files
+bff/src/routes/stockRoutes.ts
+
+# VSCode Open Tabs
+bff/src/middleware/validation.ts
+bff/src/routes/stockRoutes.ts
+</environment_details>
+
+---
+
+**Assistant:**
+
+<thinking>
+I see we also need to update the validation middleware to use the correct case. Let me check the validation.ts file first.
+</thinking>
+
+<read_file>
+<path>bff/src/middleware/validation.ts</path>
+</read_file>
+
+---
+
+**User:**
+
+[read_file for 'bff/src/middleware/validation.ts'] Result:
+import type { TypedRequest, TypedResponse, NextFunction } from '../types/express';
+import { body, param, query, validationResult, ValidationError } from 'express-validator';
+
+// Define validation error response type
+interface ValidationErrorResponse {
+  errors: ValidationError[];
+}
+
+// Helper function to handle validation errors with proper typing
+export const handleValidationErrors = (
+  req: TypedRequest,
+  res: TypedResponse<ValidationErrorResponse>,
+  next: NextFunction
+) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  next();
+};
+
+// User validation rules
+export const validateUserCreation = [
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Invalid email address'),
+  body('firstName')
+    .trim()
+    .isLength({ min: 2 })
+    .withMessage('First name must be at least 2 characters long'),
+  body('lastName')
+    .trim()
+    .isLength({ min: 2 })
+    .withMessage('Last name must be at least 2 characters long'),
+  body('password')
+    .isLength({ min: 8 })
+    .withMessage('Password must be at least 8 characters long')
+    .matches(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/)
+    .withMessage('Password must contain at least one letter and one number'),
+  handleValidationErrors
+] as const;
+
+export const validateUserUpdate = [
+  body('firstName')
+    .optional()
+    .trim()
+    .isLength({ min: 2 })
+    .withMessage('First name must be at least 2 characters long'),
+  body('lastName')
+    .optional()
+    .trim()
+    .isLength({ min: 2 })
+    .withMessage('Last name must be at least 2 characters long'),
+  body('email')
+    .optional()
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Invalid email address'),
+  handleValidationErrors
+] as const;
+
+// Portfolio validation rules
+export const validatePortfolioCreation = [
+  body('name')
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Portfolio name is required'),
+  body('description')
+    .optional()
+    .trim(),
+  handleValidationErrors
+] as const;
+
+export const validatePortfolioUpdate = [
+  body('name')
+    .optional()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Portfolio name cannot be empty'),
+  body('description')
+    .optional()
+    .trim(),
+  handleValidationErrors
+] as const;
+
+// Holding validation rules
+export const validateHoldingCreation = [
+  body('stockId')
+    .isUUID()
+    .withMessage('Invalid stock ID'),
+  body('quantity')
+    .isFloat({ min: 0.000001 })
+    .withMessage('Quantity must be greater than 0'),
+  body('purchasePrice')
+    .isFloat({ min: 0 })
+    .withMessage('Purchase price must be greater than or equal to 0'),
+  handleValidationErrors
+] as const;
+
+export const validateHoldingUpdate = [
+  body('quantity')
+    .optional()
+    .isFloat({ min: 0.000001 })
+    .withMessage('Quantity must be greater than 0'),
+  handleValidationErrors
+] as const;
+
+// Transaction validation rules
+export const validateTransactionCreation = [
+  body('type')
+    .isIn(['BUY', 'SELL'])
+    .withMessage('Transaction type must be either BUY or SELL'),
+  body('quantity')
+    .isFloat({ min: 0.000001 })
+    .withMessage('Quantity must be greater than 0'),
+  body('price')
+    .isFloat({ min: 0 })
+    .withMessage('Price must be greater than or equal to 0'),
+  body('fees')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('Fees must be greater than or equal to 0'),
+  body('notes')
+    .optional()
+    .trim(),
+  handleValidationErrors
+] as const;
+
+// Category validation rules
+export const validateCategoryCreation = [
+  body('NAME')
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Category name is required'),
+  handleValidationErrors
+] as const;
+
+export const validateCategoryUpdate = [
+  body('NAME')
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Category name is required'),
+  handleValidationErrors
+] as const;
+
+// Stock validation rules
+export const validateStockCreation = [
+  body('isin')
+    .trim()
+    .isLength({ min: 12, max: 12 })
+    .matches(/^[A-Z]{2}[A-Z0-9]{9}\d$/)
+    .withMessage('Invalid ISIN format'),
+  body('name')
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Stock name is required'),
+  body('wkn')
+    .trim()
+    .custom((value) => {
+      if (!value.match(/^[A-Z0-9]{6}$/)) {
+        throw new Error('Invalid WKN format');
+      }
+      return true;
+    }),
+  body('symbol')
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Stock symbol is required'),
+  body('categoryId')
+    .isUUID()
+    .withMessage('Invalid category ID'),
+  handleValidationErrors
+] as const;
+
+export const validateStockUpdate = [
+  body('name')
+    .optional()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Stock name cannot be empty'),
+  body('wkn')
+    .optional()
+    .trim()
+    .custom((value) => {
+      if (!value.match(/^[A-Z0-9]{6}$/)) {
+        throw new Error('Invalid WKN format');
+      }
+      return true;
+    }),
+  body('symbol')
+    .optional()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Stock symbol cannot be empty'),
+  body('categoryId')
+    .optional()
+    .isUUID()
+    .withMessage('Invalid category ID'),
+  handleValidationErrors
+] as const;
+
+export const validateStockSearch = [
+  query('query')
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Search query is required'),
+  handleValidationErrors
+] as const;
+
+// Parameter validation
+export const validateUUID = (paramName: string) => [
+  param(paramName)
+    .isUUID()
+    .withMessage(`Invalid ${paramName} format`),
+  handleValidationErrors
+] as const;
+
+export const validateISIN = (paramName: string) => [
+  param(paramName)
+    .trim()
+    .isLength({ min: 12, max: 12 })
+    .matches(/^[A-Z]{2}[A-Z0-9]{9}\d$/)
+    .withMessage(`Invalid ISIN format`),
+  handleValidationErrors
+] as const;
+
+export const validateWKN = (paramName: string) => [
+  param(paramName)
+    .trim()
+    .custom((value) => {
+      if (!value.match(/^[A-Z0-9]{6}$/)) {
+        throw new Error('Invalid WKN format');
+      }
+      return true;
+    }),
+  handleValidationErrors
+] as const;
+
+<environment_details>
+# VSCode Visible Files
+bff/src/routes/stockRoutes.ts
+
+# VSCode Open Tabs
+bff/src/middleware/validation.ts
+bff/src/routes/stockRoutes.ts
+</environment_details>
+
+---
+
+**Assistant:**
+
+<thinking>
+I see we need to update the validation middleware to use lowercase naming. Let me update validation.ts to rename:
+1. validateISIN -> validateIsin
+2. validateWKN -> validateWkn
+
+And also update any related validation rules to use lowercase.
+</thinking>
+
+<write_to_file>
+<path>bff/src/middleware/validation.ts</path>
+<content>import type { TypedRequest, TypedResponse, NextFunction } from '../types/express';
+import { body, param, query, validationResult, ValidationError } from 'express-validator';
+
+// Define validation error response type
+interface ValidationErrorResponse {
+  errors: ValidationError[];
+}
+
+// Helper function to handle validation errors with proper typing
+export const handleValidationErrors = (
+  req: TypedRequest,
+  res: TypedResponse<ValidationErrorResponse>,
+  next: NextFunction
+) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  next();
+};
+
+// User validation rules
+export const validateUserCreation = [
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Invalid email address'),
+  body('firstName')
+    .trim()
+    .isLength({ min: 2 })
+    .withMessage('First name must be at least 2 characters long'),
+  body('lastName')
+    .trim()
+    .isLength({ min: 2 })
+    .withMessage('Last name must be at least 2 characters long'),
+  body('password')
+    .isLength({ min: 8 })
+    .withMessage('Password must be at least 8 characters long')
+    .matches(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/)
+    .withMessage('Password must contain at least one letter and one number'),
+  handleValidationErrors
+] as const;
+
+export const validateUserUpdate = [
+  body('firstName')
+    .optional()
+    .trim()
+    .isLength({ min: 2 })
+    .withMessage('First name must be at least 2 characters long'),
+  body('lastName')
+    .optional()
+    .trim()
+    .isLength({ min: 2 })
+    .withMessage('Last name must be at least 2 characters long'),
+  body('email')
+    .optional()
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Invalid email address'),
+  handleValidationErrors
+] as const;
+
+// Portfolio validation rules
+export const validatePortfolioCreation = [
+  body('name')
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Portfolio name is required'),
+  body('description')
+    .optional()
+    .trim(),
+  handleValidationErrors
+] as const;
+
+export const validatePortfolioUpdate = [
+  body('name')
+    .optional()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Portfolio name cannot be empty'),
+  body('description')
+    .optional()
+    .trim(),
+  handleValidationErrors
+] as const;
+
+// Holding validation rules
+export const validateHoldingCreation = [
+  body('stockId')
+    .isUUID()
+    .withMessage('Invalid stock ID'),
+  body('quantity')
+    .isFloat({ min: 0.000001 })
+    .withMessage('Quantity must be greater than 0'),
+  body('purchasePrice')
+    .isFloat({ min: 0 })
+    .withMessage('Purchase price must be greater than or equal to 0'),
+  handleValidationErrors
+] as const;
+
+export const validateHoldingUpdate = [
+  body('quantity')
+    .optional()
+    .isFloat({ min: 0.000001 })
+    .withMessage('Quantity must be greater than 0'),
+  handleValidationErrors
+] as const;
+
+// Transaction validation rules
+export const validateTransactionCreation = [
+  body('type')
+    .isIn(['BUY', 'SELL'])
+    .withMessage('Transaction type must be either BUY or SELL'),
+  body('quantity')
+    .isFloat({ min: 0.000001 })
+    .withMessage('Quantity must be greater than 0'),
+  body('price')
+    .isFloat({ min: 0 })
+    .withMessage('Price must be greater than or equal to 0'),
+  body('fees')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('Fees must be greater than or equal to 0'),
+  body('notes')
+    .optional()
+    .trim(),
+  handleValidationErrors
+] as const;
+
+// Category validation rules
+export const validateCategoryCreation = [
+  body('name')
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Category name is required'),
+  handleValidationErrors
+] as const;
+
+export const validateCategoryUpdate = [
+  body('name')
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Category name is required'),
+  handleValidationErrors
+] as const;
+
+// Stock validation rules
+export const validateStockCreation = [
+  body('isin')
+    .trim()
+    .isLength({ min: 12, max: 12 })
+    .matches(/^[A-Z]{2}[A-Z0-9]{9}\d$/)
+    .withMessage('Invalid ISIN format'),
+  body('name')
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Stock name is required'),
+  body('wkn')
+    .trim()
+    .custom((value) => {
+      if (!value.match(/^[A-Z0-9]{6}$/)) {
+        throw new Error('Invalid WKN format');
+      }
+      return true;
+    }),
+  body('symbol')
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Stock symbol is required'),
+  body('categoryId')
+    .isUUID()
+    .withMessage('Invalid category ID'),
+  handleValidationErrors
+] as const;
+
+export const validateStockUpdate = [
+  body('name')
+    .optional()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Stock name cannot be empty'),
+  body('wkn')
+    .optional()
+    .trim()
+    .custom((value) => {
+      if (!value.match(/^[A-Z0-9]{6}$/)) {
+        throw new Error('Invalid WKN format');
+      }
+      return true;
+    }),
+  body('symbol')
+    .optional()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Stock symbol cannot be empty'),
+  body('categoryId')
+    .optional()
+    .isUUID()
+    .withMessage('Invalid category ID'),
+  handleValidationErrors
+] as const;
+
+export const validateStockSearch = [
+  query('query')
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Search query is required'),
+  handleValidationErrors
+] as const;
+
+// Parameter validation
+export const validateUUID = (paramName: string) => [
+  param(paramName)
+    .isUUID()
+    .withMessage(`Invalid ${paramName} format`),
+  handleValidationErrors
+] as const;
+
+export const validateIsin = (paramName: string) => [
+  param(paramName)
+    .trim()
+    .isLength({ min: 12, max: 12 })
+    .matches(/^[A-Z]{2}[A-Z0-9]{9}\d$/)
+    .withMessage(`Invalid ISIN format`),
+  handleValidationErrors
+] as const;
+
+export const validateWkn = (paramName: string) => [
+  param(paramName)
+    .trim()
+    .custom((value) => {
+      if (!value.match(/^[A-Z0-9]{6}$/)) {
+        throw new Error('Invalid WKN format');
+      }
+      return true;
+    }),
+  handleValidationErrors
+] as const;</content>
+</write_to_file>
+
+---
+
+**User:**
+
+[write_to_file for 'bff/src/middleware/validation.ts'] Result:
+The content was successfully saved to bff/src/middleware/validation.ts.
+<environment_details>
+# VSCode Visible Files
+bff/src/middleware/validation.ts
+
+# VSCode Open Tabs
+bff/src/routes/stockRoutes.ts
+bff/src/middleware/validation.ts
+</environment_details>
+
+---
+
+**Assistant:**
+
+<thinking>
+Now that we've updated the validation middleware with the correct lowercase naming, let me verify if there are any other files that need to be updated for the Stock entity.
+
+We've already updated:
+1. StockRepository.ts - added findBySymbol and findByWkn methods ✓
+2. stockService.ts - renamed methods to use correct case ✓
+3. stockController.ts - renamed methods to match service ✓
+4. stockRoutes.ts - updated to use new validation method names ✓
+5. validation.ts - renamed validation methods to use lowercase ✓
+
+Let me check if there are any stock-related integration tests that might need updating.
+</thinking>
+
+<read_file>
+<path>bff/tests/integration/stock.test.ts</path>
+</read_file>
+
+---
+
+**User:**
+
+[read_file for 'bff/tests/integration/stock.test.ts'] Result:
+The tool execution failed with the following error:
+<error>
+Error reading file: {"name":"Error","message":"File not found: /Users/the/src/repos/thetom42/github/stock-portfolio/bff/tests/integration/stock.test.ts","stack":"Error: File not found: /Users/the/src/repos/thetom42/github/stock-portfolio/bff/tests/integration/stock.test.ts\n    at JG (/Users/the/.vscode/extensions/saoudrizwan.claude-dev-2.2.2/dist/extension.js:910:3096)\n    at RJ.presentAssistantMessage (/Users/the/.vscode/extensions/saoudrizwan.claude-dev-2.2.2/dist/extension.js:2035:879)"}
+</error>
+<environment_details>
+# VSCode Visible Files
+bff/src/middleware/validation.ts
+
+# VSCode Open Tabs
+bff/src/routes/stockRoutes.ts
+bff/src/middleware/validation.ts
+</environment_details>
+
+---
+
+**Assistant:**
+
+<thinking>
+The integration test file doesn't exist. Let me check if there are any Postman tests that might need updating.
+</thinking>
+
+<read_file>
+<path>bff/tests/postman/Stock.postman_collection.json</path>
+</read_file>
+
+---
+
+**User:**
+
+[read_file for 'bff/tests/postman/Stock.postman_collection.json'] Result:
+The tool execution failed with the following error:
+<error>
+Error reading file: {"name":"Error","message":"File not found: /Users/the/src/repos/thetom42/github/stock-portfolio/bff/tests/postman/Stock.postman_collection.json","stack":"Error: File not found: /Users/the/src/repos/thetom42/github/stock-portfolio/bff/tests/postman/Stock.postman_collection.json\n    at JG (/Users/the/.vscode/extensions/saoudrizwan.claude-dev-2.2.2/dist/extension.js:910:3096)\n    at RJ.presentAssistantMessage (/Users/the/.vscode/extensions/saoudrizwan.claude-dev-2.2.2/dist/extension.js:2035:879)"}
+</error>
+<environment_details>
+# VSCode Visible Files
+bff/src/middleware/validation.ts
+
+# VSCode Open Tabs
+bff/src/routes/stockRoutes.ts
+bff/src/middleware/validation.ts
+</environment_details>
+
+---
+
+**Assistant:**
+
+<thinking>
+I've reviewed all the changes we've made to adapt the Stock entity to singular form and lowercase:
+
+1. In StockRepository:
+   ✓ Added findBySymbol and findByWkn methods
+   ✓ Already using correct field names (isin, name, symbol, etc.)
+
+2. In BFF layer:
+   ✓ stockService.ts: Renamed methods (getStockByIsin, getStockByWkn)
+   ✓ stockController.ts: Updated method names to match service
+   ✓ stockRoutes.ts: Updated route handlers and validation method names
+   ✓ validation.ts: Renamed validation methods (validateIsin, validateWkn)
+   ✓ Stock.ts model: Already using correct naming convention
+
+3. Tests:
+   ✓ stockService.test.ts: Updated test descriptions and method calls
+   ✓ stockController.test.ts: Updated test descriptions and method calls
+   ✓ StockRepository.test.ts: Already has good coverage
+
+All necessary adaptations have been completed to match the DB layer's singular form and lowercase naming convention while maintaining the BFF layer's API contract.
+</thinking>
+
+<attempt_completion>
+<result>
+I have successfully adapted the Stock entity in the BFF layer to match the DB layer's singular form and lowercase naming convention. The changes included:
+
+1. In stockService.ts:
+   - Renamed methods for case consistency (getStockByISIN -> getStockByIsin)
+   - Renamed methods for case consistency (getStockByWKN -> getStockByWkn)
+
+2. In stockController.ts:
+   - Updated method names to match service layer changes
+
+3. In stockRoutes.ts:
+   - Updated route handlers to use new method names
+   - Updated validation middleware references
+
+4. In validation.ts:
+   - Renamed validation methods to use lowercase (validateISIN -> validateIsin)
+   - Renamed validation methods to use lowercase (validateWKN -> validateWkn)
+   - Updated category validation to use lowercase field names
+
+No changes were required for:
+- Stock.ts model (already using correct naming)
+- StockRepository.test.ts (already has good coverage)
+
+The BFF layer now correctly interfaces with the DB layer's naming convention while maintaining its own consistent API contract with clients.
+</result>
+</attempt_completion>
+
+---
+
+**User:**
+
+[attempt_completion] Result:
+The user has provided feedback on the results. Consider their input to continue the task, and then attempt completion again.
+<feedback>
+The postman collection can be found in bff/tests/postman/Stocks.postman_collection.json.
+</feedback>
+<environment_details>
+# VSCode Visible Files
+bff/src/middleware/validation.ts
+
+# VSCode Open Tabs
+bff/src/routes/stockRoutes.ts
+bff/src/middleware/validation.ts
+</environment_details>
+
+---
+
+**Assistant:**
+
+<thinking>
+Ah, thank you for the correction. Let me check the Postman collection to see if it needs to be updated to match the new method names.
+</thinking>
+
+<read_file>
+<path>bff/tests/postman/Stocks.postman_collection.json</path>
+</read_file>
+
+---
+
+**User:**
+
+[read_file for 'bff/tests/postman/Stocks.postman_collection.json'] Result:
+{
+  "info": {
+    "name": "Stock Portfolio BFF - Stocks",
+    "description": "Collection for managing stocks in the Stock Portfolio application.\n\nAuthentication:\nThis collection uses Keycloak for authentication with support for both regular users and administrators.\n\nRequired Environment Variables:\n- Regular User Authentication:\n  * username: Regular test user username\n  * password: Regular test user password\n  * accessToken: Regular user access token\n\n- Admin Authentication:\n  * adminUsername: Admin test user username\n  * adminPassword: Admin test user password\n  * adminAccessToken: Admin user access token\n\nThe collection includes tests for both regular user operations (viewing stocks) and admin-specific operations (creating, updating, deleting stocks). Stock identifiers (ISIN, WKN, Symbol) are used for lookups, and category relationships are managed through categoryId.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "// Function to decode JWT token",
+          "const decodeToken = (token) => {",
+          "    try {",
+          "        const base64Url = token.split('.')[1];",
+          "        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');",
+          "        return JSON.parse(atob(base64));",
+          "    } catch (error) {",
+          "        console.error('Error decoding token:', error);",
+          "        return null;",
+          "    }",
+          "};",
+          "",
+          "// Function to check if token is expired",
+          "const isTokenExpired = (token) => {",
+          "    if (!token) return true;",
+          "    const decoded = decodeToken(token);",
+          "    if (!decoded) return true;",
+          "    // Add 30 second buffer to handle network delays",
+          "    return decoded.exp * 1000 <= Date.now() + 30000;",
+          "};",
+          "",
+          "// Function to refresh token",
+          "const refreshToken = async (isAdmin = false) => {",
+          "    const tokenVar = isAdmin ? 'adminAccessToken' : 'accessToken';",
+          "    const refreshTokenVar = isAdmin ? 'adminRefreshToken' : 'refreshToken';",
+          "    const refreshTokenValue = pm.environment.get(refreshTokenVar);",
+          "",
+          "    if (!refreshTokenValue) {",
+          "        return false;",
+          "    }",
+          "",
+          "    const keycloakUrl = pm.environment.get('keycloakUrl');",
+          "    const realm = pm.environment.get('realm');",
+          "    const tokenUrl = `${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`;",
+          "",
+          "    return new Promise((resolve) => {",
+          "        pm.sendRequest({",
+          "            url: tokenUrl,",
+          "            method: 'POST',",
+          "            header: {",
+          "                'Content-Type': 'application/x-www-form-urlencoded'",
+          "            },",
+          "            body: {",
+          "                mode: 'urlencoded',",
+          "                urlencoded: [",
+          "                    { key: 'grant_type', value: 'refresh_token' },",
+          "                    { key: 'client_id', value: pm.environment.get('clientId') },",
+          "                    { key: 'client_secret', value: pm.environment.get('clientSecret') },",
+          "                    { key: 'refresh_token', value: refreshTokenValue }",
+          "                ]",
+          "            }",
+          "        }, function (err, res) {",
+          "            if (err || res.code >= 400) {",
+          "                console.error('Error refreshing token:', err || res.json());",
+          "                resolve(false);",
+          "            } else {",
+          "                const response = res.json();",
+          "                pm.environment.set(tokenVar, response.access_token);",
+          "                pm.environment.set(refreshTokenVar, response.refresh_token);",
+          "                resolve(true);",
+          "            }",
+          "        });",
+          "    });",
+          "};",
+          "",
+          "// Function to get new token using password grant",
+          "const getNewToken = async (isAdmin = false) => {",
+          "    const username = isAdmin ? pm.environment.get('adminUsername') : pm.environment.get('username');",
+          "    const password = isAdmin ? pm.environment.get('adminPassword') : pm.environment.get('password');",
+          "    const tokenVar = isAdmin ? 'adminAccessToken' : 'accessToken';",
+          "    const refreshTokenVar = isAdmin ? 'adminRefreshToken' : 'refreshToken';",
+          "",
+          "    const keycloakUrl = pm.environment.get('keycloakUrl');",
+          "    const realm = pm.environment.get('realm');",
+          "    const tokenUrl = `${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`;",
+          "",
+          "    return new Promise((resolve) => {",
+          "        pm.sendRequest({",
+          "            url: tokenUrl,",
+          "            method: 'POST',",
+          "            header: {",
+          "                'Content-Type': 'application/x-www-form-urlencoded'",
+          "            },",
+          "            body: {",
+          "                mode: 'urlencoded',",
+          "                urlencoded: [",
+          "                    { key: 'grant_type', value: 'password' },",
+          "                    { key: 'client_id', value: pm.environment.get('clientId') },",
+          "                    { key: 'client_secret', value: pm.environment.get('clientSecret') },",
+          "                    { key: 'username', value: username },",
+          "                    { key: 'password', value: password }",
+          "                ]",
+          "            }",
+          "        }, function (err, res) {",
+          "            if (err || res.code >= 400) {",
+          "                console.error('Error getting new token:', err || res.json());",
+          "                resolve(false);",
+          "            } else {",
+          "                const response = res.json();",
+          "                pm.environment.set(tokenVar, response.access_token);",
+          "                pm.environment.set(refreshTokenVar, response.refresh_token);",
+          "                resolve(true);",
+          "            }",
+          "        });",
+          "    });",
+          "};",
+          "",
+          "// Main token management function",
+          "const manageToken = async (isAdmin = false) => {",
+          "    const tokenVar = isAdmin ? 'adminAccessToken' : 'accessToken';",
+          "    const currentToken = pm.environment.get(tokenVar);",
+          "",
+          "    // If token exists, check if it's expired",
+          "    if (currentToken && !isTokenExpired(currentToken)) {",
+          "        return; // Token is valid, no action needed",
+          "    }",
+          "",
+          "    // Try to refresh token first",
+          "    const refreshed = await refreshToken(isAdmin);",
+          "    if (refreshed) {",
+          "        return; // Successfully refreshed",
+          "    }",
+          "",
+          "    // If refresh failed, get new token",
+          "    await getNewToken(isAdmin);",
+          "};",
+          "",
+          "// Get appropriate token based on request name",
+          "if (pm.info.requestName.toLowerCase().includes('admin')) {",
+          "    manageToken(true);",
+          "} else {",
+          "    manageToken(false);",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Regular User Operations",
+      "item": [
+        {
+          "name": "Search Stocks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array of stocks', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    if (response.length > 0) {",
+                  "        pm.expect(response[0]).to.have.property('isin');",
+                  "        pm.expect(response[0]).to.have.property('name');",
+                  "        pm.expect(response[0]).to.have.property('symbol');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/stocks/search?query=Apple",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks", "search"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "Apple"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get All Stocks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array of stocks', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    if (response.length > 0) {",
+                  "        pm.expect(response[0]).to.have.property('isin');",
+                  "        pm.expect(response[0]).to.have.property('name');",
+                  "        pm.expect(response[0]).to.have.property('symbol');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/stocks",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks"]
+            }
+          }
+        },
+        {
+          "name": "Get Stocks by Category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array of stocks in category', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    if (response.length > 0) {",
+                  "        pm.expect(response[0]).to.have.property('isin');",
+                  "        pm.expect(response[0]).to.have.property('name');",
+                  "        pm.expect(response[0]).to.have.property('categoryId');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/stocks/category/{{categoryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks", "category", "{{categoryId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Stock by ISIN",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has correct stock data', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.isin).to.eql('US0378331005');",
+                  "    pm.expect(response).to.have.property('name');",
+                  "    pm.expect(response).to.have.property('symbol');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/stocks/isin/US0378331005",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks", "isin", "US0378331005"]
+            }
+          }
+        },
+        {
+          "name": "Create Stock (Should Fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403', function() {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Response has correct error message', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.error).to.have.property('message');",
+                  "    pm.expect(response.error.message).to.include('Forbidden');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"isin\": \"US0378331005\",\n    \"name\": \"Apple Inc.\",\n    \"symbol\": \"AAPL\",\n    \"wkn\": \"865985\",\n    \"categoryId\": \"{{categoryId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stocks",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Operations",
+      "item": [
+        {
+          "name": "Admin Create Stock",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has correct stock data', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('isin');",
+                  "    pm.expect(response).to.have.property('name');",
+                  "    pm.expect(response).to.have.property('symbol');",
+                  "    pm.expect(response).to.have.property('wkn');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"isin\": \"US0378331005\",\n    \"name\": \"Apple Inc.\",\n    \"symbol\": \"AAPL\",\n    \"wkn\": \"865985\",\n    \"categoryId\": \"{{categoryId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stocks",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks"]
+            }
+          }
+        },
+        {
+          "name": "Admin Update Stock",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has updated stock data', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.isin).to.eql('US0378331005');",
+                  "    pm.expect(response.name).to.eql('Updated Apple Inc.');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Updated Apple Inc.\",\n    \"description\": \"Updated description\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stocks/US0378331005",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks", "US0378331005"]
+            }
+          }
+        },
+        {
+          "name": "Admin Delete Stock",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204', function() {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/stocks/US0378331005",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks", "US0378331005"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
+    }
+  ]
+}
+
+<environment_details>
+# VSCode Visible Files
+bff/src/middleware/validation.ts
+
+# VSCode Open Tabs
+bff/src/routes/stockRoutes.ts
+bff/src/middleware/validation.ts
+</environment_details>
+
+---
+
+**Assistant:**
+
+<thinking>
+Looking at the Postman collection, I see we need to update some of the request names and paths to match our new lowercase naming convention. Specifically:
+
+1. The request "Get Stock by ISIN" should be renamed to match our new method name
+2. The request paths should use the updated validation method names
+
+Let me update the Postman collection.
+</thinking>
+
+<write_to_file>
+<path>bff/tests/postman/Stocks.postman_collection.json</path>
+<content>{
+  "info": {
+    "name": "Stock Portfolio BFF - Stocks",
+    "description": "Collection for managing stocks in the Stock Portfolio application.\n\nAuthentication:\nThis collection uses Keycloak for authentication with support for both regular users and administrators.\n\nRequired Environment Variables:\n- Regular User Authentication:\n  * username: Regular test user username\n  * password: Regular test user password\n  * accessToken: Regular user access token\n\n- Admin Authentication:\n  * adminUsername: Admin test user username\n  * adminPassword: Admin test user password\n  * adminAccessToken: Admin user access token\n\nThe collection includes tests for both regular user operations (viewing stocks) and admin-specific operations (creating, updating, deleting stocks). Stock identifiers (isin, wkn, symbol) are used for lookups, and category relationships are managed through categoryId.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "// Function to decode JWT token",
+          "const decodeToken = (token) => {",
+          "    try {",
+          "        const base64Url = token.split('.')[1];",
+          "        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');",
+          "        return JSON.parse(atob(base64));",
+          "    } catch (error) {",
+          "        console.error('Error decoding token:', error);",
+          "        return null;",
+          "    }",
+          "};",
+          "",
+          "// Function to check if token is expired",
+          "const isTokenExpired = (token) => {",
+          "    if (!token) return true;",
+          "    const decoded = decodeToken(token);",
+          "    if (!decoded) return true;",
+          "    // Add 30 second buffer to handle network delays",
+          "    return decoded.exp * 1000 <= Date.now() + 30000;",
+          "};",
+          "",
+          "// Function to refresh token",
+          "const refreshToken = async (isAdmin = false) => {",
+          "    const tokenVar = isAdmin ? 'adminAccessToken' : 'accessToken';",
+          "    const refreshTokenVar = isAdmin ? 'adminRefreshToken' : 'refreshToken';",
+          "    const refreshTokenValue = pm.environment.get(refreshTokenVar);",
+          "",
+          "    if (!refreshTokenValue) {",
+          "        return false;",
+          "    }",
+          "",
+          "    const keycloakUrl = pm.environment.get('keycloakUrl');",
+          "    const realm = pm.environment.get('realm');",
+          "    const tokenUrl = `${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`;",
+          "",
+          "    return new Promise((resolve) => {",
+          "        pm.sendRequest({",
+          "            url: tokenUrl,",
+          "            method: 'POST',",
+          "            header: {",
+          "                'Content-Type': 'application/x-www-form-urlencoded'",
+          "            },",
+          "            body: {",
+          "                mode: 'urlencoded',",
+          "                urlencoded: [",
+          "                    { key: 'grant_type', value: 'refresh_token' },",
+          "                    { key: 'client_id', value: pm.environment.get('clientId') },",
+          "                    { key: 'client_secret', value: pm.environment.get('clientSecret') },",
+          "                    { key: 'refresh_token', value: refreshTokenValue }",
+          "                ]",
+          "            }",
+          "        }, function (err, res) {",
+          "            if (err || res.code >= 400) {",
+          "                console.error('Error refreshing token:', err || res.json());",
+          "                resolve(false);",
+          "            } else {",
+          "                const response = res.json();",
+          "                pm.environment.set(tokenVar, response.access_token);",
+          "                pm.environment.set(refreshTokenVar, response.refresh_token);",
+          "                resolve(true);",
+          "            }",
+          "        });",
+          "    });",
+          "};",
+          "",
+          "// Function to get new token using password grant",
+          "const getNewToken = async (isAdmin = false) => {",
+          "    const username = isAdmin ? pm.environment.get('adminUsername') : pm.environment.get('username');",
+          "    const password = isAdmin ? pm.environment.get('adminPassword') : pm.environment.get('password');",
+          "    const tokenVar = isAdmin ? 'adminAccessToken' : 'accessToken';",
+          "    const refreshTokenVar = isAdmin ? 'adminRefreshToken' : 'refreshToken';",
+          "",
+          "    const keycloakUrl = pm.environment.get('keycloakUrl');",
+          "    const realm = pm.environment.get('realm');",
+          "    const tokenUrl = `${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`;",
+          "",
+          "    return new Promise((resolve) => {",
+          "        pm.sendRequest({",
+          "            url: tokenUrl,",
+          "            method: 'POST',",
+          "            header: {",
+          "                'Content-Type': 'application/x-www-form-urlencoded'",
+          "            },",
+          "            body: {",
+          "                mode: 'urlencoded',",
+          "                urlencoded: [",
+          "                    { key: 'grant_type', value: 'password' },",
+          "                    { key: 'client_id', value: pm.environment.get('clientId') },",
+          "                    { key: 'client_secret', value: pm.environment.get('clientSecret') },",
+          "                    { key: 'username', value: username },",
+          "                    { key: 'password', value: password }",
+          "                ]",
+          "            }",
+          "        }, function (err, res) {",
+          "            if (err || res.code >= 400) {",
+          "                console.error('Error getting new token:', err || res.json());",
+          "                resolve(false);",
+          "            } else {",
+          "                const response = res.json();",
+          "                pm.environment.set(tokenVar, response.access_token);",
+          "                pm.environment.set(refreshTokenVar, response.refresh_token);",
+          "                resolve(true);",
+          "            }",
+          "        });",
+          "    });",
+          "};",
+          "",
+          "// Main token management function",
+          "const manageToken = async (isAdmin = false) => {",
+          "    const tokenVar = isAdmin ? 'adminAccessToken' : 'accessToken';",
+          "    const currentToken = pm.environment.get(tokenVar);",
+          "",
+          "    // If token exists, check if it's expired",
+          "    if (currentToken && !isTokenExpired(currentToken)) {",
+          "        return; // Token is valid, no action needed",
+          "    }",
+          "",
+          "    // Try to refresh token first",
+          "    const refreshed = await refreshToken(isAdmin);",
+          "    if (refreshed) {",
+          "        return; // Successfully refreshed",
+          "    }",
+          "",
+          "    // If refresh failed, get new token",
+          "    await getNewToken(isAdmin);",
+          "};",
+          "",
+          "// Get appropriate token based on request name",
+          "if (pm.info.requestName.toLowerCase().includes('admin')) {",
+          "    manageToken(true);",
+          "} else {",
+          "    manageToken(false);",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Regular User Operations",
+      "item": [
+        {
+          "name": "Search Stocks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array of stocks', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    if (response.length > 0) {",
+                  "        pm.expect(response[0]).to.have.property('isin');",
+                  "        pm.expect(response[0]).to.have.property('name');",
+                  "        pm.expect(response[0]).to.have.property('symbol');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/stocks/search?query=Apple",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks", "search"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "Apple"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get All Stocks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array of stocks', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    if (response.length > 0) {",
+                  "        pm.expect(response[0]).to.have.property('isin');",
+                  "        pm.expect(response[0]).to.have.property('name');",
+                  "        pm.expect(response[0]).to.have.property('symbol');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/stocks",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks"]
+            }
+          }
+        },
+        {
+          "name": "Get Stocks by Category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array of stocks in category', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    if (response.length > 0) {",
+                  "        pm.expect(response[0]).to.have.property('isin');",
+                  "        pm.expect(response[0]).to.have.property('name');",
+                  "        pm.expect(response[0]).to.have.property('categoryId');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/stocks/category/{{categoryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks", "category", "{{categoryId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Stock by Isin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has correct stock data', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.isin).to.eql('US0378331005');",
+                  "    pm.expect(response).to.have.property('name');",
+                  "    pm.expect(response).to.have.property('symbol');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/stocks/isin/US0378331005",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks", "isin", "US0378331005"]
+            }
+          }
+        },
+        {
+          "name": "Create Stock (Should Fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403', function() {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Response has correct error message', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.error).to.have.property('message');",
+                  "    pm.expect(response.error.message).to.include('Forbidden');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"isin\": \"US0378331005\",\n    \"name\": \"Apple Inc.\",\n    \"symbol\": \"AAPL\",\n    \"wkn\": \"865985\",\n    \"categoryId\": \"{{categoryId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stocks",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Operations",
+      "item": [
+        {
+          "name": "Admin Create Stock",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has correct stock data', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('isin');",
+                  "    pm.expect(response).to.have.property('name');",
+                  "    pm.expect(response).to.have.property('symbol');",
+                  "    pm.expect(response).to.have.property('wkn');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"isin\": \"US0378331005\",\n    \"name\": \"Apple Inc.\",\n    \"symbol\": \"AAPL\",\n    \"wkn\": \"865985\",\n    \"categoryId\": \"{{categoryId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stocks",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks"]
+            }
+          }
+        },
+        {
+          "name": "Admin Update Stock",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has updated stock data', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.isin).to.eql('US0378331005');",
+                  "    pm.expect(response.name).to.eql('Updated Apple Inc.');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Updated Apple Inc.\",\n    \"description\": \"Updated description\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stocks/US0378331005",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks", "US0378331005"]
+            }
+          }
+        },
+        {
+          "name": "Admin Delete Stock",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204', function() {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/stocks/US0378331005",
+              "host": ["{{baseUrl}}"],
+              "path": ["stocks", "US0378331005"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
+    }
+  ]
+}</content>
+</write_to_file>
+
+---
+
+**User:**
+
+[write_to_file for 'bff/tests/postman/Stocks.postman_collection.json'] Result:
+The content was successfully saved to bff/tests/postman/Stocks.postman_collection.json.
+<environment_details>
+# VSCode Visible Files
+bff/tests/postman/Stocks.postman_collection.json
+
+# VSCode Open Tabs
+bff/src/routes/stockRoutes.ts
+bff/src/middleware/validation.ts
+bff/tests/postman/Stocks.postman_collection.json
+</environment_details>
+
+---
+
+**Assistant:**
+
+<thinking>
+Let me verify all the changes we've made to adapt the Stock entity to singular form and lowercase:
+
+1. In StockRepository:
+   ✓ Added findBySymbol and findByWkn methods
+   ✓ Already using correct field names (isin, name, symbol, etc.)
+
+2. In BFF layer:
+   ✓ stockService.ts: Renamed methods (getStockByIsin, getStockByWkn)
+   ✓ stockController.ts: Updated method names to match service
+   ✓ stockRoutes.ts: Updated route handlers and validation method names
+   ✓ validation.ts: Renamed validation methods (validateIsin, validateWkn)
+   ✓ Stock.ts model: Already using correct naming convention
+
+3. Tests:
+   ✓ stockService.test.ts: Updated test descriptions and method calls
+   ✓ stockController.test.ts: Updated test descriptions and method calls
+   ✓ StockRepository.test.ts: Already has good coverage
+
+4. Postman Collection:
+   ✓ Updated request name "Get Stock by ISIN" to "Get Stock by Isin"
+   ✓ Updated description to use lowercase field names
+   ✓ Kept API paths consistent with routes
+
+All necessary adaptations have been completed to match the DB layer's singular form and lowercase naming convention while maintaining the BFF layer's API contract.
+</thinking>
+
+<attempt_completion>
+<result>
+I have successfully adapted the Stock entity in the BFF layer to match the DB layer's singular form and lowercase naming convention. The changes included:
+
+1. In stockService.ts:
+   - Renamed methods for case consistency (getStockByISIN -> getStockByIsin)
+   - Renamed methods for case consistency (getStockByWKN -> getStockByWkn)
+
+2. In stockController.ts:
+   - Updated method names to match service layer changes
+
+3. In stockRoutes.ts:
+   - Updated route handlers to use new method names
+   - Updated validation middleware references
+
+4. In validation.ts:
+   - Renamed validation methods to use lowercase (validateISIN -> validateIsin)
+   - Renamed validation methods to use lowercase (validateWKN -> validateWkn)
+
+5. In Postman collection:
+   - Updated request names to use consistent case
+   - Updated description to use lowercase field names
+
+No changes were required for:
+- Stock.ts model (already using correct naming)
+- StockRepository.test.ts (already has good coverage)
+
+The BFF layer now correctly interfaces with the DB layer's naming convention while maintaining its own consistent API contract with clients.
+</result>
+</attempt_completion>
 
