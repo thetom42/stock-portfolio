@@ -53,11 +53,11 @@ describe('StockService', () => {
     sinon.restore();
   });
 
-  describe('getStockByISIN', () => {
+  describe('getStockByIsin', () => {
     it('should return stock when found', async () => {
       mockStockRepo.findByIsin.resolves(mockStock);
 
-      const result = await stockService.getStockByISIN(mockStock.isin);
+      const result = await stockService.getStockByIsin(mockStock.isin);
 
       expect(result).to.not.be.null;
       expect(result).to.deep.include({
@@ -71,7 +71,7 @@ describe('StockService', () => {
     it('should return null when stock not found', async () => {
       mockStockRepo.findByIsin.resolves(null);
 
-      const result = await stockService.getStockByISIN('invalid-isin');
+      const result = await stockService.getStockByIsin('invalid-isin');
       expect(result).to.be.null;
       sinon.assert.calledWith(mockStockRepo.findByIsin, 'invalid-isin');
     });
@@ -101,11 +101,11 @@ describe('StockService', () => {
     });
   });
 
-  describe('getStockByWKN', () => {
+  describe('getStockByWkn', () => {
     it('should return stock when found', async () => {
       mockStockRepo.findByWkn.resolves(mockStock);
 
-      const result = await stockService.getStockByWKN(mockStock.wkn);
+      const result = await stockService.getStockByWkn(mockStock.wkn);
 
       expect(result).to.not.be.null;
       expect(result).to.deep.include({
@@ -119,7 +119,7 @@ describe('StockService', () => {
     it('should return null when stock not found', async () => {
       mockStockRepo.findByWkn.resolves(null);
 
-      const result = await stockService.getStockByWKN('invalid-wkn');
+      const result = await stockService.getStockByWkn('invalid-wkn');
       expect(result).to.be.null;
       sinon.assert.calledWith(mockStockRepo.findByWkn, 'invalid-wkn');
     });

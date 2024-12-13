@@ -26,7 +26,7 @@ const mapDBStockToBFF = (dbStock: any, yahooQuote?: any): Stock => ({
 });
 
 // Get stock by ISIN
-export const getStockByISIN = async (isin: string): Promise<Stock | null> => {
+export const getStockByIsin = async (isin: string): Promise<Stock | null> => {
   const stock = await stockRepository.findByIsin(isin);
   
   if (!stock) {
@@ -48,7 +48,7 @@ export const getStockBySymbol = async (symbol: string): Promise<Stock | null> =>
 };
 
 // Get stock by WKN
-export const getStockByWKN = async (wkn: string): Promise<Stock | null> => {
+export const getStockByWkn = async (wkn: string): Promise<Stock | null> => {
   const stock = await stockRepository.findByWkn(wkn);
   
   if (!stock) {

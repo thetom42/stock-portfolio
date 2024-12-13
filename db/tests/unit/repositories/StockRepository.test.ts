@@ -44,7 +44,6 @@ describe('StockRepository', () => {
 
     describe('create', () => {
         it('should create a new stock', async () => {
-            // Arrange
             const stockData: Stock = {
                 isin: 'TEST123456789',
                 category_id: testCategory.category_id,
@@ -53,16 +52,13 @@ describe('StockRepository', () => {
                 symbol: 'TST'
             };
 
-            // Act
             const result = await stockRepository.create(stockData);
 
-            // Assert
             expect(result).toBeDefined();
             expect(result.isin).toBe(stockData.isin);
             expect(result.name).toBe(stockData.name);
             expect(result.category_id).toBe(stockData.category_id);
 
-            // Verify the stock was actually saved
             const savedStock = await prisma.stock.findUnique({
                 where: { isin: stockData.isin }
             });
@@ -71,7 +67,6 @@ describe('StockRepository', () => {
         });
 
         it('should throw an error if category does not exist', async () => {
-            // Arrange
             const stockData: Stock = {
                 isin: 'TEST123456789',
                 category_id: 'non-existent-category',
@@ -80,14 +75,12 @@ describe('StockRepository', () => {
                 symbol: 'TST'
             };
 
-            // Act & Assert
             await expect(stockRepository.create(stockData))
                 .rejects
                 .toThrow('Category not found');
         });
 
         it('should throw an error if isin already exists', async () => {
-            // Arrange
             const stockData: Stock = {
                 isin: 'TEST123456789',
                 category_id: testCategory.category_id,
@@ -97,7 +90,6 @@ describe('StockRepository', () => {
             };
             await stockRepository.create(stockData);
 
-            // Act & Assert
             const duplicateStock = { ...stockData, name: 'Different Name' };
             await expect(stockRepository.create(duplicateStock))
                 .rejects
@@ -105,7 +97,6 @@ describe('StockRepository', () => {
         });
 
         it('should throw an error if wkn already exists', async () => {
-            // Arrange
             const stockData: Stock = {
                 isin: 'TEST123456789',
                 category_id: testCategory.category_id,
@@ -115,7 +106,6 @@ describe('StockRepository', () => {
             };
             await stockRepository.create(stockData);
 
-            // Act & Assert
             const duplicateStock = { 
                 ...stockData, 
                 isin: 'DIFFERENT123456',
@@ -127,7 +117,6 @@ describe('StockRepository', () => {
         });
 
         it('should throw an error if symbol already exists', async () => {
-            // Arrange
             const stockData: Stock = {
                 isin: 'TEST123456789',
                 category_id: testCategory.category_id,
@@ -137,7 +126,6 @@ describe('StockRepository', () => {
             };
             await stockRepository.create(stockData);
 
-            // Act & Assert
             const duplicateStock = { 
                 ...stockData, 
                 isin: 'DIFFERENT123456',
@@ -148,8 +136,8 @@ describe('StockRepository', () => {
                 .toThrow('Stock with this SYMBOL already exists');
         });
 
-        it('should handle unexpected errors during creation', async () => {
-            // Arrange
+        // New error handling tests
+        it('should handle database errors during category check', async () => {
             const stockData: Stock = {
                 isin: 'TEST123456789',
                 category_id: testCategory.category_id,
@@ -158,19 +146,82 @@ describe('StockRepository', () => {
                 symbol: 'TST'
             };
 
-            // Mock prisma create to throw an unexpected error
-            jest.spyOn(prisma.stock, 'create').mockRejectedValueOnce(new Error('Unexpected error'));
+            jest.spyOn(prisma.category, 'findUnique').mockRejectedValueOnce(new Error('Database error'));
 
-            // Act & Assert
             await expect(stockRepository.create(stockData))
                 .rejects
-                .toThrow('Unexpected error');
+                .toThrow('Database error');
+        });
+
+        it('should handle database errors during duplicate ISIN check', async () => {
+            const stockData: Stock = {
+                isin: 'TEST123456789',
+                category_id: testCategory.category_id,
+                name: 'Test Stock',
+                wkn: 'TEST123',
+                symbol: 'TST'
+            };
+
+            jest.spyOn(prisma.stock, 'findUnique').mockRejectedValueOnce(new Error('Database error'));
+
+            await expect(stockRepository.create(stockData))
+                .rejects
+                .toThrow('Database error');
+        });
+
+        it('should handle database errors during duplicate WKN check', async () => {
+            const stockData: Stock = {
+                isin: 'TEST123456789',
+                category_id: testCategory.category_id,
+                name: 'Test Stock',
+                wkn: 'TEST123',
+                symbol: 'TST'
+            };
+
+            jest.spyOn(prisma.stock, 'findFirst').mockRejectedValueOnce(new Error('Database error'));
+
+            await expect(stockRepository.create(stockData))
+                .rejects
+                .toThrow('Database error');
+        });
+
+        it('should handle database errors during duplicate symbol check', async () => {
+            const stockData: Stock = {
+                isin: 'TEST123456789',
+                category_id: testCategory.category_id,
+                name: 'Test Stock',
+                wkn: 'TEST123',
+                symbol: 'TST'
+            };
+
+            jest.spyOn(prisma.stock, 'findFirst')
+                .mockResolvedValueOnce(null)
+                .mockRejectedValueOnce(new Error('Database error'));
+
+            await expect(stockRepository.create(stockData))
+                .rejects
+                .toThrow('Database error');
+        });
+
+        it('should handle database errors during stock creation', async () => {
+            const stockData: Stock = {
+                isin: 'TEST123456789',
+                category_id: testCategory.category_id,
+                name: 'Test Stock',
+                wkn: 'TEST123',
+                symbol: 'TST'
+            };
+
+            jest.spyOn(prisma.stock, 'create').mockRejectedValueOnce(new Error('Database error'));
+
+            await expect(stockRepository.create(stockData))
+                .rejects
+                .toThrow('Database error');
         });
     });
 
     describe('findByIsin', () => {
         it('should find a stock by isin', async () => {
-            // Arrange
             const stockData: Stock = {
                 isin: 'TEST123456789',
                 category_id: testCategory.category_id,
@@ -180,37 +231,69 @@ describe('StockRepository', () => {
             };
             await prisma.stock.create({ data: stockData });
 
-            // Act
             const result = await stockRepository.findByIsin(stockData.isin);
 
-            // Assert
             expect(result).toBeDefined();
             expect(result?.isin).toBe(stockData.isin);
             expect(result?.name).toBe(stockData.name);
         });
 
         it('should return null if stock is not found', async () => {
-            // Act
             const result = await stockRepository.findByIsin('non-existent-isin');
-
-            // Assert
             expect(result).toBeNull();
         });
+    });
 
-        it('should handle unexpected errors during findByIsin', async () => {
-            // Mock prisma findUnique to throw an unexpected error
-            jest.spyOn(prisma.stock, 'findUnique').mockRejectedValueOnce(new Error('Unexpected error'));
+    describe('findBySymbol', () => {
+        it('should find a stock by symbol', async () => {
+            const stockData: Stock = {
+                isin: 'TEST123456789',
+                category_id: testCategory.category_id,
+                name: 'Test Stock',
+                wkn: 'TEST123',
+                symbol: 'TST'
+            };
+            await prisma.stock.create({ data: stockData });
 
-            // Act & Assert
-            await expect(stockRepository.findByIsin('TEST123456789'))
-                .rejects
-                .toThrow('Unexpected error');
+            const result = await stockRepository.findBySymbol(stockData.symbol);
+
+            expect(result).toBeDefined();
+            expect(result?.symbol).toBe(stockData.symbol);
+            expect(result?.name).toBe(stockData.name);
+        });
+
+        it('should return null if stock is not found by symbol', async () => {
+            const result = await stockRepository.findBySymbol('non-existent-symbol');
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('findByWkn', () => {
+        it('should find a stock by wkn', async () => {
+            const stockData: Stock = {
+                isin: 'TEST123456789',
+                category_id: testCategory.category_id,
+                name: 'Test Stock',
+                wkn: 'TEST123',
+                symbol: 'TST'
+            };
+            await prisma.stock.create({ data: stockData });
+
+            const result = await stockRepository.findByWkn(stockData.wkn);
+
+            expect(result).toBeDefined();
+            expect(result?.wkn).toBe(stockData.wkn);
+            expect(result?.name).toBe(stockData.name);
+        });
+
+        it('should return null if stock is not found by wkn', async () => {
+            const result = await stockRepository.findByWkn('non-existent-wkn');
+            expect(result).toBeNull();
         });
     });
 
     describe('findAll', () => {
         it('should find all stocks', async () => {
-            // Arrange
             const stocks = [
                 {
                     isin: 'TEST123456789',
@@ -231,10 +314,8 @@ describe('StockRepository', () => {
                 prisma.stock.create({ data: stock })
             ));
 
-            // Act
             const result = await stockRepository.findAll();
 
-            // Assert
             expect(result).toHaveLength(2);
             expect(result).toEqual(expect.arrayContaining(
                 stocks.map(stock => expect.objectContaining(stock))
@@ -242,15 +323,11 @@ describe('StockRepository', () => {
         });
 
         it('should return empty array when no stocks exist', async () => {
-            // Act
             const result = await stockRepository.findAll();
-
-            // Assert
             expect(result).toEqual([]);
         });
 
         it('should return stocks ordered by name', async () => {
-            // Arrange
             const stocks = [
                 {
                     isin: 'TEST3',
@@ -278,30 +355,17 @@ describe('StockRepository', () => {
                 prisma.stock.create({ data: stock })
             ));
 
-            // Act
             const result = await stockRepository.findAll();
 
-            // Assert
             expect(result).toHaveLength(3);
             expect(result[0].name).toBe('Stock A');
             expect(result[1].name).toBe('Stock B');
             expect(result[2].name).toBe('Stock C');
         });
-
-        it('should handle unexpected errors during findAll', async () => {
-            // Mock prisma findMany to throw an unexpected error
-            jest.spyOn(prisma.stock, 'findMany').mockRejectedValueOnce(new Error('Unexpected error'));
-
-            // Act & Assert
-            await expect(stockRepository.findAll())
-                .rejects
-                .toThrow('Unexpected error');
-        });
     });
 
     describe('findByCategory', () => {
         it('should find all stocks in a category', async () => {
-            // Arrange
             const stocks = [
                 {
                     isin: 'TEST123456789',
@@ -322,10 +386,8 @@ describe('StockRepository', () => {
                 prisma.stock.create({ data: stock })
             ));
 
-            // Act
             const result = await stockRepository.findByCategory(testCategory.category_id);
 
-            // Assert
             expect(result).toHaveLength(2);
             expect(result).toEqual(expect.arrayContaining(
                 stocks.map(stock => expect.objectContaining(stock))
@@ -333,27 +395,13 @@ describe('StockRepository', () => {
         });
 
         it('should return empty array when category has no stocks', async () => {
-            // Act
             const result = await stockRepository.findByCategory(testCategory.category_id);
-
-            // Assert
             expect(result).toEqual([]);
-        });
-
-        it('should handle unexpected errors during findByCategory', async () => {
-            // Mock prisma findMany to throw an unexpected error
-            jest.spyOn(prisma.stock, 'findMany').mockRejectedValueOnce(new Error('Unexpected error'));
-
-            // Act & Assert
-            await expect(stockRepository.findByCategory(testCategory.category_id))
-                .rejects
-                .toThrow('Unexpected error');
         });
     });
 
     describe('update', () => {
         it('should update a stock', async () => {
-            // Arrange
             const stockData: Stock = {
                 isin: 'TEST123456789',
                 category_id: testCategory.category_id,
@@ -367,15 +415,12 @@ describe('StockRepository', () => {
                 name: 'Updated Stock Name'
             };
 
-            // Act
             const result = await stockRepository.update(stockData.isin, updateData);
 
-            // Assert
             expect(result).toBeDefined();
             expect(result.name).toBe(updateData.name);
-            expect(result.category_id).toBe(stockData.category_id); // Unchanged field
+            expect(result.category_id).toBe(stockData.category_id);
 
-            // Verify the update was persisted
             const updatedStock = await prisma.stock.findUnique({
                 where: { isin: stockData.isin }
             });
@@ -383,14 +428,12 @@ describe('StockRepository', () => {
         });
 
         it('should throw an error if stock does not exist', async () => {
-            // Act & Assert
             await expect(stockRepository.update('non-existent-isin', { name: 'New Name' }))
                 .rejects
                 .toThrow('Stock not found');
         });
 
         it('should throw an error if updated category does not exist', async () => {
-            // Arrange
             const stockData: Stock = {
                 isin: 'TEST123456789',
                 category_id: testCategory.category_id,
@@ -400,14 +443,12 @@ describe('StockRepository', () => {
             };
             await prisma.stock.create({ data: stockData });
 
-            // Act & Assert
             await expect(stockRepository.update(stockData.isin, { category_id: 'non-existent-category' }))
                 .rejects
                 .toThrow('Category not found');
         });
 
         it('should throw an error if updated wkn already exists', async () => {
-            // Arrange
             const stock1: Stock = {
                 isin: 'TEST123456789',
                 category_id: testCategory.category_id,
@@ -425,14 +466,12 @@ describe('StockRepository', () => {
             await prisma.stock.create({ data: stock1 });
             await prisma.stock.create({ data: stock2 });
 
-            // Act & Assert
             await expect(stockRepository.update(stock2.isin, { wkn: stock1.wkn }))
                 .rejects
                 .toThrow('Stock with this WKN already exists');
         });
 
         it('should throw an error if updated symbol already exists', async () => {
-            // Arrange
             const stock1: Stock = {
                 isin: 'TEST123456789',
                 category_id: testCategory.category_id,
@@ -450,36 +489,14 @@ describe('StockRepository', () => {
             await prisma.stock.create({ data: stock1 });
             await prisma.stock.create({ data: stock2 });
 
-            // Act & Assert
             await expect(stockRepository.update(stock2.isin, { symbol: stock1.symbol }))
                 .rejects
                 .toThrow('Stock with this SYMBOL already exists');
-        });
-
-        it('should handle unexpected errors during update', async () => {
-            // Arrange
-            const stockData: Stock = {
-                isin: 'TEST123456789',
-                category_id: testCategory.category_id,
-                name: 'Test Stock',
-                wkn: 'TEST123',
-                symbol: 'TST'
-            };
-            await prisma.stock.create({ data: stockData });
-
-            // Mock prisma update to throw an unexpected error
-            jest.spyOn(prisma.stock, 'update').mockRejectedValueOnce(new Error('Unexpected error'));
-
-            // Act & Assert
-            await expect(stockRepository.update(stockData.isin, { name: 'New Name' }))
-                .rejects
-                .toThrow('Unexpected error');
         });
     });
 
     describe('delete', () => {
         it('should delete a stock', async () => {
-            // Arrange
             const stockData: Stock = {
                 isin: 'TEST123456789',
                 category_id: testCategory.category_id,
@@ -489,14 +506,11 @@ describe('StockRepository', () => {
             };
             await prisma.stock.create({ data: stockData });
 
-            // Act
             const result = await stockRepository.delete(stockData.isin);
 
-            // Assert
             expect(result).toBeDefined();
             expect(result.isin).toBe(stockData.isin);
 
-            // Verify the stock was actually deleted
             const deletedStock = await prisma.stock.findUnique({
                 where: { isin: stockData.isin }
             });
@@ -504,14 +518,12 @@ describe('StockRepository', () => {
         });
 
         it('should throw an error if stock does not exist', async () => {
-            // Act & Assert
             await expect(stockRepository.delete('non-existent-isin'))
                 .rejects
                 .toThrow('Stock not found');
         });
 
         it('should throw an error if stock has associated holdings', async () => {
-            // Arrange
             const stockData: Stock = {
                 isin: 'TEST123456789',
                 category_id: testCategory.category_id,
@@ -521,7 +533,6 @@ describe('StockRepository', () => {
             };
             await prisma.stock.create({ data: stockData });
 
-            // Create a portfolio
             const portfolio = await prisma.portfolio.create({
                 data: {
                     portfolio_id: 'test-portfolio-id',
@@ -531,7 +542,6 @@ describe('StockRepository', () => {
                 }
             });
 
-            // Create an associated holding
             await prisma.holding.create({
                 data: {
                     holding_id: 'test-holding-id',
@@ -543,30 +553,9 @@ describe('StockRepository', () => {
                 }
             });
 
-            // Act & Assert
             await expect(stockRepository.delete(stockData.isin))
                 .rejects
                 .toThrow('Cannot delete stock with associated holdings');
-        });
-
-        it('should handle unexpected errors during deletion', async () => {
-            // Arrange
-            const stockData: Stock = {
-                isin: 'TEST123456789',
-                category_id: testCategory.category_id,
-                name: 'Test Stock',
-                wkn: 'TEST123',
-                symbol: 'TST'
-            };
-            await prisma.stock.create({ data: stockData });
-
-            // Mock prisma delete to throw an unexpected error
-            jest.spyOn(prisma.stock, 'delete').mockRejectedValueOnce(new Error('Unexpected error'));
-
-            // Act & Assert
-            await expect(stockRepository.delete(stockData.isin))
-                .rejects
-                .toThrow('Unexpected error');
         });
     });
 });

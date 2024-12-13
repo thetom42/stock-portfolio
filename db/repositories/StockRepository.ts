@@ -61,6 +61,18 @@ export class StockRepository {
     });
   }
 
+  async findBySymbol(symbol: string): Promise<Stock | null> {
+    return await this.prisma.stock.findFirst({
+      where: { symbol }
+    });
+  }
+
+  async findByWkn(wkn: string): Promise<Stock | null> {
+    return await this.prisma.stock.findFirst({
+      where: { wkn }
+    });
+  }
+
   async findAll(): Promise<Stock[]> {
     return await this.prisma.stock.findMany({
       orderBy: {

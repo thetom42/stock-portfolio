@@ -23,13 +23,13 @@ interface UpdateStockBody {
   categoryId?: string;
 }
 
-export const getStockByISIN = async (
+export const getStockByIsin = async (
   req: TypedRequest<{ isin: string }>,
   res: TypedResponse<StockResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
-    const stock = await stockService.getStockByISIN(req.params.isin);
+    const stock = await stockService.getStockByIsin(req.params.isin);
     if (!stock) {
       return res.status(404).json({ error: 'Stock not found' });
     }
@@ -55,13 +55,13 @@ export const getStockBySymbol = async (
   }
 };
 
-export const getStockByWKN = async (
+export const getStockByWkn = async (
   req: TypedRequest<{ wkn: string }>,
   res: TypedResponse<StockResponse | ErrorResponse>,
   next: NextFunction
 ) => {
   try {
-    const stock = await stockService.getStockByWKN(req.params.wkn);
+    const stock = await stockService.getStockByWkn(req.params.wkn);
     if (!stock) {
       return res.status(404).json({ error: 'Stock not found' });
     }

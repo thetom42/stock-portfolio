@@ -80,7 +80,7 @@ describe('QuoteService', () => {
     it('should return real-time quote for valid stock', async () => {
       mockStockRepo.findByIsin.resolves(mockStock);
       const mockDBQuote = {
-        id: '123',
+        quote_id: '123',
         isin: mockStock.isin,
         price: new Decimal(mockYahooQuote.price),
         currency: mockYahooQuote.currency,
@@ -102,7 +102,7 @@ describe('QuoteService', () => {
     it('should use cached quote if not stale', async () => {
       mockStockRepo.findByIsin.resolves(mockStock);
       const freshQuote = {
-        id: '123',
+        quote_id: '123',
         isin: mockStock.isin,
         price: new Decimal(150.50),
         currency: 'USD',
@@ -121,7 +121,7 @@ describe('QuoteService', () => {
     it('should fetch new quote if cached quote is stale', async () => {
       mockStockRepo.findByIsin.resolves(mockStock);
       const staleQuote = {
-        id: '123',
+        quote_id: '123',
         isin: mockStock.isin,
         price: new Decimal(150.50),
         currency: 'USD',
@@ -200,7 +200,7 @@ describe('QuoteService', () => {
   describe('getLatestQuotes', () => {
     it('should return latest quotes for multiple stocks', async () => {
       const mockDBQuote = {
-        id: '123',
+        quote_id: '123',
         isin: mockStock.isin,
         price: new Decimal(150.50),
         currency: 'USD',
@@ -213,10 +213,11 @@ describe('QuoteService', () => {
 
       expect(result).to.be.an('array');
       expect(result[0]).to.deep.include({
-        id: mockDBQuote.id,
+        id: mockDBQuote.quote_id,
         stockId: mockDBQuote.isin,
         price: Number(mockDBQuote.price),
-        currency: mockDBQuote.currency
+        currency: mockDBQuote.currency,
+        timestamp: mockDBQuote.market_time
       });
       sinon.assert.calledWith(mockQuoteRepo.findLatestByIsin, mockStock.isin);
     });
@@ -235,7 +236,7 @@ describe('QuoteService', () => {
     it('should return intraday quotes for valid stock', async () => {
       mockStockRepo.findByIsin.resolves(mockStock);
       const mockDBQuote = {
-        id: '123',
+        quote_id: '123',
         isin: mockStock.isin,
         price: new Decimal(mockIntradayQuote.price),
         currency: 'USD',
@@ -248,7 +249,7 @@ describe('QuoteService', () => {
 
       expect(result).to.be.an('array');
       expect(result[0]).to.deep.include({
-        id: mockDBQuote.id,
+        id: mockDBQuote.quote_id,
         stockId: mockDBQuote.isin,
         price: Number(mockDBQuote.price),
         currency: mockDBQuote.currency,
@@ -280,14 +281,14 @@ describe('QuoteService', () => {
 
     it('should return quote history for valid date range', async () => {
       const mockDBQuotes = [{
-        id: '123',
+        quote_id: '123',
         isin: mockStock.isin,
         price: new Decimal(150.50),
         currency: 'USD',
-        market_time: new Date(),
+        market_time: new Date('2023-06-15'), // Date within range
         exchange: 'NASDAQ'
       }];
-      mockQuoteRepo.findByDateRange.resolves(mockDBQuotes);
+      mockQuoteRepo.findByIsin.resolves(mockDBQuotes);
 
       const result = await quoteService.getQuoteHistory(
         mockStock.isin,
@@ -297,20 +298,17 @@ describe('QuoteService', () => {
 
       expect(result).to.be.an('array');
       expect(result[0]).to.deep.include({
-        id: mockDBQuotes[0].id,
+        id: mockDBQuotes[0].quote_id,
         stockId: mockDBQuotes[0].isin,
         price: Number(mockDBQuotes[0].price),
-        currency: mockDBQuotes[0].currency
+        currency: mockDBQuotes[0].currency,
+        timestamp: mockDBQuotes[0].market_time
       });
-      sinon.assert.calledWith(mockQuoteRepo.findByDateRange, 
-        mockStock.isin, 
-        startDate, 
-        endDate
-      );
+      sinon.assert.calledWith(mockQuoteRepo.findByIsin, mockStock.isin);
     });
 
     it('should return empty array if no quotes found', async () => {
-      mockQuoteRepo.findByDateRange.resolves([]);
+      mockQuoteRepo.findByIsin.resolves([]);
 
       const result = await quoteService.getQuoteHistory(
         mockStock.isin,
@@ -319,6 +317,50 @@ describe('QuoteService', () => {
       );
 
       expect(result).to.be.an('array').that.is.empty;
+    });
+
+    it('should filter quotes by date range', async () => {
+      const mockDBQuotes = [
+        {
+          quote_id: '123',
+          isin: mockStock.isin,
+          price: new Decimal(150.50),
+          currency: 'USD',
+          market_time: new Date('2023-06-15'), // Within range
+          exchange: 'NASDAQ'
+        },
+        {
+          quote_id: '124',
+          isin: mockStock.isin,
+          price: new Decimal(151.50),
+          currency: 'USD',
+          market_time: new Date('2022-12-31'), // Before range
+          exchange: 'NASDAQ'
+        },
+        {
+          quote_id: '125',
+          isin: mockStock.isin,
+          price: new Decimal(152.50),
+          currency: 'USD',
+          market_time: new Date('2024-01-01'), // After range
+          exchange: 'NASDAQ'
+        }
+      ];
+      mockQuoteRepo.findByIsin.resolves(mockDBQuotes);
+
+      const result = await quoteService.getQuoteHistory(
+        mockStock.isin,
+        startDate,
+        endDate
+      );
+
+      expect(result).to.have.lengthOf(1);
+      expect(result[0]).to.deep.include({
+        id: mockDBQuotes[0].quote_id,
+        stockId: mockDBQuotes[0].isin,
+        price: Number(mockDBQuotes[0].price),
+        timestamp: mockDBQuotes[0].market_time
+      });
     });
   });
 });
