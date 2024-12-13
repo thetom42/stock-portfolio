@@ -1,11 +1,18 @@
 {
-  "name": "stock-portfolio-db",
+  "name": "@stock-portfolio/db",
   "version": "1.0.0",
   "description": "Database layer for stock portfolio application",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "prisma"
+  ],
   "scripts": {
+    "build": "tsc",
     "test": "jest --runInBand",
-    "test:watch": "jest --watch --runInBand"
+    "test:watch": "jest --watch --runInBand",
+    "prisma:generate": "prisma generate"
   },
   "devDependencies": {
     "@types/jest": "^29.5.11",
