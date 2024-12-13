@@ -25,7 +25,7 @@ export const setTransactionRepository = (repo: any) => {
 
 // Helper function to map DB Holding to API response
 const mapDBHoldingToDetails = async (dbHolding: Holding): Promise<HoldingDetails> => {
-  const stock = await stockService.getStockByISIN(dbHolding.isin);
+  const stock = await stockService.getStockByIsin(dbHolding.isin);
   const quotes = await quoteService.getLatestQuotes([dbHolding.isin]);
   
   const currentPrice = quotes[0]?.price || 0;
@@ -70,7 +70,7 @@ export const createHolding = async (
 ): Promise<HoldingDetails> => {
   try {
     // First verify the stock exists
-    const stock = await stockService.getStockByISIN(holdingData.isin);
+    const stock = await stockService.getStockByIsin(holdingData.isin);
     if (!stock) {
       throw new Error('Stock not found');
     }

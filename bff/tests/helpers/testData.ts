@@ -48,12 +48,12 @@ export const mockPortfolios: Record<string, Portfolio> = {
 // Category test data
 export const mockCategories: Record<string, Category> = {
   tech: {
-    CATEGORIES_ID: 'cat123',
-    NAME: 'Technology'
+    category_id: 'cat123',
+    name: 'Technology'
   },
   finance: {
-    CATEGORIES_ID: 'cat456',
-    NAME: 'Financial Services'
+    category_id: 'cat456',
+    name: 'Financial Services'
   }
 };
 
@@ -92,36 +92,36 @@ export const mockStocks: Record<string, Stock> = {
 // Holding test data
 export const mockHoldings: Record<string, Holding> = {
   appleHolding: {
-    HOLDINGS_ID: 'holding123',
-    PORTFOLIOS_ID: mockPortfolios.basic.id,
-    ISIN: mockStocks.apple.isin,
-    QUANTITY: 100,
-    START_DATE: new Date('2023-01-01'),
-    END_DATE: null
+    holding_id: 'holding123',
+    portfolio_id: mockPortfolios.basic.id,
+    isin: mockStocks.apple.isin,
+    quantity: 100,
+    start_date: new Date('2023-01-01'),
+    end_date: null
   }
 };
 
 // Transaction test data
 export const mockTransactions: Record<string, Transaction> = {
   buyApple: {
-    TRANSACTIONS_ID: 'trans123',
-    HOLDINGS_ID: mockHoldings.appleHolding.HOLDINGS_ID,
-    BUY: true,
-    TRANSACTION_TIME: new Date('2023-01-01'),
-    AMOUNT: 100,
-    PRICE: 150.50,
-    COMMISSION: 7.99,
-    BROKER: 'TEST_BROKER'
+    id: 'trans123',
+    holding_id: mockHoldings.appleHolding.holding_id,
+    buy: true,
+    transaction_time: new Date('2023-01-01'),
+    amount: 100,
+    price: 150.50,
+    commission: 7.99,
+    broker: 'TEST_BROKER'
   },
   sellApple: {
-    TRANSACTIONS_ID: 'trans456',
-    HOLDINGS_ID: mockHoldings.appleHolding.HOLDINGS_ID,
-    BUY: false,
-    TRANSACTION_TIME: new Date('2023-06-01'),
-    AMOUNT: 50,
-    PRICE: 175.25,
-    COMMISSION: 7.99,
-    BROKER: 'TEST_BROKER'
+    id: 'trans456',
+    holding_id: mockHoldings.appleHolding.holding_id,
+    buy: false,
+    transaction_time: new Date('2023-06-01'),
+    amount: 50,
+    price: 175.25,
+    commission: 7.99,
+    broker: 'TEST_BROKER'
   }
 };
 

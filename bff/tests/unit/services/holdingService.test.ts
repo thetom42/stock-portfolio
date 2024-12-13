@@ -28,7 +28,7 @@ describe('HoldingService', () => {
     holdingService.setTransactionRepository(mockTransactionRepo);
     
     // Stub service dependencies
-    stockServiceStub = sinon.stub(stockService, 'getStockByISIN');
+    stockServiceStub = sinon.stub(stockService, 'getStockByIsin');
     quoteServiceStub = sinon.stub(quoteService, 'getLatestQuotes');
   });
 

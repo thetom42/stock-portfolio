@@ -260,13 +260,13 @@ describe('Validation Middleware', () => {
       });
     });
 
-    describe('validateISIN', () => {
+    describe('validateIsin', () => {
       it('should validate valid ISIN', async () => {
         req.params = {
           isin: 'US0378331005'
         };
 
-        const validators = validation.validateISIN('isin');
+        const validators = validation.validateIsin('isin');
         for (const validator of validators.slice(0, -1)) {
           await validator(req as Request, res as Response, next as NextFunction);
         }
@@ -281,7 +281,7 @@ describe('Validation Middleware', () => {
           isin: 'invalid-isin'
         };
 
-        const validators = validation.validateISIN('isin');
+        const validators = validation.validateIsin('isin');
         await validators[0](req as Request, res as Response, next as NextFunction);
         validation.handleValidationErrors(req as Request, res as Response, next as NextFunction);
 

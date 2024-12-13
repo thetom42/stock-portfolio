@@ -105,7 +105,7 @@ export const getPortfolioQuotes = async (
     }
     
     // Get holdings
-    const holdings = await holdingRepository.findByPortfolio(portfolioId);
+    const holdings = await holdingRepository.findByPortfolioId(portfolioId);
     
     // Get latest quotes for all holdings
     const quotes = await Promise.all(
