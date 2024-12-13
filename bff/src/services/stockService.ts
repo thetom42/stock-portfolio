@@ -1,7 +1,7 @@
 import { Stock, StockDetails, StockSearchResult } from '../models/Stock';
 import { getPrismaClient } from '../utils/database';
 import { getYahooFinanceService, YahooFinanceSearchResult } from './yahooFinanceService';
-import { StockRepository } from '../../../db/repositories/StockRepository';
+import { StockRepository } from '@stock-portfolio/db';
 
 // Initialize repository with default implementation
 const prisma = getPrismaClient();

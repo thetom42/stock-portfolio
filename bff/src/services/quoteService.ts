@@ -1,8 +1,7 @@
 import { Quote, HistoricalQuote, QuoteInterval, RealTimeQuote, QuoteHistory } from '../models/Quote';
 import { getYahooFinanceService } from './yahooFinanceService';
 import { getPrismaClient } from '../utils/database';
-import { QuoteRepository } from '../../../db/repositories/QuoteRepository';
-import { StockRepository } from '../../../db/repositories/StockRepository';
+import { QuoteRepository, StockRepository } from '@stock-portfolio/db';
 import { Decimal } from '@prisma/client/runtime/library';
 
 // Initialize repositories with default implementations

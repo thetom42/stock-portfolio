@@ -1,10 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma, PrismaClient } from '@stock-portfolio/db';
 
-let prismaClient: PrismaClient | null = null;
+let prismaClient: PrismaClient | null = prisma;
 
 export function getPrismaClient(): PrismaClient {
   if (!prismaClient) {
-    prismaClient = new PrismaClient();
+    prismaClient = prisma;
   }
   return prismaClient;
 }

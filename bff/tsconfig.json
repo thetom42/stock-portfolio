@@ -11,7 +11,8 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
-      "*": ["node_modules/*", "src/types/*"]
+      "*": ["node_modules/*", "src/types/*"],
+      "@stock-portfolio/db": ["../db/dist"]
     },
     "outDir": "dist",
     "sourceMap": true,
@@ -25,7 +26,11 @@
     "alwaysStrict": true,
     "allowJs": true,
     "types": ["node", "mocha", "chai", "express", "node-fetch"],
-    "typeRoots": ["./node_modules/@types", "./src/types"]
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/types",
+      "../db/dist"
+    ]
   },
   "include": [
     "src/**/*",

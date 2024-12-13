@@ -1,25 +1,31 @@
 import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { Decimal } from '@prisma/client/runtime/library';
-import * as transactionService from '../../../src/services/transactionService';
+import proxyquire from 'proxyquire';
+import { mockPrismaClient } from '../utils/database.mock';
 import { 
   Transaction, 
   CreateTransactionDTO, 
-  TransactionQueryParams, 
-  PaginatedTransactions 
+  TransactionQueryParams 
 } from '../../../src/models/Transaction';
 import { 
   mockTransactionRepo, 
   mockHoldingRepo, 
   mockPortfolioRepo, 
   setupRepositoryMocks, 
-  resetRepositoryMocks 
+  resetRepositoryMocks,
+  createDecimal 
 } from '../../helpers/mockRepositories';
 
-interface ServiceError extends Error {
-  message: string;
-}
+// Import the service with mocked database
+const transactionService = proxyquire.noCallThru().load('../../../src/services/transactionService', {
+  '../utils/database': {
+    getPrismaClient: () => mockPrismaClient,
+    default: {
+      getPrismaClient: () => mockPrismaClient
+    }
+  }
+});
 
 describe('TransactionService', () => {
   const userId = 'user123';
@@ -28,6 +34,11 @@ describe('TransactionService', () => {
 
   beforeEach(() => {
     setupRepositoryMocks();
+    
+    // Set the repository instances in the service using the setter methods
+    transactionService.setHoldingRepository(mockHoldingRepo);
+    transactionService.setTransactionRepository(mockTransactionRepo);
+    transactionService.setPortfolioRepository(mockPortfolioRepo);
   });
 
   afterEach(() => {
@@ -57,8 +68,8 @@ describe('TransactionService', () => {
       buy: mockCreateData.buy,
       transaction_time: new Date(),
       amount: mockCreateData.amount,
-      price: new Decimal(mockCreateData.price),
-      commission: new Decimal(mockCreateData.commission || 0),
+      price: createDecimal(mockCreateData.price),
+      commission: createDecimal(mockCreateData.commission || 0),
       broker: mockCreateData.broker || 'SYSTEM'
     };
 
@@ -72,14 +83,6 @@ describe('TransactionService', () => {
       commission: Number(mockDBTransaction.commission),
       broker: mockDBTransaction.broker
     };
-
-    beforeEach(() => {
-      // Reset stubs before each test
-      mockHoldingRepo.findById.reset();
-      mockPortfolioRepo.findById.reset();
-      mockTransactionRepo.create.reset();
-      mockHoldingRepo.update.reset();
-    });
 
     it('should create a buy transaction successfully', async () => {
       mockHoldingRepo.findById.resolves(mockHolding);
@@ -154,8 +157,8 @@ describe('TransactionService', () => {
       buy: true,
       transaction_time: new Date(),
       amount: 100,
-      price: new Decimal('150.50'),
-      commission: new Decimal('7.99'),
+      price: createDecimal('150.50'),
+      commission: createDecimal('7.99'),
       broker: 'TEST_BROKER'
     };
 
@@ -169,12 +172,6 @@ describe('TransactionService', () => {
       commission: Number(mockDBTransaction.commission),
       broker: mockDBTransaction.broker
     };
-
-    beforeEach(() => {
-      mockTransactionRepo.findById.reset();
-      mockHoldingRepo.findById.reset();
-      mockPortfolioRepo.findById.reset();
-    });
 
     it('should return transaction if authorized', async () => {
       mockTransactionRepo.findById.resolves(mockDBTransaction);
@@ -219,8 +216,8 @@ describe('TransactionService', () => {
         buy: true,
         transaction_time: new Date('2023-01-01'),
         amount: 100,
-        price: new Decimal('150.50'),
-        commission: new Decimal('7.99'),
+        price: createDecimal('150.50'),
+        commission: createDecimal('7.99'),
         broker: 'TEST_BROKER'
       },
       {
@@ -229,8 +226,8 @@ describe('TransactionService', () => {
         buy: false,
         transaction_time: new Date('2023-06-01'),
         amount: 50,
-        price: new Decimal('200.00'),
-        commission: new Decimal('7.99'),
+        price: createDecimal('200.00'),
+        commission: createDecimal('7.99'),
         broker: 'TEST_BROKER'
       }
     ];
@@ -245,12 +242,6 @@ describe('TransactionService', () => {
       commission: Number(t.commission),
       broker: t.broker
     }));
-
-    beforeEach(() => {
-      mockHoldingRepo.findById.reset();
-      mockPortfolioRepo.findById.reset();
-      mockTransactionRepo.findByHoldingId.reset();
-    });
 
     it('should return transactions with default params', async () => {
       mockHoldingRepo.findById.resolves({ portfolio_id: portfolioId });
@@ -345,8 +336,8 @@ describe('TransactionService', () => {
         buy: true,
         transaction_time: new Date('2023-01-01'),
         amount: 100,
-        price: new Decimal('150.50'),
-        commission: new Decimal('7.99'),
+        price: createDecimal('150.50'),
+        commission: createDecimal('7.99'),
         broker: 'TEST_BROKER'
       },
       {
@@ -355,22 +346,17 @@ describe('TransactionService', () => {
         buy: false,
         transaction_time: new Date('2023-06-01'),
         amount: 50,
-        price: new Decimal('200.00'),
-        commission: new Decimal('7.99'),
+        price: createDecimal('200.00'),
+        commission: createDecimal('7.99'),
         broker: 'TEST_BROKER'
       }
     ];
 
-    beforeEach(() => {
-      mockPortfolioRepo.findById.reset();
-      mockHoldingRepo.findByPortfolioId.reset();
-      mockTransactionRepo.findByHoldingId.reset();
-    });
-
     it('should return transactions for all holdings', async () => {
       mockPortfolioRepo.findById.resolves({ user_id: userId });
       mockHoldingRepo.findByPortfolioId.resolves(mockHoldings);
-      mockTransactionRepo.findByHoldingId.resolves([mockDBTransactions[0]]);
+      mockTransactionRepo.findByHoldingId.onFirstCall().resolves([mockDBTransactions[0]]);
+      mockTransactionRepo.findByHoldingId.onSecondCall().resolves([mockDBTransactions[1]]);
 
       const result = await transactionService.getTransactionsByPortfolio(userId, portfolioId);
 
@@ -388,11 +374,12 @@ describe('TransactionService', () => {
 
       mockPortfolioRepo.findById.resolves({ user_id: userId });
       mockHoldingRepo.findByPortfolioId.resolves(mockHoldings);
-      mockTransactionRepo.findByHoldingId.resolves([mockDBTransactions[0]]);
+      mockTransactionRepo.findByHoldingId.onFirstCall().resolves([mockDBTransactions[0]]);
+      mockTransactionRepo.findByHoldingId.onSecondCall().resolves([mockDBTransactions[1]]);
 
       const result = await transactionService.getTransactionsByPortfolio(userId, portfolioId, queryParams);
 
-      expect(result.transactions).to.have.lengthOf(2);
+      expect(result.transactions).to.have.lengthOf(1);
       expect(result.transactions[0].buy).to.be.true;
     });
 

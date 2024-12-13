@@ -1,7 +1,8 @@
 import { User, CreateUserDTO, UpdateUserDTO, UserCredentials } from '../models/User';
 import { getPrismaClient } from '../utils/database';
 import { createHash } from 'crypto';
-import { UserRepository } from '../../../db/repositories/UserRepository';
+import { UserRepository } from '@stock-portfolio/db';
+import { User as DBUser } from '@prisma/client';
 
 // Initialize repository with default implementation
 const prisma = getPrismaClient();
@@ -13,7 +14,7 @@ export const setUserRepository = (repo: any) => {
 };
 
 // Helper function to map DB User to BFF User
-const mapDBUserToBFF = (dbUser: any): User => ({
+const mapDBUserToBFF = (dbUser: DBUser): User => ({
   id: dbUser.user_id,
   email: dbUser.email,
   firstName: dbUser.name,

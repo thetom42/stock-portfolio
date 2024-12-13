@@ -1,8 +1,10 @@
 import type { TypedRequest, TypedResponse, NextFunction, AuthenticatedRequest } from '../types/express';
 import { getPrismaClient } from '../utils/database';
-import { QuoteRepository } from '../../../db/repositories/QuoteRepository';
-import { HoldingRepository } from '../../../db/repositories/HoldingRepository';
-import { PortfolioRepository } from '../../../db/repositories/PortfolioRepository';
+import { 
+  QuoteRepository, 
+  HoldingRepository, 
+  PortfolioRepository 
+} from '@stock-portfolio/db';
 import { 
   QuoteInterval, 
   Quote, 

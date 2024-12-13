@@ -2,12 +2,13 @@ import { getPrismaClient } from '../utils/database';
 import { CreateHoldingDTO, UpdateHoldingDTO, HoldingDetails } from '../models/Holding';
 import * as stockService from './stockService';
 import * as quoteService from './quoteService';
-import { HoldingRepository } from '../../../db/repositories/HoldingRepository';
-import { TransactionRepository } from '../../../db/repositories/TransactionRepository';
+import { 
+  HoldingRepository, 
+  TransactionRepository 
+} from '@stock-portfolio/db';
+import { Holding, Transaction } from '@prisma/client';
 import { QuoteInterval } from '../models/Quote';
 import { Decimal } from '@prisma/client/runtime/library';
-import { Holding } from '../../../db/models/Holding';
-import { CreateTransactionInput } from '../../../db/models/Transaction';
 
 // Initialize repositories
 const prisma = getPrismaClient();
@@ -86,17 +87,16 @@ export const createHolding = async (
     });
 
     // Create initial transaction using repository
-    const transactionInput: CreateTransactionInput = {
+    await transactionRepository.create({
       transaction_id: '', // Will be generated
       holding_id: dbHolding.holding_id,
       buy: true, // Initial transaction is always a buy
       amount: holdingData.quantity,
-      price: new Decimal(holdingData.price),
+      price: holdingData.price,
       transaction_time: new Date(),
-      commission: new Decimal(0),
+      commission: 0,
       broker: 'SYSTEM'
-    };
-    await transactionRepository.create(transactionInput);
+    });
 
     return await mapDBHoldingToDetails(dbHolding);
   } catch (error) {

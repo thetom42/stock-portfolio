@@ -12,7 +12,7 @@ import {
 import * as quoteService from '../../../src/services/quoteService';
 import * as yahooFinanceService from '../../../src/services/yahooFinanceService';
 import { QuoteInterval } from '../../../src/models/Quote';
-import { Stock } from '../../../../db/models/Stock';
+import { Stock } from '@prisma/client';
 import { YahooFinanceQuote, IntradayQuote, HistoricalQuote } from '../../../src/services/yahooFinanceService';
 
 use(chaiAsPromised);

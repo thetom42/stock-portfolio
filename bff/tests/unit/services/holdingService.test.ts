@@ -5,7 +5,7 @@ import * as holdingService from '../../../src/services/holdingService';
 import * as stockService from '../../../src/services/stockService';
 import * as quoteService from '../../../src/services/quoteService';
 import { CreateHoldingDTO, UpdateHoldingDTO } from '../../../src/models/Holding';
-import { Transaction } from '../../../../db/models/Transaction';
+import { Transaction } from '@prisma/client';
 import { 
   mockHoldingRepo,
   mockTransactionRepo,
@@ -96,7 +96,7 @@ describe('HoldingService', () => {
       const result = await holdingService.createHolding(mockCreateData);
 
       expect(result).to.deep.include({
-        id: mockHolding.holding_id,
+        holding_id: mockHolding.holding_id,
         portfolio_id: mockHolding.portfolio_id,
         isin: mockHolding.isin,
         quantity: mockHolding.quantity,
@@ -147,7 +147,7 @@ describe('HoldingService', () => {
       const result = await holdingService.getHoldingById('1');
 
       expect(result).to.deep.include({
-        id: mockHolding.holding_id,
+        holding_id: mockHolding.holding_id,
         portfolio_id: mockHolding.portfolio_id,
         isin: mockHolding.isin,
         quantity: mockHolding.quantity,

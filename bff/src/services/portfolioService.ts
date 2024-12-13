@@ -1,10 +1,11 @@
 import { CreatePortfolioDTO, UpdatePortfolioDTO, PortfolioDetails, PortfolioHolding } from '../models/Portfolio';
-import { PortfolioRepository } from '../../../db/repositories/PortfolioRepository';
+import { PortfolioRepository } from '@stock-portfolio/db';
+import { Portfolio } from '@prisma/client';
 import { getPrismaClient } from '../utils/database';
 import * as holdingService from './holdingService';
 
 // Helper function to map DB Portfolio to API response
-const mapDBPortfolioToDetails = async (dbPortfolio: any): Promise<PortfolioDetails> => {
+const mapDBPortfolioToDetails = async (dbPortfolio: Portfolio): Promise<PortfolioDetails> => {
   // Get holdings for this portfolio
   const holdings = await holdingService.getHoldingsByPortfolioId(dbPortfolio.portfolio_id);
   

@@ -1,9 +1,11 @@
 import { CreateTransactionDTO, Transaction as BFFTransaction, TransactionQueryParams, PaginatedTransactions } from '../models/Transaction';
-import { Transaction as DBTransaction } from '../../../db/models/Transaction';
 import { getPrismaClient } from '../utils/database';
-import { TransactionRepository } from '../../../db/repositories/TransactionRepository';
-import { HoldingRepository } from '../../../db/repositories/HoldingRepository';
-import { PortfolioRepository } from '../../../db/repositories/PortfolioRepository';
+import { 
+    TransactionRepository, 
+    HoldingRepository, 
+    PortfolioRepository 
+} from '@stock-portfolio/db';
+import { Transaction } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 // Initialize repositories with default implementations
@@ -26,7 +28,7 @@ export const setPortfolioRepository = (repo: any) => {
 };
 
 // Helper function to map DB Transaction to BFF Transaction
-const mapDBTransactionToBFF = (dbTransaction: DBTransaction): BFFTransaction => ({
+const mapDBTransactionToBFF = (dbTransaction: Transaction): BFFTransaction => ({
     id: dbTransaction.transaction_id,
     holding_id: dbTransaction.holding_id,
     buy: dbTransaction.buy,
@@ -38,7 +40,7 @@ const mapDBTransactionToBFF = (dbTransaction: DBTransaction): BFFTransaction => 
 });
 
 // Helper function to map array of DB Transactions to BFF Transactions
-const mapDBTransactionsToBFF = (dbTransactions: DBTransaction[]): BFFTransaction[] => 
+const mapDBTransactionsToBFF = (dbTransactions: Transaction[]): BFFTransaction[] => 
     dbTransactions.map(mapDBTransactionToBFF);
 
 // Helper function to filter and sort transactions

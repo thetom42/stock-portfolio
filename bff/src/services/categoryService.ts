@@ -1,5 +1,5 @@
 import { Category, CreateCategoryDTO, UpdateCategoryDTO, CategoryResponse } from '../models/Category';
-import { CategoryRepository } from '../../../db/repositories/CategoryRepository';
+import { CategoryRepository } from '@stock-portfolio/db';
 import { getPrismaClient } from '../utils/database';
 
 // Helper function to map DB Category to BFF Category
