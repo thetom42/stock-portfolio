@@ -2,6 +2,7 @@ import KeycloakConnect from 'keycloak-connect';
 import session from 'express-session';
 import { environment } from './environment';
 import type { Request, Response, NextFunction, AuthUser, KeycloakToken } from '../types/express';
+import { mapAuthProviderUser } from '../services/authMappingService';
 
 // Session configuration
 const memoryStore = new session.MemoryStore();
@@ -80,38 +81,52 @@ export const protect = (role?: string) => {
 };
 
 // Helper function to extract user info from token
-export const extractUserInfo = (token: KeycloakToken): AuthUser | undefined => {
+export const extractUserInfo = async (token: KeycloakToken): Promise<AuthUser | undefined> => {
   if (!token || !token.sub || !token.email || !token.given_name || !token.family_name) {
     console.log('Missing required user info in token');
     return undefined;
   }
 
-  const userInfo: AuthUser = {
+  // First create the auth provider user object
+  const providerUser = {
     id: token.sub,
     email: token.email,
     firstName: token.given_name,
     lastName: token.family_name,
     roles: token.realm_access?.roles || []
   };
-  console.log('Extracted user info:', userInfo);
-  return userInfo;
+
+  // Map the provider user to our internal user
+  const mappedUser = await mapAuthProviderUser(providerUser);
+  if (!mappedUser) {
+    console.log('Failed to map auth provider user to internal user');
+    return undefined;
+  }
+
+  console.log('Mapped user info:', mappedUser);
+  return mappedUser;
 };
 
 // Middleware to add user info to request
-export const addUserInfo = (req: Request, res: Response, next: NextFunction) => {
-  console.log('Adding user info to request');
-  if (req.kauth?.grant?.access_token?.content) {
-    const userInfo = extractUserInfo(req.kauth.grant.access_token.content);
-    if (userInfo) {
-      req.user = userInfo;
-      console.log('User info added to request');
+export const addUserInfo = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    console.log('Adding user info to request');
+    if (req.kauth?.grant?.access_token?.content) {
+      const userInfo = await extractUserInfo(req.kauth.grant.access_token.content);
+      if (userInfo) {
+        req.user = userInfo;
+        console.log('User info added to request');
+      } else {
+        console.log('Failed to extract user info from token');
+      }
     } else {
-      console.log('Failed to extract user info from token');
+      console.log('No Keycloak grant found in request');
     }
-  } else {
-    console.log('No Keycloak grant found in request');
+    next();
+  } catch (error) {
+    console.error('Error in addUserInfo middleware:', error);
+    next(error);
   }
-  next();
 };
 
 // Custom error handler for authentication errors

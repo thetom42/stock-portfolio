@@ -27,34 +27,154 @@
   ],
   "users": [
     {
-      "username": "test-user",
+      "username": "johnd",
       "enabled": true,
-      "email": "test@example.com",
-      "firstName": "Test",
-      "lastName": "User",
+      "email": "john.doe@example.com",
+      "firstName": "John",
+      "lastName": "Doe",
       "credentials": [
         {
           "type": "password",
-          "value": "test-password",
+          "value": "password123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user", "admin"]
+    },
+    {
+      "username": "janes",
+      "enabled": true,
+      "email": "jane.smith@example.com",
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password456",
           "temporary": false
         }
       ],
       "realmRoles": ["user"]
     },
     {
-      "username": "test-admin",
+      "username": "mikej",
       "enabled": true,
-      "email": "admin@example.com",
-      "firstName": "Test",
-      "lastName": "Admin",
+      "email": "michael.j@example.com",
+      "firstName": "Michael",
+      "lastName": "Johnson",
       "credentials": [
         {
           "type": "password",
-          "value": "admin-password",
+          "value": "password789",
           "temporary": false
         }
       ],
-      "realmRoles": ["user", "admin"]
+      "realmRoles": ["user"]
+    },
+    {
+      "username": "sarahw",
+      "enabled": true,
+      "email": "sarah.w@example.com",
+      "firstName": "Sarah",
+      "lastName": "Williams",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password321",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user"]
+    },
+    {
+      "username": "robbrown",
+      "enabled": true,
+      "email": "robert.b@example.com",
+      "firstName": "Robert",
+      "lastName": "Brown",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password654",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user"]
+    },
+    {
+      "username": "emilyd",
+      "enabled": true,
+      "email": "emily.d@example.com",
+      "firstName": "Emily",
+      "lastName": "Davis",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password987",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user"]
+    },
+    {
+      "username": "davidm",
+      "enabled": true,
+      "email": "david.m@example.com",
+      "firstName": "David",
+      "lastName": "Miller",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password147",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user"]
+    },
+    {
+      "username": "lisaa",
+      "enabled": true,
+      "email": "lisa.a@example.com",
+      "firstName": "Lisa",
+      "lastName": "Anderson",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password258",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user"]
+    },
+    {
+      "username": "jamesw",
+      "enabled": true,
+      "email": "james.w@example.com",
+      "firstName": "James",
+      "lastName": "Wilson",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password369",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user"]
+    },
+    {
+      "username": "mariag",
+      "enabled": true,
+      "email": "maria.g@example.com",
+      "firstName": "Maria",
+      "lastName": "Garcia",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password741",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user"]
     }
   ],
   "roles": {
