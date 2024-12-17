@@ -1,5 +1,5 @@
 -- Insert test users
-INSERT INTO user (user_id, name, surname, email, nickname, password, join_date)
+INSERT INTO "user" (user_id, name, surname, email, nickname, password, join_date)
 VALUES
   ('user-1', 'John', 'Doe', 'john.doe@example.com', 'johnd', 'password123', '2023-01-01'),
   ('user-2', 'Jane', 'Smith', 'jane.smith@example.com', 'janes', 'password456', '2023-01-02'),

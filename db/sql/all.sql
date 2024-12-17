@@ -4,7 +4,7 @@
 
 -- ************************************** user
 
-CREATE TABLE user
+CREATE TABLE "user"
 (
  user_id    text NOT NULL,
  name      text NOT NULL,
@@ -87,7 +87,7 @@ CREATE TABLE portfolio
  created_at   timestamp NOT NULL,
  user_id      text NOT NULL,
  CONSTRAINT pk_portfolio PRIMARY KEY ( portfolio_id ),
- CONSTRAINT fk_50 FOREIGN KEY ( user_id ) REFERENCES user ( user_id )
+ CONSTRAINT fk_50 FOREIGN KEY ( user_id ) REFERENCES "user" ( user_id )
 );
 
 CREATE INDEX fkidx_51 ON portfolio

@@ -9,8 +9,9 @@ WORKDIR /app
 COPY bff/package*.json ./
 COPY bff/tsconfig.json ./
 
-# Install BFF dependencies
+# Install BFF dependencies and prisma
 RUN npm install
+RUN npm install prisma --save-dev
 
 # Create the exact directory structure needed for imports
 RUN mkdir -p ../../../db
@@ -20,18 +21,24 @@ COPY db/package*.json ../../../db/
 COPY db/tsconfig.json ../../../db/
 WORKDIR /app/../../../db
 RUN npm install
-WORKDIR /app
 
-# Copy all necessary files maintaining the exact import structure
-COPY db/models/ ../../../db/models/
-COPY db/repositories/ ../../../db/repositories/
+# Copy DB source files first and build DB package
+COPY db/src/ ./src/
 COPY db/prisma/ ./prisma/
-COPY bff/src/ ./src/
+RUN npx prisma generate
+RUN npm run build
 
-# Generate Prisma client
+# Return to app directory and copy prisma schema
+WORKDIR /app
+COPY db/prisma/ ./prisma/
+
+# Generate Prisma client for BFF
 RUN npx prisma generate
 
-# Build the application
+# Copy BFF source files
+COPY bff/src/ ./src/
+
+# Build the BFF application
 RUN npm run build
 
 EXPOSE 3001
