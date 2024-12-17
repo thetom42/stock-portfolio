@@ -30,9 +30,9 @@ export const setPortfolioRepository = (repo: any) => {
 // Helper function to map DB Transaction to BFF Transaction
 const mapDBTransactionToBFF = (dbTransaction: Transaction): BFFTransaction => ({
     id: dbTransaction.transaction_id,
-    holding_id: dbTransaction.holding_id,
+    holdingId: dbTransaction.holding_id,
     buy: dbTransaction.buy,
-    transaction_time: dbTransaction.transaction_time,
+    transactionTime: dbTransaction.transaction_time,
     amount: dbTransaction.amount,
     price: Number(dbTransaction.price),
     commission: Number(dbTransaction.commission),
@@ -53,11 +53,11 @@ const filterAndSortTransactions = (
     // Apply date filters
     if (params.startDate) {
         const startDate = new Date(params.startDate);
-        filtered = filtered.filter(t => t.transaction_time >= startDate);
+        filtered = filtered.filter(t => t.transactionTime >= startDate);
     }
     if (params.endDate) {
         const endDate = new Date(params.endDate);
-        filtered = filtered.filter(t => t.transaction_time <= endDate);
+        filtered = filtered.filter(t => t.transactionTime <= endDate);
     }
 
     // Apply type filter
@@ -71,7 +71,7 @@ const filterAndSortTransactions = (
             const order = params.order === 'desc' ? -1 : 1;
             switch (params.sort) {
                 case 'date':
-                    return order * (a.transaction_time.getTime() - b.transaction_time.getTime());
+                    return order * (a.transactionTime.getTime() - b.transactionTime.getTime());
                 case 'amount':
                     return order * (a.amount - b.amount);
                 case 'price':

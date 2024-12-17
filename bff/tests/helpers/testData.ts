@@ -48,11 +48,11 @@ export const mockPortfolios: Record<string, Portfolio> = {
 // Category test data
 export const mockCategories: Record<string, Category> = {
   tech: {
-    category_id: 'cat123',
+    id: 'cat123',
     name: 'Technology'
   },
   finance: {
-    category_id: 'cat456',
+    id: 'cat456',
     name: 'Financial Services'
   }
 };
@@ -92,12 +92,12 @@ export const mockStocks: Record<string, Stock> = {
 // Holding test data
 export const mockHoldings: Record<string, Holding> = {
   appleHolding: {
-    holding_id: 'holding123',
-    portfolio_id: mockPortfolios.basic.id,
+    id: 'holding123',
+    portfolioId: mockPortfolios.basic.id,
     isin: mockStocks.apple.isin,
     quantity: 100,
-    start_date: new Date('2023-01-01'),
-    end_date: null
+    startDate: new Date('2023-01-01'),
+    endDate: null
   }
 };
 
@@ -105,9 +105,9 @@ export const mockHoldings: Record<string, Holding> = {
 export const mockTransactions: Record<string, Transaction> = {
   buyApple: {
     id: 'trans123',
-    holding_id: mockHoldings.appleHolding.holding_id,
+    holdingId: mockHoldings.appleHolding.id,
     buy: true,
-    transaction_time: new Date('2023-01-01'),
+    transactionTime: new Date('2023-01-01'),
     amount: 100,
     price: 150.50,
     commission: 7.99,
@@ -115,9 +115,9 @@ export const mockTransactions: Record<string, Transaction> = {
   },
   sellApple: {
     id: 'trans456',
-    holding_id: mockHoldings.appleHolding.holding_id,
+    holdingId: mockHoldings.appleHolding.id,
     buy: false,
-    transaction_time: new Date('2023-06-01'),
+    transactionTime: new Date('2023-06-01'),
     amount: 50,
     price: 175.25,
     commission: 7.99,

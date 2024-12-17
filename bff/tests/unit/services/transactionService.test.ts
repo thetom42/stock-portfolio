@@ -55,7 +55,8 @@ describe('TransactionService', () => {
       broker: 'TEST_BROKER'
     };
 
-    const mockHolding = {
+    // DB layer mock uses old naming
+    const mockDBHolding = {
       holding_id: holdingId,
       portfolio_id: portfolioId,
       quantity: 100,
@@ -73,11 +74,12 @@ describe('TransactionService', () => {
       broker: mockCreateData.broker || 'SYSTEM'
     };
 
-    const mockBFFTransaction: Transaction = {
+    // BFF layer response uses new naming
+    const expectedBFFTransaction: Transaction = {
       id: mockDBTransaction.transaction_id,
-      holding_id: mockDBTransaction.holding_id,
+      holdingId: mockDBTransaction.holding_id,
       buy: mockDBTransaction.buy,
-      transaction_time: mockDBTransaction.transaction_time,
+      transactionTime: mockDBTransaction.transaction_time,
       amount: mockDBTransaction.amount,
       price: Number(mockDBTransaction.price),
       commission: Number(mockDBTransaction.commission),
@@ -85,15 +87,15 @@ describe('TransactionService', () => {
     };
 
     it('should create a buy transaction successfully', async () => {
-      mockHoldingRepo.findById.resolves(mockHolding);
+      mockHoldingRepo.findById.resolves(mockDBHolding);
       mockPortfolioRepo.findById.resolves({ user_id: userId });
       mockTransactionRepo.create.resolves(mockDBTransaction);
-      mockHoldingRepo.update.resolves({ ...mockHolding, quantity: 200 });
+      mockHoldingRepo.update.resolves({ ...mockDBHolding, quantity: 200 });
 
       const result = await transactionService.createTransaction(userId, holdingId, mockCreateData);
 
-      expect(result).to.deep.equal(mockBFFTransaction);
-      sinon.assert.calledWith(mockHoldingRepo.update, holdingId, { quantity: mockHolding.quantity + mockCreateData.amount });
+      expect(result).to.deep.equal(expectedBFFTransaction);
+      sinon.assert.calledWith(mockHoldingRepo.update, holdingId, { quantity: mockDBHolding.quantity + mockCreateData.amount });
     });
 
     it('should create a sell transaction successfully', async () => {
@@ -104,26 +106,26 @@ describe('TransactionService', () => {
         amount: 50 
       };
       const sellBFFTransaction: Transaction = {
-        ...mockBFFTransaction,
+        ...expectedBFFTransaction,
         buy: false,
         amount: 50
       };
 
-      mockHoldingRepo.findById.resolves(mockHolding);
+      mockHoldingRepo.findById.resolves(mockDBHolding);
       mockPortfolioRepo.findById.resolves({ user_id: userId });
       mockTransactionRepo.create.resolves(sellDBTransaction);
-      mockHoldingRepo.update.resolves({ ...mockHolding, quantity: 50 });
+      mockHoldingRepo.update.resolves({ ...mockDBHolding, quantity: 50 });
 
       const result = await transactionService.createTransaction(userId, holdingId, sellData);
 
       expect(result).to.deep.equal(sellBFFTransaction);
-      sinon.assert.calledWith(mockHoldingRepo.update, holdingId, { quantity: mockHolding.quantity - sellData.amount });
+      sinon.assert.calledWith(mockHoldingRepo.update, holdingId, { quantity: mockDBHolding.quantity - sellData.amount });
     });
 
     it('should throw error if selling more than owned', async () => {
       const sellData = { ...mockCreateData, buy: false, amount: 150 };
 
-      mockHoldingRepo.findById.resolves(mockHolding);
+      mockHoldingRepo.findById.resolves(mockDBHolding);
       mockPortfolioRepo.findById.resolves({ user_id: userId });
 
       await expect(transactionService.createTransaction(userId, holdingId, sellData))
@@ -141,7 +143,7 @@ describe('TransactionService', () => {
     });
 
     it('should throw error if user not authorized', async () => {
-      mockHoldingRepo.findById.resolves(mockHolding);
+      mockHoldingRepo.findById.resolves(mockDBHolding);
       mockPortfolioRepo.findById.resolves({ user_id: 'different-user' });
 
       await expect(transactionService.createTransaction(userId, holdingId, mockCreateData))
@@ -151,6 +153,8 @@ describe('TransactionService', () => {
 
   describe('getTransactionById', () => {
     const transactionId = 'trans123';
+    
+    // DB layer mock uses old naming
     const mockDBTransaction = {
       transaction_id: transactionId,
       holding_id: holdingId,
@@ -162,11 +166,12 @@ describe('TransactionService', () => {
       broker: 'TEST_BROKER'
     };
 
-    const mockBFFTransaction: Transaction = {
+    // BFF layer response uses new naming
+    const expectedBFFTransaction: Transaction = {
       id: mockDBTransaction.transaction_id,
-      holding_id: mockDBTransaction.holding_id,
+      holdingId: mockDBTransaction.holding_id,
       buy: mockDBTransaction.buy,
-      transaction_time: mockDBTransaction.transaction_time,
+      transactionTime: mockDBTransaction.transaction_time,
       amount: mockDBTransaction.amount,
       price: Number(mockDBTransaction.price),
       commission: Number(mockDBTransaction.commission),
@@ -180,7 +185,7 @@ describe('TransactionService', () => {
 
       const result = await transactionService.getTransactionById(userId, transactionId);
 
-      expect(result).to.deep.equal(mockBFFTransaction);
+      expect(result).to.deep.equal(expectedBFFTransaction);
     });
 
     it('should throw error if transaction not found', async () => {
@@ -209,6 +214,7 @@ describe('TransactionService', () => {
   });
 
   describe('getTransactionsByHolding', () => {
+    // DB layer mock uses old naming
     const mockDBTransactions = [
       {
         transaction_id: 'trans1',
@@ -232,11 +238,12 @@ describe('TransactionService', () => {
       }
     ];
 
-    const mockBFFTransactions: Transaction[] = mockDBTransactions.map(t => ({
+    // BFF layer response uses new naming
+    const expectedBFFTransactions: Transaction[] = mockDBTransactions.map(t => ({
       id: t.transaction_id,
-      holding_id: t.holding_id,
+      holdingId: t.holding_id,
       buy: t.buy,
-      transaction_time: t.transaction_time,
+      transactionTime: t.transaction_time,
       amount: t.amount,
       price: Number(t.price),
       commission: Number(t.commission),
@@ -250,7 +257,7 @@ describe('TransactionService', () => {
 
       const result = await transactionService.getTransactionsByHolding(userId, holdingId);
 
-      expect(result.transactions).to.deep.equal(mockBFFTransactions);
+      expect(result.transactions).to.deep.equal(expectedBFFTransactions);
       expect(result.total).to.equal(2);
       expect(result.page).to.equal(1);
       expect(result.limit).to.equal(10);
@@ -324,7 +331,8 @@ describe('TransactionService', () => {
   });
 
   describe('getTransactionsByPortfolio', () => {
-    const mockHoldings = [
+    // DB layer mock uses old naming
+    const mockDBHoldings = [
       { holding_id: 'holding1', portfolio_id: portfolioId },
       { holding_id: 'holding2', portfolio_id: portfolioId }
     ];
@@ -352,15 +360,27 @@ describe('TransactionService', () => {
       }
     ];
 
+    // BFF layer response uses new naming
+    const expectedBFFTransactions: Transaction[] = mockDBTransactions.map(t => ({
+      id: t.transaction_id,
+      holdingId: t.holding_id,
+      buy: t.buy,
+      transactionTime: t.transaction_time,
+      amount: t.amount,
+      price: Number(t.price),
+      commission: Number(t.commission),
+      broker: t.broker
+    }));
+
     it('should return transactions for all holdings', async () => {
       mockPortfolioRepo.findById.resolves({ user_id: userId });
-      mockHoldingRepo.findByPortfolioId.resolves(mockHoldings);
+      mockHoldingRepo.findByPortfolioId.resolves(mockDBHoldings);
       mockTransactionRepo.findByHoldingId.onFirstCall().resolves([mockDBTransactions[0]]);
       mockTransactionRepo.findByHoldingId.onSecondCall().resolves([mockDBTransactions[1]]);
 
       const result = await transactionService.getTransactionsByPortfolio(userId, portfolioId);
 
-      expect(result.transactions).to.have.lengthOf(2);
+      expect(result.transactions).to.deep.equal(expectedBFFTransactions);
       sinon.assert.calledWith(mockTransactionRepo.findByHoldingId, 'holding1');
       sinon.assert.calledWith(mockTransactionRepo.findByHoldingId, 'holding2');
     });
@@ -373,7 +393,7 @@ describe('TransactionService', () => {
       };
 
       mockPortfolioRepo.findById.resolves({ user_id: userId });
-      mockHoldingRepo.findByPortfolioId.resolves(mockHoldings);
+      mockHoldingRepo.findByPortfolioId.resolves(mockDBHoldings);
       mockTransactionRepo.findByHoldingId.onFirstCall().resolves([mockDBTransactions[0]]);
       mockTransactionRepo.findByHoldingId.onSecondCall().resolves([mockDBTransactions[1]]);
 

@@ -21,7 +21,7 @@ const mapDBPortfolioToDetails = async (dbPortfolio: Portfolio): Promise<Portfoli
     totalCost += cost;
 
     return {
-      id: holding.holding_id,
+      id: holding.id,
       stockId: holding.isin,
       quantity: holding.quantity,
       averageCost: cost / holding.quantity,
@@ -35,11 +35,11 @@ const mapDBPortfolioToDetails = async (dbPortfolio: Portfolio): Promise<Portfoli
   const totalGainLossPercentage = totalCost > 0 ? (totalGainLoss / totalCost) * 100 : 0;
 
   return {
-    id: dbPortfolio.portfolio_id,
-    userId: dbPortfolio.user_id,
+    id: dbPortfolio.portfolio_id, // Note: DB layer uses portfolio_id
+    userId: dbPortfolio.user_id, // Note: DB layer uses user_id
     name: dbPortfolio.name,
     description: '', // Not stored in DB
-    createdAt: dbPortfolio.created_at,
+    createdAt: dbPortfolio.created_at, // Note: DB layer uses created_at
     updatedAt: dbPortfolio.created_at, // Using created_at as we don't have updated_at
     totalValue,
     totalGainLoss,
@@ -62,10 +62,10 @@ export const createPortfolio = async (
 ): Promise<PortfolioDetails> => {
   try {
     const dbPortfolio = await portfolioRepository.create({
-      portfolio_id: '', // Will be generated
-      user_id: userId,
+      portfolio_id: '', // Will be generated, Note: DB layer uses portfolio_id
+      user_id: userId, // Note: DB layer uses user_id
       name: portfolioData.name,
-      created_at: new Date()
+      created_at: new Date() // Note: DB layer uses created_at
     });
 
     return await mapDBPortfolioToDetails(dbPortfolio);

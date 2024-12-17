@@ -1,12 +1,13 @@
 import { getPrismaClient } from '../utils/database';
 import { CreateHoldingDTO, UpdateHoldingDTO, HoldingDetails } from '../models/Holding';
+import { Transaction as BFFTransaction } from '../models/Transaction';
 import * as stockService from './stockService';
 import * as quoteService from './quoteService';
 import { 
   HoldingRepository, 
   TransactionRepository 
 } from '@stock-portfolio/db';
-import { Holding, Transaction } from '@prisma/client';
+import { Holding, Transaction as DBTransaction } from '@prisma/client';
 import { QuoteInterval } from '../models/Quote';
 import { Decimal } from '@prisma/client/runtime/library';
 
@@ -24,6 +25,18 @@ export const setTransactionRepository = (repo: any) => {
   transactionRepository = repo;
 };
 
+// Helper function to map DB Transaction to BFF Transaction
+const mapDBTransactionToBFF = (dbTransaction: DBTransaction): BFFTransaction => ({
+  id: dbTransaction.transaction_id,
+  holdingId: dbTransaction.holding_id,
+  buy: dbTransaction.buy,
+  transactionTime: dbTransaction.transaction_time,
+  amount: dbTransaction.amount,
+  price: Number(dbTransaction.price),
+  commission: Number(dbTransaction.commission),
+  broker: dbTransaction.broker
+});
+
 // Helper function to map DB Holding to API response
 const mapDBHoldingToDetails = async (dbHolding: Holding): Promise<HoldingDetails> => {
   const stock = await stockService.getStockByIsin(dbHolding.isin);
@@ -39,12 +52,12 @@ const mapDBHoldingToDetails = async (dbHolding: Holding): Promise<HoldingDetails
   const gainLossPercentage = Number(totalCost) > 0 ? (gainLoss / Number(totalCost)) * 100 : 0;
 
   return {
-    holding_id: dbHolding.holding_id,
-    portfolio_id: dbHolding.portfolio_id,
+    id: dbHolding.holding_id,
+    portfolioId: dbHolding.portfolio_id,
     isin: dbHolding.isin,
     quantity: dbHolding.quantity,
-    start_date: dbHolding.start_date,
-    end_date: dbHolding.end_date,
+    startDate: dbHolding.start_date,
+    endDate: dbHolding.end_date,
     stock: {
       symbol: stock?.symbol || '',
       name: stock?.name || '',
@@ -79,7 +92,7 @@ export const createHolding = async (
     // Create the holding using repository
     const dbHolding = await holdingRepository.create({
       holding_id: '', // Will be generated
-      portfolio_id: holdingData.portfolio_id,
+      portfolio_id: holdingData.portfolioId, // Map from BFF to DB naming
       isin: holdingData.isin,
       quantity: holdingData.quantity,
       start_date: new Date(),
@@ -191,13 +204,14 @@ export const getHoldingPerformance = async (holdingId: string) => {
   };
 };
 
-export const getHoldingTransactions = async (holdingId: string) => {
+export const getHoldingTransactions = async (holdingId: string): Promise<BFFTransaction[]> => {
   const holding = await holdingRepository.findById(holdingId);
   if (!holding) {
     throw new Error('Holding not found');
   }
 
-  return await transactionRepository.findByHoldingId(holdingId);
+  const dbTransactions = await transactionRepository.findByHoldingId(holdingId);
+  return dbTransactions.map(mapDBTransactionToBFF);
 };
 
 export const getHoldingValue = async (holdingId: string) => {

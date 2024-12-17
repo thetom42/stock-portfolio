@@ -4,7 +4,7 @@ import { getPrismaClient } from '../utils/database';
 
 // Helper function to map DB Category to BFF Category
 const mapDBCategoryToBFF = (dbCategory: any): CategoryResponse => ({
-  category_id: dbCategory.category_id,
+  id: dbCategory.category_id, // Map from DB's category_id to BFF's id
   name: dbCategory.name
 });
 

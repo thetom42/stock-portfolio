@@ -2,17 +2,17 @@ import { Transaction } from './Transaction';
 
 // Base interface matching DB model
 export interface Holding {
-    holding_id: string;
-    portfolio_id: string;
+    id: string;
+    portfolioId: string;
     isin: string;
     quantity: number;
-    start_date: Date;
-    end_date: Date | null;
+    startDate: Date;
+    endDate: Date | null;
 }
 
 // DTOs for API requests
 export interface CreateHoldingDTO {
-    portfolio_id: string;
+    portfolioId: string;
     isin: string;
     quantity: number;
     price: number;

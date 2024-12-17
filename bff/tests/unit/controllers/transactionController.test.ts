@@ -34,13 +34,13 @@ describe('TransactionController', () => {
 
     const mockCreatedTransaction: Transaction = {
       id: '1',
-      holding_id: '1',
+      holdingId: '1',
       buy: mockCreateData.buy,
       amount: mockCreateData.amount,
       price: mockCreateData.price,
       commission: mockCreateData.commission!,
       broker: mockCreateData.broker!,
-      transaction_time: new Date()
+      transactionTime: new Date()
     };
 
     it('should create a buy transaction successfully', async () => {
@@ -102,13 +102,13 @@ describe('TransactionController', () => {
   describe('getTransactionsByHolding', () => {
     const mockTransaction: Transaction = {
       id: '1',
-      holding_id: '1',
+      holdingId: '1',
       buy: true,
       amount: 10,
       price: 150.50,
       commission: 9.99,
       broker: 'Test Broker',
-      transaction_time: new Date()
+      transactionTime: new Date()
     };
 
     const mockPaginatedTransactions: PaginatedTransactions = {

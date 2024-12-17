@@ -28,8 +28,9 @@ describe('CategoryController', () => {
       name: 'Technology'
     };
 
+    // BFF layer response uses new naming
     const mockCreatedCategory: Category = {
-      category_id: '1',
+      id: '1',
       name: mockCreateData.name
     };
 
@@ -64,13 +65,14 @@ describe('CategoryController', () => {
   });
 
   describe('getAllCategories', () => {
+    // BFF layer response uses new naming
     const mockCategories: Category[] = [
       {
-        category_id: '1',
+        id: '1',
         name: 'Technology'
       },
       {
-        category_id: '2',
+        id: '2',
         name: 'Healthcare'
       }
     ];
@@ -96,8 +98,9 @@ describe('CategoryController', () => {
   });
 
   describe('getCategoryById', () => {
+    // BFF layer response uses new naming
     const mockCategory: Category = {
-      category_id: '1',
+      id: '1',
       name: 'Technology'
     };
 

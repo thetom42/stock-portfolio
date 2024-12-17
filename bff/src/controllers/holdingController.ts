@@ -1,6 +1,6 @@
 import type { TypedResponse, NextFunction, AuthenticatedRequest } from '../types/express';
 import { CreateHoldingDTO, UpdateHoldingDTO, HoldingDetails, HoldingPerformance, HoldingValue, HoldingHistory } from '../models/Holding';
-import { Transaction } from '@stock-portfolio/db';
+import { Transaction } from '../models/Transaction';
 import * as holdingService from '../services/holdingService';
 
 // Define response types

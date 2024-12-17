@@ -23,17 +23,24 @@ describe('CategoryService', () => {
       name: 'Test Category'
     };
 
-    const mockCreatedCategory = {
+    // DB layer response uses old naming
+    const mockDBCategory = {
       category_id: '1',
       name: 'Test Category'
     };
 
+    // BFF layer response uses new naming
+    const expectedBFFCategory = {
+      id: '1',
+      name: 'Test Category'
+    };
+
     it('should create a category successfully', async () => {
-      mockCategoryRepo.create.resolves(mockCreatedCategory);
+      mockCategoryRepo.create.resolves(mockDBCategory);
 
       const result = await categoryService.createCategory(mockCreateData);
 
-      expect(result).to.deep.equal(mockCreatedCategory);
+      expect(result).to.deep.equal(expectedBFFCategory);
       expect(mockCategoryRepo.create.firstCall.args[0]).to.deep.include({
         category_id: '',
         name: mockCreateData.name
@@ -49,17 +56,24 @@ describe('CategoryService', () => {
   });
 
   describe('getCategoryById', () => {
-    const mockCategory = {
+    // DB layer response uses old naming
+    const mockDBCategory = {
       category_id: '1',
       name: 'Test Category'
     };
 
+    // BFF layer response uses new naming
+    const expectedBFFCategory = {
+      id: '1',
+      name: 'Test Category'
+    };
+
     it('should return category if found', async () => {
-      mockCategoryRepo.findById.resolves(mockCategory);
+      mockCategoryRepo.findById.resolves(mockDBCategory);
 
       const result = await categoryService.getCategoryById('1');
 
-      expect(result).to.deep.equal(mockCategory);
+      expect(result).to.deep.equal(expectedBFFCategory);
       expect(mockCategoryRepo.findById.calledWith('1')).to.be.true;
     });
 
@@ -73,17 +87,24 @@ describe('CategoryService', () => {
   });
 
   describe('getAllCategories', () => {
-    const mockCategories = [
+    // DB layer response uses old naming
+    const mockDBCategories = [
       { category_id: '1', name: 'Category 1' },
       { category_id: '2', name: 'Category 2' }
     ];
 
+    // BFF layer response uses new naming
+    const expectedBFFCategories = [
+      { id: '1', name: 'Category 1' },
+      { id: '2', name: 'Category 2' }
+    ];
+
     it('should return all categories', async () => {
-      mockCategoryRepo.findAll.resolves(mockCategories);
+      mockCategoryRepo.findAll.resolves(mockDBCategories);
 
       const result = await categoryService.getAllCategories();
 
-      expect(result).to.deep.equal(mockCategories);
+      expect(result).to.deep.equal(expectedBFFCategories);
       expect(mockCategoryRepo.findAll.called).to.be.true;
     });
 
@@ -101,17 +122,24 @@ describe('CategoryService', () => {
       name: 'Updated Category'
     };
 
-    const mockUpdatedCategory = {
+    // DB layer response uses old naming
+    const mockDBUpdatedCategory = {
       category_id: '1',
       name: 'Updated Category'
     };
 
+    // BFF layer response uses new naming
+    const expectedBFFUpdatedCategory = {
+      id: '1',
+      name: 'Updated Category'
+    };
+
     it('should update category successfully', async () => {
-      mockCategoryRepo.update.resolves(mockUpdatedCategory);
+      mockCategoryRepo.update.resolves(mockDBUpdatedCategory);
 
       const result = await categoryService.updateCategory('1', mockUpdateData);
 
-      expect(result).to.deep.equal(mockUpdatedCategory);
+      expect(result).to.deep.equal(expectedBFFUpdatedCategory);
       expect(mockCategoryRepo.update.firstCall.args).to.deep.equal([
         '1',
         { name: mockUpdateData.name }

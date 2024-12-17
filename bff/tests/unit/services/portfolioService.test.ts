@@ -128,18 +128,41 @@ describe('PortfolioService', () => {
     it('should calculate portfolio totals with holdings', async () => {
       mockPortfolioRepo.findById.resolves(mockDBPortfolio);
       
+      // Mock holdings using BFF layer naming
       const mockHoldings = [
         {
-          holding_id: 'h1',
+          id: 'h1',
+          portfolioId: '1',
           isin: 'stock1',
           quantity: 10,
-          currentPrice: 100 // Mock current price
+          currentPrice: 100, // Mock current price
+          startDate: new Date(),
+          endDate: null,
+          stock: {
+            symbol: 'STOCK1',
+            name: 'Stock One',
+            currency: 'USD'
+          },
+          totalValue: 1000,
+          gainLoss: 0,
+          gainLossPercentage: 0
         },
         {
-          holding_id: 'h2',
+          id: 'h2',
+          portfolioId: '1',
           isin: 'stock2',
           quantity: 5,
-          currentPrice: 200 // Mock current price
+          currentPrice: 200, // Mock current price
+          startDate: new Date(),
+          endDate: null,
+          stock: {
+            symbol: 'STOCK2',
+            name: 'Stock Two',
+            currency: 'USD'
+          },
+          totalValue: 1000,
+          gainLoss: 0,
+          gainLossPercentage: 0
         }
       ];
       
@@ -257,18 +280,41 @@ describe('PortfolioService', () => {
       created_at: new Date()
     };
 
+    // Mock holdings using BFF layer naming
     const mockHoldings = [
       {
-        holding_id: 'h1',
+        id: 'h1',
+        portfolioId: '1',
         isin: 'AAPL',
         quantity: 10,
-        currentPrice: 150
+        currentPrice: 150,
+        startDate: new Date(),
+        endDate: null,
+        stock: {
+          symbol: 'AAPL',
+          name: 'Apple Inc.',
+          currency: 'USD'
+        },
+        totalValue: 1500,
+        gainLoss: 0,
+        gainLossPercentage: 0
       },
       {
-        holding_id: 'h2',
+        id: 'h2',
+        portfolioId: '1',
         isin: 'MSFT',
         quantity: 5,
-        currentPrice: 200
+        currentPrice: 200,
+        startDate: new Date(),
+        endDate: null,
+        stock: {
+          symbol: 'MSFT',
+          name: 'Microsoft Corp',
+          currency: 'USD'
+        },
+        totalValue: 1000,
+        gainLoss: 0,
+        gainLossPercentage: 0
       }
     ];
 
@@ -340,12 +386,24 @@ describe('PortfolioService', () => {
       created_at: new Date()
     };
 
+    // Mock holdings using BFF layer naming
     const mockHoldings = [
       {
-        holding_id: 'h1',
+        id: 'h1',
+        portfolioId: '1',
         isin: 'AAPL',
         quantity: 10,
-        currentPrice: 150
+        currentPrice: 150,
+        startDate: new Date(),
+        endDate: null,
+        stock: {
+          symbol: 'AAPL',
+          name: 'Apple Inc.',
+          currency: 'USD'
+        },
+        totalValue: 1500,
+        gainLoss: 0,
+        gainLossPercentage: 0
       }
     ];
 

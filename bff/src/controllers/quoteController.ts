@@ -102,7 +102,7 @@ export const getPortfolioQuotes = async (
     // Verify portfolio ownership
     const portfolio = await portfolioRepository.findById(portfolioId);
     
-    if (!portfolio || portfolio.user_id !== userId) {
+    if (!portfolio || portfolio.user_id !== userId) { // Note: DB layer still uses user_id
       return res.status(403).json({ error: 'Unauthorized' });
     }
     
@@ -147,9 +147,9 @@ export const getHoldingQuotes = async (
       return res.status(404).json({ error: 'Holding not found' });
     }
     
-    const portfolio = await portfolioRepository.findById(holding.portfolio_id);
+    const portfolio = await portfolioRepository.findById(holding.portfolio_id); // Note: DB layer still uses portfolio_id
     
-    if (!portfolio || portfolio.user_id !== userId) {
+    if (!portfolio || portfolio.user_id !== userId) { // Note: DB layer still uses user_id
       return res.status(403).json({ error: 'Unauthorized' });
     }
     

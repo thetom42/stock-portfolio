@@ -1,6 +1,6 @@
 // Base interface matching DB model
 export interface Category {
-    category_id: string;
+    id: string;
     name: string;
 }
 

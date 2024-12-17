@@ -6,7 +6,7 @@ import { CreateHoldingDTO, HoldingDetails, UpdateHoldingDTO } from '../../../src
 import { createMockRequest, RequestWithUser } from '../../helpers/mockRequest';
 import { createMockResponse, MockResponse, verifyResponse } from '../../helpers/mockResponse';
 import { setupRepositoryMocks, resetRepositoryMocks, mockHoldingRepo } from '../../helpers/mockRepositories';
-import { Decimal } from '@prisma/client/runtime/library';
+import { Transaction } from '../../../src/models/Transaction';
 
 describe('HoldingController', () => {
   let req: Partial<RequestWithUser>;
@@ -25,12 +25,12 @@ describe('HoldingController', () => {
   });
 
   const mockHoldingDetails: HoldingDetails = {
-    holding_id: '1',
-    portfolio_id: '1',
+    id: '1',
+    portfolioId: '1',
     isin: 'US0378331005',
     quantity: 10,
-    start_date: new Date(),
-    end_date: null,
+    startDate: new Date(),
+    endDate: null,
     stock: {
       symbol: 'AAPL',
       name: 'Apple Inc.',
@@ -44,7 +44,7 @@ describe('HoldingController', () => {
 
   describe('createHolding', () => {
     const mockCreateData: CreateHoldingDTO = {
-      portfolio_id: '1',
+      portfolioId: '1',
       isin: 'US0378331005',
       quantity: 10,
       price: 150.50
@@ -271,14 +271,14 @@ describe('HoldingController', () => {
   });
 
   describe('getHoldingTransactions', () => {
-    const mockTransactions = [{
-      transaction_id: '1',
-      holding_id: '1',
+    const mockTransactions: Transaction[] = [{
+      id: '1',
+      holdingId: '1',
       buy: true,
       amount: 10,
-      price: new Decimal(150.50),
-      transaction_time: new Date(),
-      commission: new Decimal(5.00),
+      price: 150.50,
+      transactionTime: new Date(),
+      commission: 5.00,
       broker: 'Example Broker'
     }];
 

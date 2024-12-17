@@ -1,9 +1,9 @@
 // Base interface matching DB model
 export interface Transaction {
     id: string;
-    holding_id: string;
+    holdingId: string;
     buy: boolean;
-    transaction_time: Date;
+    transactionTime: Date;
     amount: number;
     price: number;
     commission: number;
