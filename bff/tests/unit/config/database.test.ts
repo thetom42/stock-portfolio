@@ -22,9 +22,9 @@ describe('Database Configuration', () => {
       const { environment } = require('./test-environment');
       expect(environment.DB_HOST).to.equal('localhost');
       expect(environment.DB_PORT).to.equal(5432);
-      expect(environment.DB_NAME).to.equal('stockportfolio');
+      expect(environment.DB_NAME).to.equal('stockportfolio_test');
       expect(environment.DB_USER).to.equal('postgres');
-      expect(environment.DB_PASSWORD).to.equal('');
+      expect(environment.DB_PASSWORD).to.equal('test_password');
       expect(environment.DB_SSL).to.be.false;
     });
 

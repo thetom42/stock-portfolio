@@ -10,5 +10,22 @@
             "username": "postgres",
             "password": "postgres"
         }
-    ]
+    ],
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit"
+    },
+    "javascript.updateImportsOnFileMove.enabled": "always",
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "files.watcherExclude": {
+        "**/node_modules/**": true,
+        "**/dist/**": true
+    },
+    "debug.javascript.autoAttachFilter": "smart",
+    "debug.javascript.terminalOptions": {
+        "skipFiles": [
+            "<node_internals>/**"
+        ]
+    }
 }

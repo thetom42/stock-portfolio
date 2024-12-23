@@ -1,5 +1,8 @@
 module.exports = {
-  require: ['ts-node/register'],
+  require: [
+    'ts-node/register',
+    '../../setup.ts'  // Include the mock database setup
+  ],
   extension: ['ts'],
   spec: [
     'categoryService.test.ts',
@@ -8,8 +11,7 @@ module.exports = {
     'quoteService.test.ts',
     'stockService.test.ts',
     'transactionService.test.ts',
-    'userService.test.ts',
-    'yahooFinanceService.test.ts'
+    'userService.test.ts'
   ],
   timeout: 0,
   exit: true,

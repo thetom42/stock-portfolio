@@ -1,4 +1,4 @@
-import * as userService from './userService';
+import { userService } from './userService';
 import { AuthUser } from '../types/express';
 
 /**
@@ -21,7 +21,7 @@ export const mapAuthProviderUser = async (providerUser: AuthProviderUser): Promi
   try {
     // Find our internal user by email
     const internalUser = await userService.getUserByEmail(providerUser.email);
-    
+
     if (!internalUser) {
       console.warn(`No internal user found for email: ${providerUser.email}`);
       return null;

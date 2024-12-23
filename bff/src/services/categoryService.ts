@@ -8,84 +8,99 @@ const mapDBCategoryToBFF = (dbCategory: any): CategoryResponse => ({
   name: dbCategory.name
 });
 
-// Repository factory
-let categoryRepository: CategoryRepository;
+class CategoryService {
+  private repository: CategoryRepository;
+  private static instance: CategoryService;
 
-export const getCategoryRepository = () => {
-  if (!categoryRepository) {
-    categoryRepository = new CategoryRepository(getPrismaClient());
+  private constructor() {
+    this.repository = new CategoryRepository(getPrismaClient());
   }
-  return categoryRepository;
-};
+
+  static getInstance(): CategoryService {
+    if (!CategoryService.instance) {
+      CategoryService.instance = new CategoryService();
+    }
+    return CategoryService.instance;
+  }
+
+  // For testing purposes
+  setRepository(repo: CategoryRepository): void {
+    this.repository = repo;
+  }
+
+  async createCategory(categoryData: CreateCategoryDTO): Promise<CategoryResponse> {
+    try {
+      const dbCategory = await this.repository.create({
+        category_id: '', // Will be generated
+        name: categoryData.name
+      });
+
+      return mapDBCategoryToBFF(dbCategory);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('already exists')) {
+        throw new Error('Category with this name already exists');
+      }
+      throw new Error('Failed to create category');
+    }
+  }
+
+  async getCategoryById(categoryId: string): Promise<CategoryResponse | null> {
+    try {
+      const category = await this.repository.findById(categoryId);
+
+      if (!category) {
+        return null;
+      }
+
+      return mapDBCategoryToBFF(category);
+    } catch (error) {
+      throw new Error('Failed to fetch category');
+    }
+  }
+
+  async getAllCategories(): Promise<CategoryResponse[]> {
+    try {
+      const categories = await this.repository.findAll();
+      return categories.map(mapDBCategoryToBFF);
+    } catch (error) {
+      throw new Error('Failed to fetch categories');
+    }
+  }
+
+  async updateCategory(
+    categoryId: string,
+    updateData: UpdateCategoryDTO
+  ): Promise<CategoryResponse | null> {
+    try {
+      const updatedCategory = await this.repository.update(categoryId, {
+        name: updateData.name
+      });
+
+      if (!updatedCategory) {
+        return null;
+      }
+
+      return mapDBCategoryToBFF(updatedCategory);
+    } catch (error) {
+      throw new Error('Failed to update category');
+    }
+  }
+
+  async deleteCategory(categoryId: string): Promise<CategoryResponse> {
+    try {
+      const deletedCategory = await this.repository.delete(categoryId);
+      return mapDBCategoryToBFF(deletedCategory);
+    } catch (error) {
+      throw new Error('Failed to delete category');
+    }
+  }
+}
+
+// Export singleton instance
+export const categoryService = CategoryService.getInstance();
 
 // For testing purposes
 export const setCategoryRepository = (repo: CategoryRepository) => {
-  categoryRepository = repo;
-};
-
-export const createCategory = async (categoryData: CreateCategoryDTO): Promise<CategoryResponse> => {
-  try {
-    const dbCategory = await getCategoryRepository().create({
-      category_id: '', // Will be generated
-      name: categoryData.name
-    });
-
-    return mapDBCategoryToBFF(dbCategory);
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('already exists')) {
-      throw new Error('Category with this name already exists');
-    }
-    throw error;
-  }
-};
-
-export const getCategoryById = async (categoryId: string): Promise<CategoryResponse | null> => {
-  const category = await getCategoryRepository().findById(categoryId);
-
-  if (!category) {
-    return null;
-  }
-
-  return mapDBCategoryToBFF(category);
-};
-
-export const getAllCategories = async (): Promise<CategoryResponse[]> => {
-  const categories = await getCategoryRepository().findAll();
-  return categories.map(mapDBCategoryToBFF);
-};
-
-export const updateCategory = async (
-  categoryId: string,
-  updateData: UpdateCategoryDTO
-): Promise<CategoryResponse> => {
-  try {
-    const updatedCategory = await getCategoryRepository().update(categoryId, {
-      name: updateData.name
-    });
-
-    return mapDBCategoryToBFF(updatedCategory);
-  } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('not found')) {
-        throw new Error('Category not found');
-      }
-      if (error.message.includes('already exists')) {
-        throw new Error('Category with this name already exists');
-      }
-    }
-    throw new Error('Failed to update category');
-  }
-};
-
-export const deleteCategory = async (categoryId: string): Promise<void> => {
-  try {
-    await getCategoryRepository().delete(categoryId);
-  } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('not found')) {
-        throw new Error('Category not found');
-      }
-    }
-    throw new Error('Failed to delete category');
-  }
+  categoryService.setRepository(repo);
+  return categoryService;
 };

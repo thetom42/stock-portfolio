@@ -1,11 +1,11 @@
 import type { TypedResponse, NextFunction, AuthenticatedRequest } from '../types/express';
-import { 
-  CreateTransactionDTO, 
-  TransactionQueryParams, 
+import {
+  CreateTransactionDTO,
+  TransactionQueryParams,
   Transaction,
-  PaginatedTransactions 
+  PaginatedTransactions
 } from '../models/Transaction';
-import * as transactionService from '../services/transactionService';
+import { transactionService } from '../services/transactionService';
 
 // Define response types
 type TransactionResponse = { transaction: Transaction };

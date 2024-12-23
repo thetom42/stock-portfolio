@@ -1,276 +1,138 @@
-import { CreatePortfolioDTO, UpdatePortfolioDTO, PortfolioDetails, PortfolioHolding } from '../models/Portfolio';
-import { PortfolioRepository } from '@stock-portfolio/db';
-import { Portfolio } from '@prisma/client';
-import { getPrismaClient } from '../utils/database';
-import * as holdingService from './holdingService';
+import { prisma, PortfolioRepository } from '@stock-portfolio/db';
+import type { Portfolio as DBPortfolio } from '@stock-portfolio/db/dist/models/Portfolio';
+import type { Portfolio, CreatePortfolioDTO, UpdatePortfolioDTO, PortfolioSummary, PerformanceData, AllocationData, ReturnsData, HistoryData } from '../models/Portfolio';
 
-// Helper function to map DB Portfolio to API response
-const mapDBPortfolioToDetails = async (dbPortfolio: Portfolio): Promise<PortfolioDetails> => {
-  // Get holdings for this portfolio
-  const holdings = await holdingService.getHoldingsByPortfolioId(dbPortfolio.portfolio_id);
-  
-  // Calculate portfolio totals
-  let totalValue = 0;
-  let totalCost = 0;
+// Helper function to map DB Portfolio to BFF Portfolio
+const mapDBPortfolioToBFF = (dbPortfolio: DBPortfolio): Portfolio => ({
+  id: dbPortfolio.portfolio_id,
+  userId: dbPortfolio.user_id,
+  name: dbPortfolio.name,
+  createdAt: dbPortfolio.created_at,
+  updatedAt: dbPortfolio.created_at, // Using created_at as we don't have updated_at in DB
+});
 
-  const portfolioHoldings: PortfolioHolding[] = holdings.map(holding => {
-    const currentValue = holding.currentPrice * holding.quantity;
-    totalValue += currentValue;
-    // Note: This is a simplified cost calculation. In reality, we'd need to consider all transactions
-    const cost = holding.currentPrice * holding.quantity; // Placeholder
-    totalCost += cost;
+export class PortfolioService {
+  private portfolioRepository: PortfolioRepository;
 
+  constructor(portfolioRepo?: PortfolioRepository) {
+    this.portfolioRepository = portfolioRepo || new PortfolioRepository(prisma);
+  }
+
+  async getPortfolioById(portfolioId: string): Promise<Portfolio | null> {
+    const portfolio = await this.portfolioRepository.findById(portfolioId);
+    return portfolio ? mapDBPortfolioToBFF(portfolio) : null;
+  }
+
+  async getPortfoliosByUserId(userId: string): Promise<Portfolio[]> {
+    const portfolios = await this.portfolioRepository.findByUserId(userId);
+    return portfolios.map(mapDBPortfolioToBFF);
+  }
+
+  async createPortfolio(userId: string, portfolio: CreatePortfolioDTO): Promise<Portfolio> {
+    const dbPortfolio = await this.portfolioRepository.create({
+      portfolio_id: crypto.randomUUID(),
+      user_id: userId,
+      name: portfolio.name,
+      created_at: new Date()
+    });
+    return mapDBPortfolioToBFF(dbPortfolio);
+  }
+
+  async updatePortfolio(portfolioId: string, portfolio: UpdatePortfolioDTO): Promise<Portfolio> {
+    const dbPortfolio = await this.portfolioRepository.update(portfolioId, {
+      name: portfolio.name
+    });
+    return mapDBPortfolioToBFF(dbPortfolio);
+  }
+
+  async deletePortfolio(portfolioId: string): Promise<Portfolio> {
+    const dbPortfolio = await this.portfolioRepository.delete(portfolioId);
+    return mapDBPortfolioToBFF(dbPortfolio);
+  }
+
+  // Additional portfolio functionality
+  async getPortfolioSummary(portfolioId: string): Promise<PortfolioSummary | null> {
+    const portfolio = await this.portfolioRepository.findById(portfolioId);
+    if (!portfolio) return null;
+
+    // Implementation would calculate these values
     return {
-      id: holding.id,
-      stockId: holding.isin,
-      quantity: holding.quantity,
-      averageCost: cost / holding.quantity,
-      currentValue,
-      gainLoss: currentValue - cost,
-      gainLossPercentage: ((currentValue - cost) / cost) * 100
+      totalValue: 0,
+      totalGainLoss: 0,
+      totalGainLossPercentage: 0,
+      numberOfHoldings: 0,
+      topPerformers: []
     };
-  });
+  }
 
-  const totalGainLoss = totalValue - totalCost;
-  const totalGainLossPercentage = totalCost > 0 ? (totalGainLoss / totalCost) * 100 : 0;
+  async getPortfolioPerformance(portfolioId: string): Promise<PerformanceData | null> {
+    const portfolio = await this.portfolioRepository.findById(portfolioId);
+    if (!portfolio) return null;
 
-  return {
-    id: dbPortfolio.portfolio_id, // Note: DB layer uses portfolio_id
-    userId: dbPortfolio.user_id, // Note: DB layer uses user_id
-    name: dbPortfolio.name,
-    description: '', // Not stored in DB
-    createdAt: dbPortfolio.created_at, // Note: DB layer uses created_at
-    updatedAt: dbPortfolio.created_at, // Using created_at as we don't have updated_at
-    totalValue,
-    totalGainLoss,
-    totalGainLossPercentage,
-    holdings: portfolioHoldings
-  };
-};
+    // Implementation would calculate performance data
+    return {
+      daily: [],
+      weekly: [],
+      monthly: []
+    };
+  }
 
-// Initialize repository
-let portfolioRepository = new PortfolioRepository(getPrismaClient());
+  async getPortfolioHoldings(portfolioId: string): Promise<any[] | null> {
+    const portfolio = await this.portfolioRepository.findById(portfolioId);
+    if (!portfolio) return null;
+
+    // Implementation would fetch and return holdings
+    return [];
+  }
+
+  async getPortfolioAllocation(portfolioId: string): Promise<AllocationData | null> {
+    const portfolio = await this.portfolioRepository.findById(portfolioId);
+    if (!portfolio) return null;
+
+    // Implementation would calculate allocation data
+    return {
+      bySector: [],
+      byAssetType: []
+    };
+  }
+
+  async getPortfolioReturns(portfolioId: string): Promise<ReturnsData | null> {
+    const portfolio = await this.portfolioRepository.findById(portfolioId);
+    if (!portfolio) return null;
+
+    // Implementation would calculate returns data
+    return {
+      totalReturn: 0,
+      totalReturnPercentage: 0,
+      annualizedReturn: 0,
+      periodReturns: {
+        '1d': 0,
+        '1w': 0,
+        '1m': 0,
+        '3m': 0,
+        '6m': 0,
+        '1y': 0,
+        ytd: 0
+      }
+    };
+  }
+
+  async getPortfolioHistory(portfolioId: string): Promise<HistoryData | null> {
+    const portfolio = await this.portfolioRepository.findById(portfolioId);
+    if (!portfolio) return null;
+
+    // Implementation would fetch historical data
+    return {
+      transactions: [],
+      valueHistory: []
+    };
+  }
+}
+
+// Export a singleton instance
+export const portfolioService = new PortfolioService();
 
 // For testing: allow repository injection
-export const setPortfolioRepository = (repo: any) => {
-  portfolioRepository = repo;
-};
-
-export const createPortfolio = async (
-  userId: string,
-  portfolioData: CreatePortfolioDTO
-): Promise<PortfolioDetails> => {
-  try {
-    const dbPortfolio = await portfolioRepository.create({
-      portfolio_id: '', // Will be generated, Note: DB layer uses portfolio_id
-      user_id: userId, // Note: DB layer uses user_id
-      name: portfolioData.name,
-      created_at: new Date() // Note: DB layer uses created_at
-    });
-
-    return await mapDBPortfolioToDetails(dbPortfolio);
-  } catch (error) {
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error('Failed to create portfolio');
-  }
-};
-
-export const getPortfolioById = async (
-  portfolioId: string
-): Promise<PortfolioDetails | null> => {
-  const portfolio = await portfolioRepository.findById(portfolioId);
-
-  if (!portfolio) {
-    return null;
-  }
-
-  return await mapDBPortfolioToDetails(portfolio);
-};
-
-export const getPortfoliosByUserId = async (
-  userId: string
-): Promise<PortfolioDetails[]> => {
-  const portfolios = await portfolioRepository.findByUserId(userId);
-  return Promise.all(portfolios.map(mapDBPortfolioToDetails));
-};
-
-export const updatePortfolio = async (
-  portfolioId: string,
-  updateData: UpdatePortfolioDTO
-): Promise<PortfolioDetails | null> => {
-  try {
-    // First check if portfolio exists
-    const existingPortfolio = await portfolioRepository.findById(portfolioId);
-
-    if (!existingPortfolio) {
-      return null;
-    }
-
-    const updatedPortfolio = await portfolioRepository.update(portfolioId, {
-      name: updateData.name
-    });
-
-    return await mapDBPortfolioToDetails(updatedPortfolio);
-  } catch (error) {
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error('Failed to update portfolio');
-  }
-};
-
-export const deletePortfolio = async (portfolioId: string): Promise<void> => {
-  try {
-    await portfolioRepository.delete(portfolioId);
-  } catch (error) {
-    if (error instanceof Error && error.message === 'Portfolio not found') {
-      throw error;
-    }
-    throw new Error('Failed to delete portfolio');
-  }
-};
-
-export const getPortfolioSummary = async (portfolioId: string) => {
-  const portfolio = await getPortfolioById(portfolioId);
-  if (!portfolio) return null;
-
-  const holdings = portfolio.holdings;
-  const topPerformers = [...holdings]
-    .sort((a, b) => b.gainLossPercentage - a.gainLossPercentage)
-    .slice(0, 5)
-    .map(h => ({
-      symbol: h.stockId,
-      gainLossPercentage: h.gainLossPercentage
-    }));
-
-  return {
-    totalValue: portfolio.totalValue || 0,
-    totalGainLoss: portfolio.totalGainLoss || 0,
-    totalGainLossPercentage: portfolio.totalGainLossPercentage || 0,
-    numberOfHoldings: holdings.length,
-    topPerformers
-  };
-};
-
-export const getPortfolioPerformance = async (portfolioId: string) => {
-  const portfolio = await getPortfolioById(portfolioId);
-  if (!portfolio) return null;
-
-  const baseValue = portfolio.totalValue || 0;
-
-  // Mock data for demonstration - in real implementation, this would come from historical data
-  const today = new Date();
-  const dailyData = Array.from({ length: 7 }, (_, i) => ({
-    date: new Date(today.getTime() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    value: baseValue * (1 + (Math.random() * 0.1 - 0.05))
-  })).reverse();
-
-  const weeklyData = Array.from({ length: 4 }, (_, i) => ({
-    date: `2023-W${i + 1}`,
-    value: baseValue * (1 + (Math.random() * 0.2 - 0.1))
-  }));
-
-  const monthlyData = Array.from({ length: 12 }, (_, i) => ({
-    date: `2023-${String(i + 1).padStart(2, '0')}`,
-    value: baseValue * (1 + (Math.random() * 0.3 - 0.15))
-  }));
-
-  return {
-    daily: dailyData,
-    weekly: weeklyData,
-    monthly: monthlyData
-  };
-};
-
-export const getPortfolioHoldings = async (portfolioId: string) => {
-  const portfolio = await getPortfolioById(portfolioId);
-  if (!portfolio) return null;
-
-  return portfolio.holdings;
-};
-
-export const getPortfolioAllocation = async (portfolioId: string) => {
-  const portfolio = await getPortfolioById(portfolioId);
-  if (!portfolio) return null;
-
-  // Mock data for demonstration - in real implementation, this would come from stock metadata
-  const sectors = ['Technology', 'Healthcare', 'Finance', 'Consumer Goods', 'Energy'];
-  const assetTypes = ['Stocks', 'ETFs', 'Bonds', 'Cash'];
-
-  const bySector = sectors.map(sector => ({
-    sector,
-    percentage: Math.random() * 100
-  }));
-
-  const byAssetType = assetTypes.map(type => ({
-    type,
-    percentage: Math.random() * 100
-  }));
-
-  // Normalize percentages to sum to 100
-  const normalizePercentages = (items: Array<{ percentage: number }>) => {
-    const total = items.reduce((sum, item) => sum + item.percentage, 0);
-    items.forEach(item => {
-      item.percentage = (item.percentage / total) * 100;
-    });
-  };
-
-  normalizePercentages(bySector);
-  normalizePercentages(byAssetType);
-
-  return {
-    bySector,
-    byAssetType
-  };
-};
-
-export const getPortfolioReturns = async (portfolioId: string) => {
-  const portfolio = await getPortfolioById(portfolioId);
-  if (!portfolio) return null;
-
-  const totalGainLossPercentage = portfolio.totalGainLossPercentage || 0;
-
-  // Mock data for demonstration - in real implementation, this would be calculated from historical data
-  return {
-    totalReturn: portfolio.totalGainLoss || 0,
-    totalReturnPercentage: totalGainLossPercentage,
-    annualizedReturn: totalGainLossPercentage / 2, // Simplified calculation
-    periodReturns: {
-      '1d': Math.random() * 2 - 1,
-      '1w': Math.random() * 5 - 2.5,
-      '1m': Math.random() * 10 - 5,
-      '3m': Math.random() * 15 - 7.5,
-      '6m': Math.random() * 20 - 10,
-      '1y': Math.random() * 30 - 15,
-      'ytd': Math.random() * 25 - 12.5
-    }
-  };
-};
-
-export const getPortfolioHistory = async (portfolioId: string) => {
-  const portfolio = await getPortfolioById(portfolioId);
-  if (!portfolio) return null;
-
-  const baseValue = portfolio.totalValue || 0;
-
-  // Mock data for demonstration - in real implementation, this would come from transaction history
-  const transactions = Array.from({ length: 10 }, (_, i) => ({
-    date: new Date(Date.now() - i * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    type: Math.random() > 0.5 ? 'BUY' : 'SELL',
-    symbol: ['AAPL', 'MSFT', 'GOOGL', 'AMZN'][Math.floor(Math.random() * 4)],
-    quantity: Math.floor(Math.random() * 100) + 1,
-    price: Math.random() * 1000
-  }));
-
-  const valueHistory = Array.from({ length: 12 }, (_, i) => ({
-    date: new Date(Date.now() - i * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    value: baseValue * (1 + (Math.random() * 0.4 - 0.2))
-  }));
-
-  return {
-    transactions,
-    valueHistory
-  };
+export const setPortfolioRepository = (repo: PortfolioRepository) => {
+  return new PortfolioService(repo);
 };

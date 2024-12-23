@@ -3,31 +3,43 @@
     "configurations": [
         {
             "type": "node",
-            "request": "launch",
+            "request": "attach",
             "name": "Debug BFF",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "cwd": "${workspaceFolder}/bff",
-            "runtimeArgs": [
-                "-r",
-                "ts-node/register",
-                "-r",
-                "dotenv/config"
-            ],
-            "program": "${workspaceFolder}/bff/src/app.ts",
+            "port": 9229,
+            "restart": true,
+            "remoteRoot": "/workspace/bff",
+            "localRoot": "${workspaceFolder}/bff",
             "outFiles": [
                 "${workspaceFolder}/bff/dist/**/*.js"
             ],
-            "sourceMaps": true,
-            "resolveSourceMapLocations": [
-                "${workspaceFolder}/bff/**",
-                "!**/node_modules/**"
+            "skipFiles": [
+                "<node_internals>/**"
             ],
-            "envFile": "${workspaceFolder}/bff/.env",
+            "sourceMaps": true
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug Tests",
+            "runtimeExecutable": "${workspaceFolder}/bff/node_modules/.bin/mocha",
+            "runtimeArgs": [
+                "--timeout",
+                "999999",
+                "--colors",
+                "--require",
+                "ts-node/register",
+                "${workspaceFolder}/bff/tests/**/*.test.ts"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
             "env": {
-                "NODE_ENV": "development"
-            }
+                "TS_NODE_PROJECT": "${workspaceFolder}/bff/tsconfig.json",
+                "NODE_ENV": "test"
+            },
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceFolder}/bff/dist/**/*.js"
+            ]
         }
     ]
 }

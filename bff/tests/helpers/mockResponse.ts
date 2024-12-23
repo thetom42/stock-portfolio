@@ -4,6 +4,8 @@ import { expect } from 'chai';
 
 // Create a type that matches the Express Response interface
 export interface MockResponse extends Partial<Response> {
+  _json?: any;
+  _sent?: boolean;
   status: sinon.SinonStub;
   json: sinon.SinonStub;
   send: sinon.SinonStub;
@@ -42,9 +44,19 @@ export interface MockResponse extends Partial<Response> {
 export const createMockResponse = (): MockResponse => {
   // Create a base object with all required properties
   const res: MockResponse = {
-    status: sinon.stub().returnsThis(),
-    json: sinon.stub().returnsThis(),
-    send: sinon.stub().returnsThis(),
+    status: sinon.stub().callsFake(function (this: MockResponse, code: number) {
+      this.statusCode = code;
+      return this;
+    }),
+    json: sinon.stub().callsFake(function (this: MockResponse, data: any) {
+      this._json = data;
+      return this;
+    }),
+    send: sinon.stub().callsFake(function (this: MockResponse, data?: any) {
+      this._sent = true;
+      if (data) this._json = data;
+      return this;
+    }),
     end: sinon.stub().returnsThis(),
     setHeader: sinon.stub().returnsThis(),
     getHeader: sinon.stub().returnsThis(),
@@ -80,26 +92,52 @@ export const createMockResponse = (): MockResponse => {
   return res;
 };
 
+// Helper function to check if a value is a Date matcher
+const isDateMatcher = (value: any): boolean => {
+  return value && typeof value === 'object' && 'kind' in value && value.kind === 'date';
+};
+
+// Helper function to deeply compare values with special handling for Date matchers
+const deepCompare = (actual: any, expected: any): boolean => {
+  if (expected === undefined) return true;
+  if (expected === null) return actual === null;
+
+  if (isDateMatcher(expected)) {
+    return actual instanceof Date;
+  }
+
+  if (Array.isArray(expected)) {
+    if (!Array.isArray(actual) || actual.length !== expected.length) return false;
+    return expected.every((item, index) => deepCompare(actual[index], item));
+  }
+
+  if (typeof expected === 'object') {
+    if (typeof actual !== 'object' || actual === null) return false;
+    return Object.entries(expected).every(([key, value]) =>
+      key in actual && deepCompare(actual[key], value)
+    );
+  }
+
+  return actual === expected;
+};
+
 // Helper function to verify response status and data
 export const verifyResponse = (
   res: MockResponse,
   expectedStatus: number,
   expectedData?: any
 ) => {
-  // Check if status was explicitly set, otherwise assume 200 (Express default)
-  const statusCall = res.status.getCall(0);
-  const actualStatus = statusCall ? statusCall.args[0] : 200;
+  // Check the actual status code that was set
+  const actualStatus = res.statusCode;
   expect(actualStatus).to.equal(expectedStatus);
 
   if (expectedData !== undefined) {
-    // Get the actual data passed to json
-    const jsonCall = res.json.getCall(0);
-    if (!jsonCall) {
+    // Get the actual data that was set
+    const actualData = res._json;
+    if (actualData === undefined && expectedData !== undefined) {
       throw new Error('json was not called');
     }
 
-    const actualData = jsonCall.args[0];
-    
     if (expectedData.error) {
       // For error responses, check if either error or message property matches
       const actualError = actualData.error || actualData.message;
@@ -112,9 +150,8 @@ export const verifyResponse = (
         if (!(key in actualData)) {
           throw new Error(`Missing key "${key}" in response`);
         }
-        
-        // Use JSON.stringify for deep comparison of values
-        if (JSON.stringify(actualData[key]) !== JSON.stringify(value)) {
+
+        if (!deepCompare(actualData[key], value)) {
           throw new Error(`Value mismatch for key "${key}". Expected ${JSON.stringify(value)} but got ${JSON.stringify(actualData[key])}`);
         }
       });
@@ -132,7 +169,7 @@ export const verifyErrorResponse = (
   const statusCall = res.status.getCall(0);
   const actualStatus = statusCall ? statusCall.args[0] : 200;
   expect(actualStatus).to.equal(expectedStatus);
-  
+
   const jsonCall = res.json.getCall(0);
   if (!jsonCall) {
     throw new Error('json was not called');

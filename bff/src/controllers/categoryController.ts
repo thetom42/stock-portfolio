@@ -1,6 +1,6 @@
 import type { TypedRequest, TypedResponse, NextFunction } from '../types/express';
 import { Category, CategoryResponse } from '../models/Category';
-import * as categoryService from '../services/categoryService';
+import { categoryService } from '../services/categoryService';
 
 type CategoryResponseType = { category: CategoryResponse };
 type CategoriesResponseType = { categories: CategoryResponse[] };
@@ -59,12 +59,13 @@ export const updateCategory = async (
 ) => {
     try {
         const category = await categoryService.updateCategory(req.params.id, req.body);
+        if (!category) {
+            return res.status(404).json({ error: 'Category not found' });
+        }
         res.json({ category });
     } catch (error) {
         if (error instanceof Error) {
-            if (error.message === 'Category not found') {
-                res.status(404).json({ error: error.message });
-            } else if (error.message === 'Category name already exists') {
+            if (error.message === 'Category name already exists') {
                 res.status(409).json({ error: error.message });
             } else {
                 next(error);

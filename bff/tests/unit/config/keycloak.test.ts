@@ -20,9 +20,9 @@ describe('Keycloak Configuration', () => {
     it('should use default Keycloak configuration', () => {
       const { environment } = require('./test-environment');
       expect(environment.KEYCLOAK_AUTH_SERVER_URL).to.equal('http://localhost:8080/auth');
-      expect(environment.KEYCLOAK_REALM).to.equal('stock-portfolio');
-      expect(environment.KEYCLOAK_CLIENT_ID).to.equal('bff-client');
-      expect(environment.KEYCLOAK_CLIENT_SECRET).to.equal('');
+      expect(environment.KEYCLOAK_REALM).to.equal('stock-portfolio-test');
+      expect(environment.KEYCLOAK_CLIENT_ID).to.equal('bff-client-test');
+      expect(environment.KEYCLOAK_CLIENT_SECRET).to.equal('test_client_secret');
     });
 
     it('should use environment variables when set', () => {
@@ -60,11 +60,12 @@ describe('Keycloak Configuration', () => {
       expect(environment.KEYCLOAK_AUTH_SERVER_URL).to.equal('invalid-url');
     });
 
-    it('should handle missing optional configurations', () => {
+    it('should use default values for missing optional configurations', () => {
       delete process.env.KEYCLOAK_REALM;
       delete process.env.KEYCLOAK_CLIENT_ID;
 
       const { environment } = require('./test-environment');
+      // When env vars are missing, it should fall back to default non-test values
       expect(environment.KEYCLOAK_REALM).to.equal('stock-portfolio');
       expect(environment.KEYCLOAK_CLIENT_ID).to.equal('bff-client');
     });

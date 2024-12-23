@@ -1,17 +1,19 @@
 import type { TypedResponse, NextFunction, AuthenticatedRequest } from '../types/express';
 import { CreateHoldingDTO, UpdateHoldingDTO, HoldingDetails, HoldingPerformance, HoldingValue, HoldingHistory } from '../models/Holding';
 import { Transaction } from '../models/Transaction';
-import * as holdingService from '../services/holdingService';
+import { holdingService } from '../services/holdingService';
 
 // Define response types
 type HoldingResponse = { holding: HoldingDetails };
 type ErrorResponse = { error: string };
-type PerformanceResponse = { performance: {
-  totalReturn: number;
-  percentageReturn: number;
-  annualizedReturn: number;
-  holdingPeriod: number;
-} };
+type PerformanceResponse = {
+  performance: {
+    totalReturn: number;
+    percentageReturn: number;
+    annualizedReturn: number;
+    holdingPeriod: number;
+  }
+};
 type TransactionsResponse = { transactions: Transaction[] };
 type ValueResponse = { value: HoldingValue };
 type HistoryResponse = { history: HoldingHistory[] };
@@ -46,11 +48,11 @@ export const getHolding = async (
   try {
     const holdingId = req.params.id;
     const holding = await holdingService.getHoldingById(holdingId);
-    
+
     if (!holding) {
       return res.status(404).json({ error: 'Holding not found' });
     }
-    
+
     res.json({ holding });
   } catch (error) {
     next(error);
@@ -65,19 +67,14 @@ export const updateHolding = async (
   try {
     const holdingId = req.params.id;
     const updateData = req.body;
-    
+
     const updatedHolding = await holdingService.updateHolding(holdingId, updateData);
+    if (!updatedHolding) {
+      return res.status(404).json({ error: 'Holding not found' });
+    }
     res.json({ holding: updatedHolding });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Holding not found') {
-        res.status(404).json({ error: error.message });
-      } else {
-        next(error);
-      }
-    } else {
-      next(error);
-    }
+    next(error);
   }
 };
 

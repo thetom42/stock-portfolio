@@ -1,5 +1,5 @@
 import type { TypedRequest, TypedResponse, NextFunction } from '../types/express';
-import * as stockService from '../services/stockService';
+import { stockService } from '../services/stockService';
 import { Stock, StockDetails, StockSearchResult } from '../models/Stock';
 
 // Define response types

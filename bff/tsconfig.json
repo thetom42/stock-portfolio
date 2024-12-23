@@ -2,7 +2,10 @@
   "compilerOptions": {
     "target": "es2018",
     "module": "commonjs",
-    "lib": ["es2018", "dom"],
+    "lib": [
+      "es2018",
+      "dom"
+    ],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -11,8 +14,19 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
-      "*": ["node_modules/*", "src/types/*"],
-      "@stock-portfolio/db": ["../db/dist"]
+      "*": [
+        "node_modules/*",
+        "src/types/*"
+      ],
+      "@stock-portfolio/db": [
+        "../db/dist"
+      ],
+      "@prisma/client": [
+        "./node_modules/@prisma/client"
+      ],
+      "@prisma/client/runtime/library": [
+        "./node_modules/@prisma/client/runtime/library"
+      ]
     },
     "outDir": "dist",
     "sourceMap": true,
@@ -25,16 +39,24 @@
     "noImplicitThis": true,
     "alwaysStrict": true,
     "allowJs": true,
-    "types": ["node", "mocha", "chai", "express", "node-fetch"],
+    "types": [
+      "node",
+      "mocha",
+      "chai",
+      "express",
+      "node-fetch"
+    ],
     "typeRoots": [
       "./node_modules/@types",
       "./src/types",
-      "../db/dist"
+      "../db/dist",
+      "./node_modules/.prisma/client"
     ]
   },
   "include": [
     "src/**/*",
-    "tests/**/*"
+    "tests/**/*",
+    "node_modules/.prisma/client/**/*"
   ],
   "exclude": [
     "node_modules",

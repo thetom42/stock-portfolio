@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14
+    networks:
+      - stock-portfolio-network
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: stock_portfolio
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../db/sql/all.sql:/docker-entrypoint-initdb.d/1-schema.sql
+      - ../db/sql/test-data.sql:/docker-entrypoint-initdb.d/2-data.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:21.1
+    networks:
+      - stock-portfolio-network
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/stock_portfolio
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
+      KC_HEALTH_ENABLED: "true"
+      KC_HTTP_RELATIVE_PATH: "/"
+      KC_HOSTNAME: keycloak
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+    command:
+      - start-dev
+      - --import-realm
+    volumes:
+      - ../keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  bff:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    networks:
+      - stock-portfolio-network
+    environment:
+      - BFF_PORT=3001
+      - INTERNAL_BFF_PORT=3001
+      - NODE_ENV=development
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=stock_portfolio
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - KEYCLOAK_AUTH_SERVER_URL=http://keycloak:8080
+      - KEYCLOAK_REALM=stock-portfolio
+      - KEYCLOAK_CLIENT_ID=bff-client
+      - KEYCLOAK_CLIENT_SECRET=bff-client-secret-123
+      - TS_NODE_PROJECT=/workspace/bff/tsconfig.json
+      - NPM_CONFIG_CACHE=/home/node/.npm
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/stock_portfolio
+      - PRISMA_SCHEMA_PATH=/workspace/db/prisma/schema.prisma
+    ports:
+      - "3001:3001"
+      - "9229:9229"  # Debug port
+    volumes:
+      - ..:/workspace:cached
+      - npm-cache:/home/node/.npm
+      - /var/run/docker.sock:/var/run/docker.sock
+    working_dir: /workspace/bff
+    user: node
+    command: sleep infinity
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+
+networks:
+  stock-portfolio-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  npm-cache:

@@ -1,6 +1,6 @@
 import type { TypedResponse, NextFunction, AuthenticatedRequest } from '../types/express';
-import { 
-  CreatePortfolioDTO, 
+import {
+  CreatePortfolioDTO,
   UpdatePortfolioDTO,
   PortfolioResponse,
   PortfoliosResponse,
@@ -16,7 +16,7 @@ import {
   ReturnsData,
   HistoryData
 } from '../models/Portfolio';
-import * as portfolioService from '../services/portfolioService';
+import { portfolioService } from '../services/portfolioService';
 
 export const createPortfolio = async (
   req: AuthenticatedRequest<{}, {}, CreatePortfolioDTO>,
@@ -55,11 +55,11 @@ export const getPortfolio = async (
   try {
     const portfolioId = req.params.id;
     const portfolio = await portfolioService.getPortfolioById(portfolioId);
-    
+
     if (!portfolio) {
       return res.status(404).json({ error: 'Portfolio not found' });
     }
-    
+
     res.json({ portfolio });
   } catch (error) {
     next(error);
@@ -74,13 +74,13 @@ export const updatePortfolio = async (
   try {
     const portfolioId = req.params.id;
     const updateData = req.body;
-    
+
     const updatedPortfolio = await portfolioService.updatePortfolio(portfolioId, updateData);
-    
+
     if (!updatedPortfolio) {
       return res.status(404).json({ error: 'Portfolio not found' });
     }
-    
+
     res.json({ portfolio: updatedPortfolio });
   } catch (error) {
     next(error);

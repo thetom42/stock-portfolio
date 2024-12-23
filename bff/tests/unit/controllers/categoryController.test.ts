@@ -1,133 +1,220 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import * as categoryService from '../../../src/services/categoryService';
+import { categoryService } from '../../../src/services/categoryService';
 import * as categoryController from '../../../src/controllers/categoryController';
-import { Category, CreateCategoryDTO } from '../../../src/models/Category';
+import { Category } from '../../../src/models/Category';
 import { createMockRequest, RequestWithUser } from '../../helpers/mockRequest';
 import { createMockResponse, MockResponse, verifyResponse } from '../../helpers/mockResponse';
-import { setupRepositoryMocks, resetRepositoryMocks, mockCategoryRepo } from '../../helpers/mockRepositories';
-
 describe('CategoryController', () => {
   let req: Partial<RequestWithUser>;
   let res: MockResponse;
   let next: sinon.SinonSpy;
 
   beforeEach(() => {
-    setupRepositoryMocks();
     res = createMockResponse();
     next = sinon.spy();
+    // Stub categoryService methods
+    sinon.stub(categoryService, 'createCategory');
+    sinon.stub(categoryService, 'getAllCategories');
+    sinon.stub(categoryService, 'getCategoryById');
+    sinon.stub(categoryService, 'updateCategory');
+    sinon.stub(categoryService, 'deleteCategory');
   });
 
   afterEach(() => {
-    resetRepositoryMocks();
     sinon.restore();
   });
 
   describe('createCategory', () => {
-    const mockCreateData: CreateCategoryDTO = {
+    const mockCreateData = {
       name: 'Technology'
     };
 
-    // BFF layer response uses new naming
-    const mockCreatedCategory: Category = {
-      id: '1',
-      name: mockCreateData.name
-    };
-
-    it('should create a category and return 201 status', async () => {
+    it('should create category and return 201 status', async () => {
       req = createMockRequest({ body: mockCreateData });
-      sinon.stub(categoryService, 'createCategory').resolves(mockCreatedCategory);
+      (categoryService.createCategory as sinon.SinonStub).resolves({
+        id: '1',
+        name: mockCreateData.name
+      });
 
-      await categoryController.createCategory(req as any, res, next);
+      await categoryController.createCategory(req as any, res as any, next);
 
-      verifyResponse(res, 201, { category: mockCreatedCategory });
+      verifyResponse(res, 201, {
+        category: {
+          id: '1',
+          name: mockCreateData.name
+        }
+      });
     });
 
-    it('should return 409 if category name already exists', async () => {
+    it('should return 409 if category already exists', async () => {
       req = createMockRequest({ body: mockCreateData });
-      const error = new Error('Category name already exists');
-      sinon.stub(categoryService, 'createCategory').rejects(error);
+      (categoryService.createCategory as sinon.SinonStub).rejects(new Error('Category name already exists'));
 
-      await categoryController.createCategory(req as any, res, next);
+      await categoryController.createCategory(req as any, res as any, next);
 
       verifyResponse(res, 409, { error: 'Category name already exists' });
     });
 
-    it('should call next with error for other errors', async () => {
+    it('should handle errors gracefully', async () => {
       req = createMockRequest({ body: mockCreateData });
-      const error = new Error('Database error');
-      sinon.stub(categoryService, 'createCategory').rejects(error);
+      const error = new Error('Failed to create category');
+      (categoryService.createCategory as sinon.SinonStub).rejects(error);
 
-      await categoryController.createCategory(req as any, res, next);
+      await categoryController.createCategory(req as any, res as any, next);
 
       expect(next.calledWith(error)).to.be.true;
     });
   });
 
   describe('getAllCategories', () => {
-    // BFF layer response uses new naming
-    const mockCategories: Category[] = [
-      {
-        id: '1',
-        name: 'Technology'
-      },
-      {
-        id: '2',
-        name: 'Healthcare'
-      }
-    ];
-
     it('should return all categories', async () => {
-      req = createMockRequest();
-      sinon.stub(categoryService, 'getAllCategories').resolves(mockCategories);
+      req = createMockRequest({});
+      (categoryService.getAllCategories as sinon.SinonStub).resolves([
+        {
+          id: '1',
+          name: 'Technology'
+        }
+      ]);
 
-      await categoryController.getAllCategories(req as any, res, next);
+      await categoryController.getAllCategories(req as any, res as any, next);
 
-      verifyResponse(res, 200, { categories: mockCategories });
+      verifyResponse(res, 200, {
+        categories: [{
+          id: '1',
+          name: 'Technology'
+        }]
+      });
     });
 
     it('should handle errors gracefully', async () => {
-      req = createMockRequest();
-      const error = new Error('Database error');
-      sinon.stub(categoryService, 'getAllCategories').rejects(error);
+      req = createMockRequest({});
+      const error = new Error('Failed to fetch categories');
+      (categoryService.getAllCategories as sinon.SinonStub).rejects(error);
 
-      await categoryController.getAllCategories(req as any, res, next);
+      await categoryController.getAllCategories(req as any, res as any, next);
 
       expect(next.calledWith(error)).to.be.true;
     });
   });
 
   describe('getCategoryById', () => {
-    // BFF layer response uses new naming
-    const mockCategory: Category = {
-      id: '1',
-      name: 'Technology'
-    };
-
     it('should return category if found', async () => {
       req = createMockRequest({ params: { id: '1' } });
-      sinon.stub(categoryService, 'getCategoryById').resolves(mockCategory);
+      (categoryService.getCategoryById as sinon.SinonStub).resolves({
+        id: '1',
+        name: 'Technology'
+      });
 
-      await categoryController.getCategoryById(req as any, res, next);
+      await categoryController.getCategoryById(req as any, res as any, next);
 
-      verifyResponse(res, 200, { category: mockCategory });
+      verifyResponse(res, 200, {
+        category: {
+          id: '1',
+          name: 'Technology'
+        }
+      });
     });
 
     it('should return 404 if category not found', async () => {
       req = createMockRequest({ params: { id: '999' } });
-      sinon.stub(categoryService, 'getCategoryById').resolves(null);
+      (categoryService.getCategoryById as sinon.SinonStub).resolves(null);
 
-      await categoryController.getCategoryById(req as any, res, next);
+      await categoryController.getCategoryById(req as any, res as any, next);
 
       verifyResponse(res, 404, { error: 'Category not found' });
     });
 
     it('should handle errors gracefully', async () => {
       req = createMockRequest({ params: { id: '1' } });
-      const error = new Error('Database error');
-      sinon.stub(categoryService, 'getCategoryById').rejects(error);
+      const error = new Error('Failed to fetch category');
+      (categoryService.getCategoryById as sinon.SinonStub).rejects(error);
 
-      await categoryController.getCategoryById(req as any, res, next);
+      await categoryController.getCategoryById(req as any, res as any, next);
+
+      expect(next.calledWith(error)).to.be.true;
+    });
+  });
+
+  describe('updateCategory', () => {
+    const mockUpdateData = {
+      name: 'Updated Technology'
+    };
+
+    it('should update category successfully', async () => {
+      req = createMockRequest({
+        params: { id: '1' },
+        body: mockUpdateData
+      });
+      (categoryService.updateCategory as sinon.SinonStub).resolves({
+        id: '1',
+        name: mockUpdateData.name
+      });
+
+      await categoryController.updateCategory(req as any, res as any, next);
+
+      verifyResponse(res, 200, {
+        category: {
+          id: '1',
+          name: mockUpdateData.name
+        }
+      });
+    });
+
+    it('should return 404 if category not found', async () => {
+      req = createMockRequest({
+        params: { id: '999' },
+        body: mockUpdateData
+      });
+      (categoryService.updateCategory as sinon.SinonStub).resolves(null);
+
+      await categoryController.updateCategory(req as any, res as any, next);
+
+      verifyResponse(res, 404, { error: 'Category not found' });
+    });
+
+    it('should handle errors gracefully', async () => {
+      req = createMockRequest({
+        params: { id: '1' },
+        body: mockUpdateData
+      });
+      const error = new Error('Failed to update category');
+      (categoryService.updateCategory as sinon.SinonStub).rejects(error);
+
+      await categoryController.updateCategory(req as any, res as any, next);
+
+      expect(next.calledWith(error)).to.be.true;
+    });
+  });
+
+  describe('deleteCategory', () => {
+    it('should delete category successfully', async () => {
+      req = createMockRequest({ params: { id: '1' } });
+      (categoryService.deleteCategory as sinon.SinonStub).resolves({
+        id: '1',
+        name: 'Technology'
+      });
+
+      await categoryController.deleteCategory(req as any, res as any, next);
+
+      verifyResponse(res, 204);
+    });
+
+    it('should return 404 if category not found', async () => {
+      req = createMockRequest({ params: { id: '999' } });
+      (categoryService.deleteCategory as sinon.SinonStub).rejects(new Error('Category not found'));
+
+      await categoryController.deleteCategory(req as any, res as any, next);
+
+      verifyResponse(res, 404, { error: 'Category not found' });
+    });
+
+    it('should handle errors gracefully', async () => {
+      req = createMockRequest({ params: { id: '1' } });
+      const error = new Error('Failed to delete category');
+      (categoryService.deleteCategory as sinon.SinonStub).rejects(error);
+
+      await categoryController.deleteCategory(req as any, res as any, next);
 
       expect(next.calledWith(error)).to.be.true;
     });

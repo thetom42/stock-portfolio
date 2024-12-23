@@ -1,48 +1,32 @@
 import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
-import proxyquire from 'proxyquire';
-import { mockPrismaClient } from '../utils/database.mock';
-import { 
-  Transaction, 
-  CreateTransactionDTO, 
-  TransactionQueryParams 
-} from '../../../src/models/Transaction';
-import { 
-  mockTransactionRepo, 
-  mockHoldingRepo, 
-  mockPortfolioRepo, 
-  setupRepositoryMocks, 
-  resetRepositoryMocks,
-  createDecimal 
-} from '../../helpers/mockRepositories';
-
-// Import the service with mocked database
-const transactionService = proxyquire.noCallThru().load('../../../src/services/transactionService', {
-  '../utils/database': {
-    getPrismaClient: () => mockPrismaClient,
-    default: {
-      getPrismaClient: () => mockPrismaClient
-    }
-  }
-});
+import { transactionService, setTransactionRepository, setHoldingRepository, setPortfolioRepository } from '../../../src/services/transactionService';
+import { Transaction, CreateTransactionDTO, TransactionQueryParams } from '../../../src/models/Transaction';
+import { setupMockTransactionHoldingAndPortfolioRepos, resetAllMocks, createDecimal } from '../../helpers/mockRepositories';
 
 describe('TransactionService', () => {
   const userId = 'user123';
   const holdingId = 'holding123';
   const portfolioId = 'portfolio123';
+  let mockTransactionRepo: any;
+  let mockHoldingRepo: any;
+  let mockPortfolioRepo: any;
 
   beforeEach(() => {
-    setupRepositoryMocks();
-    
-    // Set the repository instances in the service using the setter methods
-    transactionService.setHoldingRepository(mockHoldingRepo);
-    transactionService.setTransactionRepository(mockTransactionRepo);
-    transactionService.setPortfolioRepository(mockPortfolioRepo);
+    const setup = setupMockTransactionHoldingAndPortfolioRepos();
+    mockTransactionRepo = setup.mockTransactionRepo;
+    mockHoldingRepo = setup.mockHoldingRepo;
+    mockPortfolioRepo = setup.mockPortfolioRepo;
+
+    // Inject mock repositories into the singleton instance
+    setTransactionRepository(mockTransactionRepo);
+    setHoldingRepository(mockHoldingRepo);
+    setPortfolioRepository(mockPortfolioRepo);
   });
 
   afterEach(() => {
-    resetRepositoryMocks();
+    resetAllMocks();
     sinon.restore();
   });
 
@@ -100,10 +84,10 @@ describe('TransactionService', () => {
 
     it('should create a sell transaction successfully', async () => {
       const sellData = { ...mockCreateData, buy: false, amount: 50 };
-      const sellDBTransaction = { 
-        ...mockDBTransaction, 
-        buy: false, 
-        amount: 50 
+      const sellDBTransaction = {
+        ...mockDBTransaction,
+        buy: false,
+        amount: 50
       };
       const sellBFFTransaction: Transaction = {
         ...expectedBFFTransaction,
@@ -153,7 +137,7 @@ describe('TransactionService', () => {
 
   describe('getTransactionById', () => {
     const transactionId = 'trans123';
-    
+
     // DB layer mock uses old naming
     const mockDBTransaction = {
       transaction_id: transactionId,
@@ -161,8 +145,8 @@ describe('TransactionService', () => {
       buy: true,
       transaction_time: new Date(),
       amount: 100,
-      price: createDecimal('150.50'),
-      commission: createDecimal('7.99'),
+      price: createDecimal(150.50),
+      commission: createDecimal(7.99),
       broker: 'TEST_BROKER'
     };
 
@@ -222,8 +206,8 @@ describe('TransactionService', () => {
         buy: true,
         transaction_time: new Date('2023-01-01'),
         amount: 100,
-        price: createDecimal('150.50'),
-        commission: createDecimal('7.99'),
+        price: createDecimal(150.50),
+        commission: createDecimal(7.99),
         broker: 'TEST_BROKER'
       },
       {
@@ -232,8 +216,8 @@ describe('TransactionService', () => {
         buy: false,
         transaction_time: new Date('2023-06-01'),
         amount: 50,
-        price: createDecimal('200.00'),
-        commission: createDecimal('7.99'),
+        price: createDecimal(200.00),
+        commission: createDecimal(7.99),
         broker: 'TEST_BROKER'
       }
     ];
@@ -344,8 +328,8 @@ describe('TransactionService', () => {
         buy: true,
         transaction_time: new Date('2023-01-01'),
         amount: 100,
-        price: createDecimal('150.50'),
-        commission: createDecimal('7.99'),
+        price: createDecimal(150.50),
+        commission: createDecimal(7.99),
         broker: 'TEST_BROKER'
       },
       {
@@ -354,8 +338,8 @@ describe('TransactionService', () => {
         buy: false,
         transaction_time: new Date('2023-06-01'),
         amount: 50,
-        price: createDecimal('200.00'),
-        commission: createDecimal('7.99'),
+        price: createDecimal(200.00),
+        commission: createDecimal(7.99),
         broker: 'TEST_BROKER'
       }
     ];

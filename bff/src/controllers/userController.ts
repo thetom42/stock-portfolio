@@ -1,6 +1,6 @@
 import type { TypedRequest, TypedResponse, NextFunction, AuthenticatedRequest } from '../types/express';
 import { User, CreateUserDTO, UpdateUserDTO } from '../models/User';
-import * as userService from '../services/userService';
+import { userService } from '../services/userService';
 
 // Define response types
 type UserResponse = { user: User };

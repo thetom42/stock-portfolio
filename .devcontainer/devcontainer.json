@@ -1,0 +1,59 @@
+{
+    "name": "Stock Portfolio Dev",
+    "dockerComposeFile": "docker-compose.yaml",
+    "service": "bff",
+    "workspaceFolder": "/workspace",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode",
+                "ms-vscode.vscode-typescript-next",
+                "Prisma.prisma",
+                "ms-vscode.js-debug",
+                "ms-vscode.js-debug-nightly",
+                "ms-azuretools.vscode-docker",
+                "Postman.postman-for-vscode",
+                "ryanluker.vscode-coverage-gutters",
+                "christian-kohler.npm-intellisense",
+                "christian-kohler.path-intellisense"
+            ],
+            "settings": {
+                "typescript.tsdk": "bff/node_modules/typescript/lib",
+                "typescript.enablePromptUseWorkspaceTsdk": true,
+                "javascript.updateImportsOnFileMove.enabled": "always",
+                "typescript.updateImportsOnFileMove.enabled": "always",
+                "javascript.preferences.importModuleSpecifier": "relative",
+                "typescript.preferences.importModuleSpecifier": "relative",
+                "debug.javascript.autoAttachFilter": "always",
+                "debug.javascript.terminalOptions": {
+                    "skipFiles": [
+                        "<node_internals>/**"
+                    ]
+                },
+                "debug.javascript.defaultRuntimeExecutable": {
+                    "pwa-node": "node"
+                },
+                "files.watcherExclude": {
+                    "**/node_modules/**": true,
+                    "**/dist/**": true
+                }
+            }
+        }
+    },
+    "forwardPorts": [
+        3001,
+        5432,
+        8080,
+        9229
+    ],
+    "onCreateCommand": "mkdir -p /workspace/bff/node_modules && sudo chown -R node:node /workspace/bff/node_modules",
+    "updateContentCommand": "cp bff/.env.sample bff/.env",
+    "postCreateCommand": "cd db && npm install && npm run prisma:generate && cd ../bff && npm install && npm run build",
+    "remoteUser": "node",
+    "features": {
+        "ghcr.io/devcontainers/features/node:1": {
+            "version": "18"
+        }
+    }
+}

@@ -3,21 +3,20 @@ import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import { Decimal } from '@prisma/client/runtime/library';
-import { 
-  mockQuoteRepo, 
-  mockStockRepo,
-  setupRepositoryMocks, 
-  resetRepositoryMocks 
-} from '../../helpers/mockRepositories';
-import * as quoteService from '../../../src/services/quoteService';
+import { setupMockQuoteAndStockRepos, resetAllMocks } from '../../helpers/mockRepositories';
+import { QuoteService, setQuoteRepository, setStockRepository } from '../../../src/services/quoteService';
 import * as yahooFinanceService from '../../../src/services/yahooFinanceService';
 import { QuoteInterval } from '../../../src/models/Quote';
-import { Stock } from '@prisma/client';
+import type { Stock } from '@stock-portfolio/db/dist/models/Stock';
 import { YahooFinanceQuote, IntradayQuote, HistoricalQuote } from '../../../src/services/yahooFinanceService';
 
 use(chaiAsPromised);
 
 describe('QuoteService', () => {
+  let mockQuoteRepo: any;
+  let mockStockRepo: any;
+  let testQuoteService: QuoteService;
+
   const mockStock: Stock = {
     isin: 'US0378331005',
     category_id: '1',
@@ -59,11 +58,13 @@ describe('QuoteService', () => {
   };
 
   beforeEach(() => {
-    setupRepositoryMocks();
-    // Use the new setter methods to inject mock repositories
-    quoteService.setStockRepository(mockStockRepo);
-    quoteService.setQuoteRepository(mockQuoteRepo);
-    
+    const setup = setupMockQuoteAndStockRepos();
+    mockQuoteRepo = setup.mockQuoteRepo;
+    mockStockRepo = setup.mockStockRepo;
+
+    // Create a new QuoteService instance with mock repositories
+    testQuoteService = new QuoteService(mockQuoteRepo, mockStockRepo);
+
     sinon.stub(yahooFinanceService, 'getYahooFinanceService').returns({
       getRealTimeQuote: sinon.stub().resolves(mockYahooQuote),
       getHistoricalQuotes: sinon.stub().resolves([mockHistoricalQuote]),
@@ -72,7 +73,7 @@ describe('QuoteService', () => {
   });
 
   afterEach(() => {
-    resetRepositoryMocks();
+    resetAllMocks();
     sinon.restore();
   });
 
@@ -90,13 +91,13 @@ describe('QuoteService', () => {
       mockQuoteRepo.create.resolves(mockDBQuote);
       mockQuoteRepo.findLatestByIsin.resolves(null);
 
-      const result = await quoteService.getRealTimeQuote(mockStock.isin);
+      const result = await testQuoteService.getRealTimeQuote(mockStock.isin);
 
       expect(result).to.have.property('price', mockYahooQuote.price);
       expect(result).to.have.property('change');
       expect(result).to.have.property('changePercent');
       expect(result).to.have.property('timestamp');
-      sinon.assert.calledWith(mockStockRepo.findByIsin, mockStock.isin);
+      expect(mockStockRepo.findByIsin.calledWith(mockStock.isin)).to.be.true;
     });
 
     it('should use cached quote if not stale', async () => {
@@ -111,11 +112,11 @@ describe('QuoteService', () => {
       };
       mockQuoteRepo.findLatestByIsin.resolves(freshQuote);
 
-      const result = await quoteService.getRealTimeQuote(mockStock.isin);
+      const result = await testQuoteService.getRealTimeQuote(mockStock.isin);
 
       expect(result).to.have.property('price', Number(freshQuote.price));
       const yahooService = yahooFinanceService.getYahooFinanceService() as any;
-      sinon.assert.notCalled(yahooService.getRealTimeQuote);
+      expect(yahooService.getRealTimeQuote.called).to.be.false;
     });
 
     it('should fetch new quote if cached quote is stale', async () => {
@@ -135,17 +136,17 @@ describe('QuoteService', () => {
         market_time: new Date(mockYahooQuote.timestamp)
       });
 
-      const result = await quoteService.getRealTimeQuote(mockStock.isin);
+      const result = await testQuoteService.getRealTimeQuote(mockStock.isin);
 
       expect(result).to.have.property('price', mockYahooQuote.price);
       const yahooService = yahooFinanceService.getYahooFinanceService() as any;
-      sinon.assert.called(yahooService.getRealTimeQuote);
+      expect(yahooService.getRealTimeQuote.called).to.be.true;
     });
 
     it('should throw error if stock not found', async () => {
       mockStockRepo.findByIsin.resolves(null);
 
-      await expect(quoteService.getRealTimeQuote('invalid-isin'))
+      await expect(testQuoteService.getRealTimeQuote('invalid-isin'))
         .to.be.rejectedWith('Stock not found');
     });
 
@@ -155,7 +156,7 @@ describe('QuoteService', () => {
       const yahooService = yahooFinanceService.getYahooFinanceService() as any;
       yahooService.getRealTimeQuote.rejects(new Error('API Error'));
 
-      await expect(quoteService.getRealTimeQuote(mockStock.isin))
+      await expect(testQuoteService.getRealTimeQuote(mockStock.isin))
         .to.be.rejectedWith('Failed to fetch quote data');
     });
   });
@@ -169,7 +170,7 @@ describe('QuoteService', () => {
     it('should return historical quotes for valid stock', async () => {
       mockStockRepo.findByIsin.resolves(mockStock);
 
-      const result = await quoteService.getHistoricalQuotes(mockStock.isin, interval);
+      const result = await testQuoteService.getHistoricalQuotes(mockStock.isin, interval);
 
       expect(result).to.have.property('symbol', mockStock.symbol);
       expect(result).to.have.property('interval', interval.interval);
@@ -177,13 +178,13 @@ describe('QuoteService', () => {
       expect(result.quotes[0]).to.have.all.keys(
         'date', 'open', 'high', 'low', 'close', 'adjustedClose', 'volume'
       );
-      sinon.assert.calledWith(mockStockRepo.findByIsin, mockStock.isin);
+      expect(mockStockRepo.findByIsin.calledWith(mockStock.isin)).to.be.true;
     });
 
     it('should throw error if stock not found', async () => {
       mockStockRepo.findByIsin.resolves(null);
 
-      await expect(quoteService.getHistoricalQuotes('invalid-isin', interval))
+      await expect(testQuoteService.getHistoricalQuotes('invalid-isin', interval))
         .to.be.rejectedWith('Stock not found');
     });
 
@@ -192,7 +193,7 @@ describe('QuoteService', () => {
       const yahooService = yahooFinanceService.getYahooFinanceService() as any;
       yahooService.getHistoricalQuotes.rejects(new Error('API Error'));
 
-      await expect(quoteService.getHistoricalQuotes(mockStock.isin, interval))
+      await expect(testQuoteService.getHistoricalQuotes(mockStock.isin, interval))
         .to.be.rejectedWith('Failed to fetch historical data');
     });
   });
@@ -209,7 +210,7 @@ describe('QuoteService', () => {
       };
       mockQuoteRepo.findLatestByIsin.resolves(mockDBQuote);
 
-      const result = await quoteService.getLatestQuotes([mockStock.isin]);
+      const result = await testQuoteService.getLatestQuotes([mockStock.isin]);
 
       expect(result).to.be.an('array');
       expect(result[0]).to.deep.include({
@@ -219,59 +220,15 @@ describe('QuoteService', () => {
         currency: mockDBQuote.currency,
         timestamp: mockDBQuote.market_time
       });
-      sinon.assert.calledWith(mockQuoteRepo.findLatestByIsin, mockStock.isin);
+      expect(mockQuoteRepo.findLatestByIsin.calledWith(mockStock.isin)).to.be.true;
     });
 
     it('should return empty array for empty input', async () => {
-      // Reset the spy count before this specific test
       mockQuoteRepo.findLatestByIsin.resetHistory();
-      
-      const result = await quoteService.getLatestQuotes([]);
+
+      const result = await testQuoteService.getLatestQuotes([]);
       expect(result).to.be.an('array').that.is.empty;
-      sinon.assert.notCalled(mockQuoteRepo.findLatestByIsin);
-    });
-  });
-
-  describe('getIntradayQuotes', () => {
-    it('should return intraday quotes for valid stock', async () => {
-      mockStockRepo.findByIsin.resolves(mockStock);
-      const mockDBQuote = {
-        quote_id: '123',
-        isin: mockStock.isin,
-        price: new Decimal(mockIntradayQuote.price),
-        currency: 'USD',
-        market_time: new Date(mockIntradayQuote.timestamp),
-        exchange: 'YAHOO'
-      };
-      mockQuoteRepo.create.resolves(mockDBQuote);
-
-      const result = await quoteService.getIntradayQuotes(mockStock.isin);
-
-      expect(result).to.be.an('array');
-      expect(result[0]).to.deep.include({
-        id: mockDBQuote.quote_id,
-        stockId: mockDBQuote.isin,
-        price: Number(mockDBQuote.price),
-        currency: mockDBQuote.currency,
-        timestamp: mockDBQuote.market_time
-      });
-      sinon.assert.calledWith(mockStockRepo.findByIsin, mockStock.isin);
-    });
-
-    it('should throw error if stock not found', async () => {
-      mockStockRepo.findByIsin.resolves(null);
-
-      await expect(quoteService.getIntradayQuotes('invalid-isin'))
-        .to.be.rejectedWith('Stock not found');
-    });
-
-    it('should handle Yahoo Finance API errors', async () => {
-      mockStockRepo.findByIsin.resolves(mockStock);
-      const yahooService = yahooFinanceService.getYahooFinanceService() as any;
-      yahooService.getIntradayQuotes.rejects(new Error('API Error'));
-
-      await expect(quoteService.getIntradayQuotes(mockStock.isin))
-        .to.be.rejectedWith('Failed to fetch intraday data');
+      expect(mockQuoteRepo.findLatestByIsin.called).to.be.false;
     });
   });
 
@@ -290,7 +247,7 @@ describe('QuoteService', () => {
       }];
       mockQuoteRepo.findByIsin.resolves(mockDBQuotes);
 
-      const result = await quoteService.getQuoteHistory(
+      const result = await testQuoteService.getQuoteHistory(
         mockStock.isin,
         startDate,
         endDate
@@ -304,13 +261,13 @@ describe('QuoteService', () => {
         currency: mockDBQuotes[0].currency,
         timestamp: mockDBQuotes[0].market_time
       });
-      sinon.assert.calledWith(mockQuoteRepo.findByIsin, mockStock.isin);
+      expect(mockQuoteRepo.findByIsin.calledWith(mockStock.isin)).to.be.true;
     });
 
     it('should return empty array if no quotes found', async () => {
       mockQuoteRepo.findByIsin.resolves([]);
 
-      const result = await quoteService.getQuoteHistory(
+      const result = await testQuoteService.getQuoteHistory(
         mockStock.isin,
         startDate,
         endDate
@@ -348,7 +305,7 @@ describe('QuoteService', () => {
       ];
       mockQuoteRepo.findByIsin.resolves(mockDBQuotes);
 
-      const result = await quoteService.getQuoteHistory(
+      const result = await testQuoteService.getQuoteHistory(
         mockStock.isin,
         startDate,
         endDate

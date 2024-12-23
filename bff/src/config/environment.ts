@@ -14,7 +14,7 @@ export const environment = {
 
   // Keycloak configuration
   // Always use the Docker service name when running in a container
-  KEYCLOAK_AUTH_SERVER_URL: process.env.DB_HOST === 'postgres' 
+  KEYCLOAK_AUTH_SERVER_URL: process.env.DB_HOST === 'postgres'
     ? 'http://keycloak:8080'
     : (process.env.KEYCLOAK_AUTH_SERVER_URL || 'http://localhost:8080'),
   KEYCLOAK_REALM: process.env.KEYCLOAK_REALM || 'stock-portfolio',

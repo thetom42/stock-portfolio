@@ -1,11 +1,10 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import * as transactionService from '../../../src/services/transactionService';
+import { transactionService } from '../../../src/services/transactionService';
 import * as transactionController from '../../../src/controllers/transactionController';
 import { Transaction, CreateTransactionDTO, PaginatedTransactions } from '../../../src/models/Transaction';
 import { createMockRequest, RequestWithUser } from '../../helpers/mockRequest';
 import { createMockResponse, MockResponse, verifyResponse } from '../../helpers/mockResponse';
-import { setupRepositoryMocks, resetRepositoryMocks, mockTransactionRepo } from '../../helpers/mockRepositories';
 
 describe('TransactionController', () => {
   let req: Partial<RequestWithUser>;
@@ -13,13 +12,14 @@ describe('TransactionController', () => {
   let next: sinon.SinonSpy;
 
   beforeEach(() => {
-    setupRepositoryMocks();
     res = createMockResponse();
     next = sinon.spy();
+    // Stub transactionService methods
+    sinon.stub(transactionService, 'createTransaction');
+    sinon.stub(transactionService, 'getTransactionsByHolding');
   });
 
   afterEach(() => {
-    resetRepositoryMocks();
     sinon.restore();
   });
 
@@ -49,11 +49,12 @@ describe('TransactionController', () => {
         user: { id: 'user1' }
       });
 
-      sinon.stub(transactionService, 'createTransaction').resolves(mockCreatedTransaction);
+      (transactionService.createTransaction as sinon.SinonStub).resolves(mockCreatedTransaction);
 
       await transactionController.createTransaction(req as any, res, next);
 
       verifyResponse(res, 201, { transaction: mockCreatedTransaction });
+      sinon.assert.calledWith(transactionService.createTransaction as sinon.SinonStub, 'user1', undefined, mockCreateData);
     });
 
     it('should return 404 if holding not found', async () => {
@@ -63,7 +64,7 @@ describe('TransactionController', () => {
       });
 
       const error = new Error('Holding not found');
-      sinon.stub(transactionService, 'createTransaction').rejects(error);
+      (transactionService.createTransaction as sinon.SinonStub).rejects(error);
 
       await transactionController.createTransaction(req as any, res, next);
 
@@ -77,7 +78,7 @@ describe('TransactionController', () => {
       });
 
       const error = new Error('Unauthorized');
-      sinon.stub(transactionService, 'createTransaction').rejects(error);
+      (transactionService.createTransaction as sinon.SinonStub).rejects(error);
 
       await transactionController.createTransaction(req as any, res, next);
 
@@ -91,7 +92,7 @@ describe('TransactionController', () => {
       });
 
       const error = new Error('Database error');
-      sinon.stub(transactionService, 'createTransaction').rejects(error);
+      (transactionService.createTransaction as sinon.SinonStub).rejects(error);
 
       await transactionController.createTransaction(req as any, res, next);
 
@@ -131,11 +132,25 @@ describe('TransactionController', () => {
         user: { id: 'user1' }
       });
 
-      sinon.stub(transactionService, 'getTransactionsByHolding').resolves(mockPaginatedTransactions);
+      (transactionService.getTransactionsByHolding as sinon.SinonStub).resolves(mockPaginatedTransactions);
 
       await transactionController.getTransactionsByHolding(req as any, res, next);
 
       verifyResponse(res, 200, mockPaginatedTransactions);
+      sinon.assert.calledWith(
+        transactionService.getTransactionsByHolding as sinon.SinonStub,
+        'user1',
+        '1',
+        {
+          startDate: '2024-01-01',
+          endDate: '2024-01-31',
+          type: undefined,
+          sort: undefined,
+          order: undefined,
+          page: 1,
+          limit: 10
+        }
+      );
     });
 
     it('should return 404 if holding not found', async () => {
@@ -149,7 +164,7 @@ describe('TransactionController', () => {
       });
 
       const error = new Error('Holding not found');
-      sinon.stub(transactionService, 'getTransactionsByHolding').rejects(error);
+      (transactionService.getTransactionsByHolding as sinon.SinonStub).rejects(error);
 
       await transactionController.getTransactionsByHolding(req as any, res, next);
 
@@ -167,7 +182,7 @@ describe('TransactionController', () => {
       });
 
       const error = new Error('Unauthorized');
-      sinon.stub(transactionService, 'getTransactionsByHolding').rejects(error);
+      (transactionService.getTransactionsByHolding as sinon.SinonStub).rejects(error);
 
       await transactionController.getTransactionsByHolding(req as any, res, next);
 
@@ -185,7 +200,7 @@ describe('TransactionController', () => {
       });
 
       const error = new Error('Database error');
-      sinon.stub(transactionService, 'getTransactionsByHolding').rejects(error);
+      (transactionService.getTransactionsByHolding as sinon.SinonStub).rejects(error);
 
       await transactionController.getTransactionsByHolding(req as any, res, next);
 

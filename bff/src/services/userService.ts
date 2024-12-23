@@ -1,125 +1,68 @@
-import { User, CreateUserDTO, UpdateUserDTO, UserCredentials } from '../models/User';
-import { getPrismaClient } from '../utils/database';
-import { createHash } from 'crypto';
-import { UserRepository } from '@stock-portfolio/db';
-import { User as DBUser } from '@prisma/client';
-
-// Initialize repository with default implementation
-const prisma = getPrismaClient();
-let userRepository = new UserRepository(prisma);
-
-// For testing: allow repository injection
-export const setUserRepository = (repo: any) => {
-    userRepository = repo;
-};
+import { prisma, UserRepository } from '@stock-portfolio/db';
+import type { User as DBUser } from '@stock-portfolio/db/dist/models/User';
+import type { User, CreateUserDTO, UpdateUserDTO } from '../models/User';
 
 // Helper function to map DB User to BFF User
 const mapDBUserToBFF = (dbUser: DBUser): User => ({
   id: dbUser.user_id,
   email: dbUser.email,
-  firstName: dbUser.name,
-  lastName: dbUser.surname,
-  createdAt: dbUser.join_date,
-  updatedAt: dbUser.join_date // DB doesn't have updated_at, using join_date
+  firstName: dbUser.name,        // Map name to firstName
+  lastName: dbUser.surname,      // Map surname to lastName
+  createdAt: dbUser.join_date,  // Map join_date to createdAt
+  updatedAt: dbUser.join_date   // Using join_date as we don't have updated_at in DB
 });
 
-// Helper function to hash password
-const hashPassword = (password: string): string => {
-  return createHash('sha256').update(password).digest('hex');
-};
+export class UserService {
+  private userRepository: UserRepository;
 
-export const createUser = async (userData: CreateUserDTO): Promise<User> => {
-  try {
-    // Hash password
-    const hashedPassword = hashPassword(userData.password);
+  constructor(userRepo?: UserRepository) {
+    this.userRepository = userRepo || new UserRepository(prisma);
+  }
 
-    const dbUser = await userRepository.create({
-      user_id: '', // Will be generated
+  async getUserById(userId: string): Promise<User | null> {
+    const user = await this.userRepository.findById(userId);
+    return user ? mapDBUserToBFF(user) : null;
+  }
+
+  async getUserByEmail(email: string): Promise<User | null> {
+    const user = await this.userRepository.findByEmail(email);
+    return user ? mapDBUserToBFF(user) : null;
+  }
+
+  async createUser(userData: CreateUserDTO): Promise<User> {
+    const dbUser = await this.userRepository.create({
+      user_id: crypto.randomUUID(),
       email: userData.email,
-      name: userData.firstName,
-      surname: userData.lastName,
-      nickname: userData.firstName, // Using firstName as nickname
-      password: hashedPassword,
+      name: userData.firstName,      // Map firstName to name
+      surname: userData.lastName,    // Map lastName to surname
+      password: userData.password,
+      nickname: `${userData.firstName} ${userData.lastName}`, // Generate nickname
       join_date: new Date()
     });
-
     return mapDBUserToBFF(dbUser);
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('already exists')) {
-      throw new Error('User with this email already exists');
-    }
-    throw error;
-  }
-};
-
-export const getUserById = async (userId: string): Promise<User | null> => {
-  const user = await userRepository.findById(userId);
-  
-  if (!user) {
-    return null;
   }
 
-  return mapDBUserToBFF(user);
-};
+  async updateUser(userId: string, userData: UpdateUserDTO): Promise<User> {
+    const updateData: Partial<DBUser> = {};
 
-export const getUserByEmail = async (email: string): Promise<User | null> => {
-  const user = await userRepository.findByEmail(email);
-  
-  if (!user) {
-    return null;
+    if (userData.firstName) updateData.name = userData.firstName;
+    if (userData.lastName) updateData.surname = userData.lastName;
+    if (userData.email) updateData.email = userData.email;
+
+    const dbUser = await this.userRepository.update(userId, updateData);
+    return mapDBUserToBFF(dbUser);
   }
 
-  return mapDBUserToBFF(user);
-};
-
-export const updateUser = async (
-  userId: string,
-  updateData: UpdateUserDTO
-): Promise<User | null> => {
-  try {
-    // Build update data
-    const updateFields: any = {
-      ...(updateData.email && { email: updateData.email }),
-      ...(updateData.firstName && { name: updateData.firstName }),
-      ...(updateData.lastName && { surname: updateData.lastName }),
-      ...(updateData.firstName && { nickname: updateData.firstName }) // Update nickname if firstName changes
-    };
-
-    const updatedUser = await userRepository.update(userId, updateFields);
-    return mapDBUserToBFF(updatedUser);
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('not found')) {
-      return null;
-    }
-    throw error;
+  async deleteUser(userId: string): Promise<User> {
+    const dbUser = await this.userRepository.delete(userId);
+    return mapDBUserToBFF(dbUser);
   }
-};
+}
 
-export const deleteUser = async (userId: string): Promise<void> => {
-  try {
-    await userRepository.delete(userId);
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('not found')) {
-      throw new Error('User not found');
-    }
-    throw error;
-  }
-};
+// Export a singleton instance
+export const userService = new UserService();
 
-export const validateUserCredentials = async (
-  credentials: UserCredentials
-): Promise<User | null> => {
-  const user = await userRepository.findByEmail(credentials.email);
-
-  if (!user) {
-    return null;
-  }
-
-  // Verify password
-  const hashedPassword = hashPassword(credentials.password);
-  if (hashedPassword !== user.password) {
-    return null;
-  }
-
-  return mapDBUserToBFF(user);
+// For testing: allow repository injection
+export const setUserRepository = (repo: UserRepository) => {
+  return new UserService(repo);
 };

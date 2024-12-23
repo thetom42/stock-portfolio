@@ -1,184 +1,208 @@
-import { expect, use } from 'chai';
-import chaiAsPromised from 'chai-as-promised';
+import { expect } from 'chai';
 import sinon from 'sinon';
-import * as categoryService from '../../../src/services/categoryService';
-import { CreateCategoryDTO, UpdateCategoryDTO } from '../../../src/models/Category';
-import { mockCategoryRepo } from '../../helpers/mockRepositories';
-
-use(chaiAsPromised);
+import { categoryService, setCategoryRepository } from '../../../src/services/categoryService';
+import { Category } from '../../../src/models/Category';
+import { setupMockCategoryRepo, resetAllMocks } from '../../helpers/mockRepositories';
 
 describe('CategoryService', () => {
+  let mockRepo: any;
+
   beforeEach(() => {
-    // Set up mock repository
-    categoryService.setCategoryRepository(mockCategoryRepo);
+    const setup = setupMockCategoryRepo();
+    mockRepo = setup.mockRepo;
+    // Inject mock repository into the singleton instance
+    setCategoryRepository(mockRepo);
   });
 
   afterEach(() => {
-    // Reset all stubs
+    resetAllMocks();
     sinon.restore();
   });
 
-  describe('createCategory', () => {
-    const mockCreateData: CreateCategoryDTO = {
-      name: 'Test Category'
-    };
+  describe('getAllCategories', () => {
+    it('should return all categories', async () => {
+      const mockDBCategories = [
+        {
+          category_id: '1',
+          name: 'Technology',
+          created_at: new Date()
+        },
+        {
+          category_id: '2',
+          name: 'Healthcare',
+          created_at: new Date()
+        }
+      ];
 
-    // DB layer response uses old naming
-    const mockDBCategory = {
-      category_id: '1',
-      name: 'Test Category'
-    };
+      mockRepo.findAll.resolves(mockDBCategories);
 
-    // BFF layer response uses new naming
-    const expectedBFFCategory = {
-      id: '1',
-      name: 'Test Category'
-    };
+      const result = await categoryService.getAllCategories();
 
-    it('should create a category successfully', async () => {
-      mockCategoryRepo.create.resolves(mockDBCategory);
-
-      const result = await categoryService.createCategory(mockCreateData);
-
-      expect(result).to.deep.equal(expectedBFFCategory);
-      expect(mockCategoryRepo.create.firstCall.args[0]).to.deep.include({
-        category_id: '',
-        name: mockCreateData.name
+      expect(result).to.be.an('array').with.lengthOf(2);
+      expect(result[0]).to.deep.include({
+        id: '1',
+        name: 'Technology'
       });
+      expect(result[1]).to.deep.include({
+        id: '2',
+        name: 'Healthcare'
+      });
+      expect(mockRepo.findAll.calledOnce).to.be.true;
     });
 
-    it('should throw error if category name already exists', async () => {
-      mockCategoryRepo.create.rejects(new Error('Category with this name already exists'));
+    it('should return empty array if no categories exist', async () => {
+      mockRepo.findAll.resolves([]);
 
-      await expect(categoryService.createCategory(mockCreateData))
-        .to.be.rejectedWith('Category with this name already exists');
+      const result = await categoryService.getAllCategories();
+
+      expect(result).to.be.an('array').that.is.empty;
+      expect(mockRepo.findAll.calledOnce).to.be.true;
+    });
+
+    it('should handle errors gracefully', async () => {
+      mockRepo.findAll.rejects(new Error('Database error'));
+
+      await expect(categoryService.getAllCategories())
+        .to.be.rejectedWith('Failed to fetch categories');
     });
   });
 
   describe('getCategoryById', () => {
-    // DB layer response uses old naming
-    const mockDBCategory = {
-      category_id: '1',
-      name: 'Test Category'
-    };
-
-    // BFF layer response uses new naming
-    const expectedBFFCategory = {
-      id: '1',
-      name: 'Test Category'
-    };
-
     it('should return category if found', async () => {
-      mockCategoryRepo.findById.resolves(mockDBCategory);
+      const mockDBCategory = {
+        category_id: '1',
+        name: 'Technology',
+        created_at: new Date()
+      };
+
+      mockRepo.findById.resolves(mockDBCategory);
 
       const result = await categoryService.getCategoryById('1');
 
-      expect(result).to.deep.equal(expectedBFFCategory);
-      expect(mockCategoryRepo.findById.calledWith('1')).to.be.true;
+      expect(result).to.deep.include({
+        id: '1',
+        name: 'Technology'
+      });
+      expect(mockRepo.findById.calledWith('1')).to.be.true;
     });
 
     it('should return null if category not found', async () => {
-      mockCategoryRepo.findById.resolves(null);
+      mockRepo.findById.resolves(null);
 
       const result = await categoryService.getCategoryById('999');
+
       expect(result).to.be.null;
-      expect(mockCategoryRepo.findById.calledWith('999')).to.be.true;
+      expect(mockRepo.findById.calledWith('999')).to.be.true;
+    });
+
+    it('should handle errors gracefully', async () => {
+      mockRepo.findById.rejects(new Error('Database error'));
+
+      await expect(categoryService.getCategoryById('1'))
+        .to.be.rejectedWith('Failed to fetch category');
     });
   });
 
-  describe('getAllCategories', () => {
-    // DB layer response uses old naming
-    const mockDBCategories = [
-      { category_id: '1', name: 'Category 1' },
-      { category_id: '2', name: 'Category 2' }
-    ];
+  describe('createCategory', () => {
+    const createData = {
+      name: 'New Category'
+    };
 
-    // BFF layer response uses new naming
-    const expectedBFFCategories = [
-      { id: '1', name: 'Category 1' },
-      { id: '2', name: 'Category 2' }
-    ];
+    it('should create category successfully', async () => {
+      const mockDBCategory = {
+        category_id: '1',
+        name: createData.name,
+        created_at: new Date()
+      };
 
-    it('should return all categories', async () => {
-      mockCategoryRepo.findAll.resolves(mockDBCategories);
+      mockRepo.create.resolves(mockDBCategory);
 
-      const result = await categoryService.getAllCategories();
+      const result = await categoryService.createCategory(createData);
 
-      expect(result).to.deep.equal(expectedBFFCategories);
-      expect(mockCategoryRepo.findAll.called).to.be.true;
+      expect(result).to.deep.include({
+        id: '1',
+        name: createData.name
+      });
+      expect(mockRepo.create.firstCall.args[0]).to.deep.include({
+        name: createData.name
+      });
     });
 
-    it('should return empty array if no categories exist', async () => {
-      mockCategoryRepo.findAll.resolves([]);
+    it('should handle errors gracefully', async () => {
+      mockRepo.create.rejects(new Error('Database error'));
 
-      const result = await categoryService.getAllCategories();
-      expect(result).to.deep.equal([]);
-      expect(mockCategoryRepo.findAll.called).to.be.true;
+      await expect(categoryService.createCategory(createData))
+        .to.be.rejectedWith('Failed to create category');
     });
   });
 
   describe('updateCategory', () => {
-    const mockUpdateData: UpdateCategoryDTO = {
-      name: 'Updated Category'
-    };
-
-    // DB layer response uses old naming
-    const mockDBUpdatedCategory = {
-      category_id: '1',
-      name: 'Updated Category'
-    };
-
-    // BFF layer response uses new naming
-    const expectedBFFUpdatedCategory = {
-      id: '1',
+    const updateData = {
       name: 'Updated Category'
     };
 
     it('should update category successfully', async () => {
-      mockCategoryRepo.update.resolves(mockDBUpdatedCategory);
+      const mockDBCategory = {
+        category_id: '1',
+        name: updateData.name,
+        created_at: new Date()
+      };
 
-      const result = await categoryService.updateCategory('1', mockUpdateData);
+      mockRepo.update.resolves(mockDBCategory);
 
-      expect(result).to.deep.equal(expectedBFFUpdatedCategory);
-      expect(mockCategoryRepo.update.firstCall.args).to.deep.equal([
+      const result = await categoryService.updateCategory('1', updateData);
+
+      expect(result).to.deep.include({
+        id: '1',
+        name: updateData.name
+      });
+      expect(mockRepo.update.firstCall.args).to.deep.equal([
         '1',
-        { name: mockUpdateData.name }
+        { name: updateData.name }
       ]);
     });
 
-    it('should throw error if category not found', async () => {
-      mockCategoryRepo.update.rejects(new Error('Category not found'));
+    it('should return null if category not found', async () => {
+      mockRepo.update.resolves(null);
 
-      await expect(categoryService.updateCategory('999', mockUpdateData))
-        .to.be.rejectedWith('Category not found');
+      const result = await categoryService.updateCategory('999', updateData);
+
+      expect(result).to.be.null;
+      expect(mockRepo.update.firstCall.args).to.deep.equal([
+        '999',
+        { name: updateData.name }
+      ]);
     });
 
-    it('should throw error if new name already exists', async () => {
-      mockCategoryRepo.update.rejects(new Error('Category with this name already exists'));
+    it('should handle errors gracefully', async () => {
+      mockRepo.update.rejects(new Error('Database error'));
 
-      await expect(categoryService.updateCategory('1', mockUpdateData))
-        .to.be.rejectedWith('Category with this name already exists');
+      await expect(categoryService.updateCategory('1', updateData))
+        .to.be.rejectedWith('Failed to update category');
     });
   });
 
   describe('deleteCategory', () => {
     it('should delete category successfully', async () => {
-      mockCategoryRepo.delete.resolves();
+      const mockDBCategory = {
+        category_id: '1',
+        name: 'Technology',
+        created_at: new Date()
+      };
 
-      await categoryService.deleteCategory('1');
+      mockRepo.delete.resolves(mockDBCategory);
 
-      expect(mockCategoryRepo.delete.calledWith('1')).to.be.true;
+      const result = await categoryService.deleteCategory('1');
+
+      expect(result).to.deep.include({
+        id: '1',
+        name: 'Technology'
+      });
+      expect(mockRepo.delete.calledWith('1')).to.be.true;
     });
 
-    it('should throw error if category not found', async () => {
-      mockCategoryRepo.delete.rejects(new Error('Category not found'));
-
-      await expect(categoryService.deleteCategory('999'))
-        .to.be.rejectedWith('Category not found');
-    });
-
-    it('should throw error if deletion fails', async () => {
-      mockCategoryRepo.delete.rejects(new Error('Database error'));
+    it('should handle errors gracefully', async () => {
+      mockRepo.delete.rejects(new Error('Database error'));
 
       await expect(categoryService.deleteCategory('1'))
         .to.be.rejectedWith('Failed to delete category');
