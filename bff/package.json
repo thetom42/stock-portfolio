@@ -9,6 +9,7 @@
     "debug": "nodemon --inspect=0.0.0.0:9229 src/app.ts",
     "debug:test": "mocha --inspect=0.0.0.0:9229 tests/**/*.test.ts",
     "build": "tsc",
+    "test": "npm-run-all test:unit:* test:integration",
     "test:unit": "npm-run-all test:unit:*",
     "test:unit:config": "cd tests/unit/config && mocha --config .mocharc.js",
     "test:unit:middleware": "cd tests/unit/middleware && mocha --config .mocharc.js",

@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
-import { UserRepository } from '../../../repositories/UserRepository';
-import { User } from '../../../models/User';
+import { UserRepository } from '../../../src/repositories/UserRepository';
+import { User } from '../../../src/models/User';
 import { getPrismaClient, clearDatabase } from '../../helpers/prisma';
 
 describe('UserRepository', () => {
@@ -33,7 +33,7 @@ describe('UserRepository', () => {
       expect(result).toBeDefined();
       expect(result.user_id).toBe(userData.user_id);
       expect(result.email).toBe(userData.email);
-      
+
       // Verify the user was actually saved
       const savedUser = await prisma.user.findUnique({
         where: { user_id: userData.user_id }

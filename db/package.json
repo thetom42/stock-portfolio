@@ -2,12 +2,7 @@
   "name": "@stock-portfolio/db",
   "version": "1.0.0",
   "description": "Database layer for stock portfolio application",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist",
-    "prisma"
-  ],
+  "main": "index.js",
   "scripts": {
     "build": "tsc",
     "test": "jest --runInBand",

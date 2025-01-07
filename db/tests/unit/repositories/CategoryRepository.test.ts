@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
-import { CategoryRepository } from '../../../repositories/CategoryRepository';
-import { Category } from '../../../models/Category';
+import { CategoryRepository } from '../../../src/repositories/CategoryRepository';
+import { Category } from '../../../src/models/Category';
 import { getPrismaClient, clearDatabase } from '../../helpers/prisma';
 
 describe('CategoryRepository', () => {
@@ -104,7 +104,7 @@ describe('CategoryRepository', () => {
                 { category_id: 'id-2', name: 'Category 2' },
                 { category_id: 'id-3', name: 'Category 3' }
             ];
-            await Promise.all(categories.map(category => 
+            await Promise.all(categories.map(category =>
                 prisma.category.create({ data: category })
             ));
 
@@ -133,7 +133,7 @@ describe('CategoryRepository', () => {
                 { category_id: 'id-1', name: 'Category A' },
                 { category_id: 'id-2', name: 'Category B' }
             ];
-            await Promise.all(categories.map(category => 
+            await Promise.all(categories.map(category =>
                 prisma.category.create({ data: category })
             ));
 

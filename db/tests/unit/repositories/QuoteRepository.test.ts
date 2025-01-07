@@ -1,10 +1,10 @@
 import { PrismaClient } from '@prisma/client';
-import { QuoteRepository } from '../../../repositories/QuoteRepository';
-import { StockRepository } from '../../../repositories/StockRepository';
-import { CategoryRepository } from '../../../repositories/CategoryRepository';
-import { Quote, CreateQuoteInput } from '../../../models/Quote';
-import { Stock } from '../../../models/Stock';
-import { Category } from '../../../models/Category';
+import { QuoteRepository } from '../../../src/repositories/QuoteRepository';
+import { StockRepository } from '../../../src/repositories/StockRepository';
+import { CategoryRepository } from '../../../src/repositories/CategoryRepository';
+import { Quote, CreateQuoteInput } from '../../../src/models/Quote';
+import { Stock } from '../../../src/models/Stock';
+import { Category } from '../../../src/models/Category';
 import { getPrismaClient, clearDatabase } from '../../helpers/prisma';
 import { Decimal } from '@prisma/client/runtime/library';
 

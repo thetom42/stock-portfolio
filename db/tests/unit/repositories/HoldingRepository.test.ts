@@ -1,15 +1,15 @@
 import { PrismaClient } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
-import { HoldingRepository } from '../../../repositories/HoldingRepository';
-import { PortfolioRepository } from '../../../repositories/PortfolioRepository';
-import { StockRepository } from '../../../repositories/StockRepository';
-import { CategoryRepository } from '../../../repositories/CategoryRepository';
-import { UserRepository } from '../../../repositories/UserRepository';
-import { Holding } from '../../../models/Holding';
-import { Portfolio } from '../../../models/Portfolio';
-import { Stock } from '../../../models/Stock';
-import { Category } from '../../../models/Category';
-import { User } from '../../../models/User';
+import { HoldingRepository } from '../../../src/repositories/HoldingRepository';
+import { PortfolioRepository } from '../../../src/repositories/PortfolioRepository';
+import { StockRepository } from '../../../src/repositories/StockRepository';
+import { CategoryRepository } from '../../../src/repositories/CategoryRepository';
+import { UserRepository } from '../../../src/repositories/UserRepository';
+import { Holding } from '../../../src/models/Holding';
+import { Portfolio } from '../../../src/models/Portfolio';
+import { Stock } from '../../../src/models/Stock';
+import { Category } from '../../../src/models/Category';
+import { User } from '../../../src/models/User';
 import { getPrismaClient, clearDatabase } from '../../helpers/prisma';
 
 describe('HoldingRepository', () => {

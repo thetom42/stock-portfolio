@@ -1,10 +1,10 @@
 import { PrismaClient } from '@prisma/client';
-import { StockRepository } from '../../../repositories/StockRepository';
-import { CategoryRepository } from '../../../repositories/CategoryRepository';
-import { UserRepository } from '../../../repositories/UserRepository';
-import { Stock } from '../../../models/Stock';
-import { Category } from '../../../models/Category';
-import { User } from '../../../models/User';
+import { StockRepository } from '../../../src/repositories/StockRepository';
+import { CategoryRepository } from '../../../src/repositories/CategoryRepository';
+import { UserRepository } from '../../../src/repositories/UserRepository';
+import { Stock } from '../../../src/models/Stock';
+import { Category } from '../../../src/models/Category';
+import { User } from '../../../src/models/User';
 import { getPrismaClient, clearDatabase } from '../../helpers/prisma';
 
 describe('StockRepository', () => {
@@ -106,8 +106,8 @@ describe('StockRepository', () => {
             };
             await stockRepository.create(stockData);
 
-            const duplicateStock = { 
-                ...stockData, 
+            const duplicateStock = {
+                ...stockData,
                 isin: 'DIFFERENT123456',
                 symbol: 'DIF'
             };
@@ -126,8 +126,8 @@ describe('StockRepository', () => {
             };
             await stockRepository.create(stockData);
 
-            const duplicateStock = { 
-                ...stockData, 
+            const duplicateStock = {
+                ...stockData,
                 isin: 'DIFFERENT123456',
                 wkn: 'DIFF123'
             };
@@ -310,7 +310,7 @@ describe('StockRepository', () => {
                     symbol: 'TST2'
                 }
             ];
-            await Promise.all(stocks.map(stock => 
+            await Promise.all(stocks.map(stock =>
                 prisma.stock.create({ data: stock })
             ));
 
@@ -351,7 +351,7 @@ describe('StockRepository', () => {
                     symbol: 'TST2'
                 }
             ];
-            await Promise.all(stocks.map(stock => 
+            await Promise.all(stocks.map(stock =>
                 prisma.stock.create({ data: stock })
             ));
 
@@ -382,7 +382,7 @@ describe('StockRepository', () => {
                     symbol: 'TST2'
                 }
             ];
-            await Promise.all(stocks.map(stock => 
+            await Promise.all(stocks.map(stock =>
                 prisma.stock.create({ data: stock })
             ));
 

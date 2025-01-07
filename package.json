@@ -3,7 +3,9 @@
   "private": true,
   "scripts": {
     "build": "cd db && npm run build && cd ../bff && npm run build",
-    "test": "cd db && npm test && cd ../bff && npm test"
+    "test": "npm-run-all test:db test:bff",
+    "test:db": "cd db && npm test",
+    "test:bff": "cd bff && npm test"
   },
   "devDependencies": {
     "@types/sinon-chai": "^4.0.0",

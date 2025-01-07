@@ -1,12 +1,12 @@
 import { PrismaClient } from '@prisma/client';
-import { PortfolioRepository } from '../../../repositories/PortfolioRepository';
-import { UserRepository } from '../../../repositories/UserRepository';
-import { CategoryRepository } from '../../../repositories/CategoryRepository';
-import { StockRepository } from '../../../repositories/StockRepository';
-import { Portfolio } from '../../../models/Portfolio';
-import { User } from '../../../models/User';
-import { Category } from '../../../models/Category';
-import { Stock } from '../../../models/Stock';
+import { PortfolioRepository } from '../../../src/repositories/PortfolioRepository';
+import { UserRepository } from '../../../src/repositories/UserRepository';
+import { CategoryRepository } from '../../../src/repositories/CategoryRepository';
+import { StockRepository } from '../../../src/repositories/StockRepository';
+import { Portfolio } from '../../../src/models/Portfolio';
+import { User } from '../../../src/models/User';
+import { Category } from '../../../src/models/Category';
+import { Stock } from '../../../src/models/Stock';
 import { getPrismaClient, clearDatabase } from '../../helpers/prisma';
 
 describe('PortfolioRepository', () => {
@@ -250,7 +250,7 @@ describe('PortfolioRepository', () => {
           user_id: testUser.user_id,
         }
       ];
-      await Promise.all(portfolios.map(portfolio => 
+      await Promise.all(portfolios.map(portfolio =>
         prisma.portfolio.create({ data: portfolio })
       ));
 
