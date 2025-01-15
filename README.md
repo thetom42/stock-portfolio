@@ -26,7 +26,7 @@ Initial purpose of the "Stock Portfolio" was a study project aimed at developing
 
 ### Technology Stack
 
-- **Frontend**: Typescript with VueJS
+- **Frontend**: Typescript with React
 - **Middleware**: NodeJS with ExpressJS, providing REST API
 - **Database**: PostgreSQL
 - **Authentication**: JWT (Keycloak)
