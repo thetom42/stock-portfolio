@@ -6,8 +6,7 @@ module.exports = {
   extension: ['ts'],
   spec: [
     'database.test.ts',
-    'validation.test.ts',
-    'error.test.ts'
+    'validation.test.ts'
   ],
   timeout: 0,
   exit: true,

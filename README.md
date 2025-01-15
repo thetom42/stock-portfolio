@@ -101,7 +101,7 @@ Will be implemented as part of the roadmap, focusing on a modern, responsive use
 
 The database model represents a comprehensive stock portfolio management system with interconnected entities. At its core, Users can manage multiple Portfolios, each containing various Holdings of Stocks. Each Holding tracks a specific Stock position and its associated Transactions (buys/sells). Stocks are organized into Categories for better classification, and the system maintains historical Quote data for each Stock. This relational model ensures data integrity while providing flexibility for portfolio management and performance tracking.
 
-![View Database Model](db/model.png)
+![View Database Model](docs/model.png)
 
 #### Architecture
 
