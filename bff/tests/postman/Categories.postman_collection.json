@@ -248,14 +248,14 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test('Status code is 500', function() {",
-                  "    pm.response.to.have.status(500);",
+                  "pm.test('Status code is 403', function() {",
+                  "    pm.response.to.have.status(403);",
                   "});",
                   "",
                   "pm.test('Response has correct error message', function() {",
                   "    const response = pm.response.json();",
                   "    pm.expect(response.error).to.have.property('message');",
-                  "    pm.expect(response.error.message).to.include('Category with this name already exists');",
+                  "    pm.expect(response.error.message).to.include('Forbidden');",
                   "});"
                 ]
               }
@@ -300,24 +300,19 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test('Response has valid status code', function() {",
-                  "    pm.expect(pm.response.code).to.be.oneOf([201, 500]);",
+                  "pm.test('Status code is 201', function() {",
+                  "    pm.response.to.have.status(201);",
                   "});",
                   "",
                   "pm.test('Response has valid data structure', function() {",
                   "    const response = pm.response.json();",
                   "    pm.expect(response).to.be.an('object');",
-                  "    if (pm.response.code === 201) {",
-                  "        pm.expect(response).to.have.property('category');",
-                  "        pm.expect(response.category).to.have.property('id');",
-                  "        pm.expect(response.category).to.have.property('name');",
-                  "        pm.environment.set('categoryId', response.category.id);",
-                  "        const uniqueName = `TestCategory_${Date.now()}`;",
-                  "        pm.environment.set('uniqueCategoryName', uniqueName);",
-                  "    } else {",
-                  "        pm.expect(response).to.have.property('error');",
-                  "        pm.expect(response.error).to.have.property('message');",
-                  "    }",
+                  "    pm.expect(response).to.have.property('category');",
+                  "    pm.expect(response.category).to.have.property('id');",
+                  "    pm.expect(response.category).to.have.property('name');",
+                  "    pm.environment.set('categoryId', response.category.id);",
+                  "    const uniqueName = `TestCategory_${Date.now()}`;",
+                  "    pm.environment.set('uniqueCategoryName', uniqueName);",
                   "});"
                 ]
               }
@@ -357,21 +352,16 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test('Response has valid status code', function() {",
-                  "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
                   "});",
                   "",
                   "pm.test('Response has valid data structure', function() {",
                   "    const response = pm.response.json();",
                   "    pm.expect(response).to.be.an('object');",
-                  "    if (pm.response.code === 200) {",
-                  "        pm.expect(response).to.have.property('category');",
-                  "        pm.expect(response.category.id).to.eql(pm.environment.get('categoryId'));",
-                  "        pm.expect(response.category.name).to.eql('{{uniqueCategoryName}}_Updated');",
-                  "    } else {",
-                  "        pm.expect(response).to.have.property('error');",
-                  "        pm.expect(response.error).to.have.property('message');",
-                  "    }",
+                  "    pm.expect(response).to.have.property('category');",
+                  "    pm.expect(response.category.id).to.eql(pm.environment.get('categoryId'));",
+                  "    pm.expect(response.category.name).to.eql('{{uniqueCategoryName}}_Updated');",
                   "});"
                 ]
               }
@@ -412,17 +402,9 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test('Response has valid status code', function() {",
-                  "    pm.expect(pm.response.code).to.be.oneOf([204, 404]);",
-                  "});",
-                  "",
-                  "if (pm.response.code === 404) {",
-                  "    pm.test('Response has error message', function() {",
-                  "        const response = pm.response.json();",
-                  "        pm.expect(response).to.have.property('error');",
-                  "        pm.expect(response.error).to.have.property('message');",
-                  "    });",
-                  "}"
+                  "pm.test('Status code is 204', function() {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
                 ]
               }
             }
