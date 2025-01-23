@@ -62,10 +62,20 @@ export const protect = (role?: string) => {
   if (environment.NODE_ENV === 'test') {
     return mockProtect(role);
   }
-  
+
   return (req: Request, res: Response, next: NextFunction) => {
-    // Use Keycloak's built-in protect middleware
-    keycloak.protect(role)(req, res, (err?: any) => {
+    // First verify token exists
+    if (!req.kauth?.grant?.access_token) {
+      return res.status(401).json({
+        error: {
+          message: 'Unauthorized',
+          details: 'Authentication required'
+        }
+      });
+    }
+
+    // Verify token validity
+    keycloak.protect()(req, res, (err?: any) => {
       if (err) {
         console.error('Keycloak protect error:', err);
         return res.status(403).json({
@@ -75,6 +85,29 @@ export const protect = (role?: string) => {
           }
         });
       }
+
+      // Verify role if specified
+      if (role) {
+        const token = req.kauth?.grant?.access_token?.content;
+        if (!token) {
+          return res.status(403).json({
+            error: {
+              message: 'Forbidden',
+              details: 'Invalid token format'
+            }
+          });
+        }
+        const roles = token.realm_access?.roles || [];
+        if (!roles.includes(role)) {
+          return res.status(403).json({
+            error: {
+              message: 'Forbidden',
+              details: `Requires ${role} role`
+            }
+          });
+        }
+      }
+
       next();
     });
   };

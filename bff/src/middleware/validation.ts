@@ -131,8 +131,10 @@ export const validateTransactionCreation = [
 export const validateCategoryCreation = [
   body('name')
     .trim()
-    .isLength({ min: 1 })
-    .withMessage('Category name is required'),
+    .isLength({ min: 3, max: 50 })
+    .withMessage('Category name must be between 3 and 50 characters')
+    .matches(/^[A-Za-z][A-Za-z0-9-]*$/)
+    .withMessage('Category name must start with a letter and can only contain letters, numbers and dashes'),
   handleValidationErrors
 ] as const;
 
@@ -211,8 +213,14 @@ export const validateStockSearch = [
 // Parameter validation
 export const validateUUID = (paramName: string) => [
   param(paramName)
-    .isUUID()
-    .withMessage(`Invalid ${paramName} format`),
+    .custom((value) => {
+      // Accept either UUID or our custom 'cat-X' format
+      if (!value.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) &&
+        !value.match(/^cat-\d+$/)) {
+        throw new Error(`Invalid ${paramName} format`);
+      }
+      return true;
+    }),
   handleValidationErrors
 ] as const;
 

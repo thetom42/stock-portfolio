@@ -5,14 +5,13 @@ import { validateCategoryCreation, validateCategoryUpdate, validateUUID } from '
 
 const router = express.Router();
 
-// All category routes require authentication
-router.use(protect());
+// Read operations require basic authentication
+router.get('/', protect(), categoryController.getAllCategories);
+router.get('/:id', protect(), validateUUID('id'), categoryController.getCategoryById);
 
-// Category routes
-router.post('/', validateCategoryCreation, categoryController.createCategory);
-router.get('/', categoryController.getAllCategories);
-router.get('/:id', validateUUID('id'), categoryController.getCategoryById);
-router.put('/:id', validateUUID('id'), validateCategoryUpdate, categoryController.updateCategory);
-router.delete('/:id', validateUUID('id'), categoryController.deleteCategory);
+// Write operations require admin role
+router.post('/', protect('admin'), validateCategoryCreation, categoryController.createCategory);
+router.put('/:id', protect('admin'), validateUUID('id'), validateCategoryUpdate, categoryController.updateCategory);
+router.delete('/:id', protect('admin'), validateUUID('id'), categoryController.deleteCategory);
 
 export default router;

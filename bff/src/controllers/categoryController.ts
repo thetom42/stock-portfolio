@@ -4,7 +4,7 @@ import { categoryService } from '../services/categoryService';
 
 type CategoryResponseType = { category: CategoryResponse };
 type CategoriesResponseType = { categories: CategoryResponse[] };
-type ErrorResponse = { error: string };
+type ErrorResponse = { error: { message: string } };
 
 export const createCategory = async (
     req: TypedRequest<{}, {}, Category>,
@@ -16,7 +16,7 @@ export const createCategory = async (
         res.status(201).json({ category });
     } catch (error) {
         if (error instanceof Error && error.message === 'Category name already exists') {
-            res.status(409).json({ error: error.message });
+            res.status(409).json({ error: { message: error.message } });
         } else {
             next(error);
         }
@@ -25,15 +25,15 @@ export const createCategory = async (
 
 export const getCategoryById = async (
     req: TypedRequest<{ id: string }>,
-    res: TypedResponse<CategoryResponseType | ErrorResponse>,
+    res: TypedResponse<CategoriesResponseType | ErrorResponse>,
     next: NextFunction
 ) => {
     try {
         const category = await categoryService.getCategoryById(req.params.id);
         if (!category) {
-            return res.status(404).json({ error: 'Category not found' });
+            return res.status(404).json({ error: { message: 'Category not found' } });
         }
-        res.json({ category });
+        res.json({ categories: [category] });
     } catch (error) {
         next(error);
     }
@@ -60,13 +60,13 @@ export const updateCategory = async (
     try {
         const category = await categoryService.updateCategory(req.params.id, req.body);
         if (!category) {
-            return res.status(404).json({ error: 'Category not found' });
+            return res.status(404).json({ error: { message: 'Category not found' } });
         }
         res.json({ category });
     } catch (error) {
         if (error instanceof Error) {
             if (error.message === 'Category name already exists') {
-                res.status(409).json({ error: error.message });
+                res.status(409).json({ error: { message: error.message } });
             } else {
                 next(error);
             }
@@ -84,7 +84,7 @@ export const deleteCategory = async (
         res.status(204).send();
     } catch (error) {
         if (error instanceof Error && error.message === 'Category not found') {
-            res.status(404).json({ error: error.message });
+            res.status(404).json({ error: { message: error.message } });
         } else {
             next(error);
         }

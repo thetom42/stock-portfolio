@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Stock Portfolio BFF - Categories",
-    "description": "Collection for managing stock categories in the Stock Portfolio application.\n\nAuthentication:\nThis collection uses Keycloak for authentication with support for both regular users and administrators.\n\nRequired Environment Variables:\n- Regular User Authentication:\n  * username: Regular test user username\n  * password: Regular test user password\n  * accessToken: Regular user access token\n\n- Admin Authentication:\n  * adminUsername: Admin test user username\n  * adminPassword: Admin test user password\n  * adminAccessToken: Admin user access token\n\nThe collection includes tests for both regular user operations (viewing categories) and admin-specific operations (creating, updating, deleting categories). Category IDs are dynamically managed through the test flow.",
+    "description": "Collection for managing stock categories in the Stock Portfolio application.\n\nAuthentication:\nThis collection uses Keycloak for authentication with support for both regular users and administrators.\n\nRequired Environment Variables:\n- Regular User Authentication:\n  * username: Regular test user username\n  * password: Regular test user password\n  * accessToken: Regular user access token\n\n- Admin Authentication:\n  * adminUsername: Admin test user username\n  * adminPassword: Admin test user password\n  * adminAccessToken: Admin user access token\n\nThe collection includes tests for both regular user operations (viewing categories) and admin-specific operations (creating, updating, deleting categories). Category IDs are dynamically managed through collection variables.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "event": [
@@ -141,6 +141,18 @@
           "    manageToken(true);",
           "} else {",
           "    manageToken(false);",
+          "}",
+          "",
+          "// Initialize collection variables for new category creation",
+          "if (pm.info.requestName === 'Admin Create Category') {",
+          "    // Get initial values from environment",
+          "    const baseName = pm.environment.get('categoryName');",
+          "    const baseDescription = pm.environment.get('categoryDescription');",
+          "    ",
+          "    // Create unique values for the new category",
+          "    const timestamp = new Date().getTime();",
+          "    pm.collectionVariables.set('newCategoryName', `${baseName}-${timestamp}`);",
+          "    pm.collectionVariables.set('newCategoryDescription', `${baseDescription}-${timestamp}`);",
           "}"
         ],
         "type": "text/javascript"
@@ -275,7 +287,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"Technology\",\n    \"description\": \"Technology sector stocks\"\n}"
+              "raw": "{\n    \"name\": \"{{categoryName}}\",\n    \"description\": \"{{categoryDescription}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/categories",
@@ -310,9 +322,13 @@
                   "    pm.expect(response).to.have.property('category');",
                   "    pm.expect(response.category).to.have.property('id');",
                   "    pm.expect(response.category).to.have.property('name');",
-                  "    pm.environment.set('categoryId', response.category.id);",
-                  "    const uniqueName = `TestCategory_${Date.now()}`;",
-                  "    pm.environment.set('uniqueCategoryName', uniqueName);",
+                  "    ",
+                  "    // Store category ID after verifying the structure",
+                  "    pm.collectionVariables.set('createdCategoryId', response.category.id);",
+                  "    console.log('Set createdCategoryId to:', response.category.id);",
+                  "",
+                  "    const expectedName = pm.collectionVariables.get('newCategoryName');",
+                  "    pm.expect(response.category.name).to.eql(expectedName);",
                   "});"
                 ]
               }
@@ -332,7 +348,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"{{uniqueCategoryName}}\",\n    \"description\": \"Test category description\"\n}"
+              "raw": "{\n    \"name\": \"{{newCategoryName}}\",\n    \"description\": \"{{newCategoryDescription}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/categories",
@@ -360,8 +376,10 @@
                   "    const response = pm.response.json();",
                   "    pm.expect(response).to.be.an('object');",
                   "    pm.expect(response).to.have.property('category');",
-                  "    pm.expect(response.category.id).to.eql(pm.environment.get('categoryId'));",
-                  "    pm.expect(response.category.name).to.eql('{{uniqueCategoryName}}_Updated');",
+                  "    pm.expect(response.category).to.be.an('object');",
+                  "    pm.expect(response.category.id).to.eql(pm.collectionVariables.get('createdCategoryId'));",
+                  "    pm.expect(response.category.name).to.eql(pm.collectionVariables.get('newCategoryName') + '_Updated');",
+                  "    pm.expect(response.category).to.have.property('description');",
                   "});"
                 ]
               }
@@ -381,16 +399,16 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"{{uniqueCategoryName}}_Updated\",\n    \"description\": \"Updated test category description\"\n}"
+              "raw": "{\n    \"name\": \"{{newCategoryName}}_Updated\",\n    \"description\": \"Updated {{newCategoryDescription}}\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/categories/{{categoryId}}",
+              "raw": "{{baseUrl}}/categories/{{createdCategoryId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "categories",
-                "{{categoryId}}"
+                "{{createdCategoryId}}"
               ]
             }
           }
@@ -418,13 +436,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/categories/{{categoryId}}",
+              "raw": "{{baseUrl}}/categories/{{createdCategoryId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "categories",
-                "{{categoryId}}"
+                "{{createdCategoryId}}"
               ]
             }
           }
@@ -436,6 +454,18 @@
     {
       "key": "baseUrl",
       "value": "http://localhost:3000/api"
+    },
+    {
+      "key": "createdCategoryId",
+      "value": ""
+    },
+    {
+      "key": "newCategoryName",
+      "value": ""
+    },
+    {
+      "key": "newCategoryDescription",
+      "value": ""
     }
   ]
 }
