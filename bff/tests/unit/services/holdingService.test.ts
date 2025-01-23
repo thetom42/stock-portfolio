@@ -71,7 +71,7 @@ describe('HoldingService', () => {
     };
 
     const mockDBHolding = {
-      holding_id: '1',
+      holding_id: '550e8400-e29b-41d4-a716-446655440000',
       portfolio_id: mockCreateData.portfolioId,
       isin: mockCreateData.isin,
       quantity: mockCreateData.quantity,
@@ -125,7 +125,7 @@ describe('HoldingService', () => {
   describe('getHoldingById', () => {
     it('should return holding if found', async () => {
       const mockDBHolding = {
-        holding_id: '1',
+        holding_id: '550e8400-e29b-41d4-a716-446655440000',
         portfolio_id: '1',
         isin: 'US0378331005',
         quantity: 10,
@@ -161,7 +161,7 @@ describe('HoldingService', () => {
 
     it('should update holding successfully', async () => {
       const mockDBHolding = {
-        holding_id: '1',
+        holding_id: '550e8400-e29b-41d4-a716-446655440000',
         portfolio_id: '1',
         isin: 'US0378331005',
         quantity: updateData.quantity,
@@ -190,7 +190,7 @@ describe('HoldingService', () => {
   describe('closeHolding', () => {
     it('should close holding successfully', async () => {
       mockHoldingRepo.update.resolves({
-        holding_id: '1',
+        holding_id: '550e8400-e29b-41d4-a716-446655440000',
         portfolio_id: '1',
         isin: 'US0378331005',
         quantity: 10,
@@ -214,7 +214,7 @@ describe('HoldingService', () => {
   describe('getHoldingPerformance', () => {
     it('should return performance metrics', async () => {
       const mockDBHolding = {
-        holding_id: '1',
+        holding_id: '550e8400-e29b-41d4-a716-446655440000',
         portfolio_id: '1',
         isin: 'US0378331005',
         quantity: 10,
@@ -255,7 +255,7 @@ describe('HoldingService', () => {
   describe('getHoldingTransactions', () => {
     it('should return transactions for holding', async () => {
       mockHoldingRepo.findById.resolves({
-        holding_id: '1',
+        holding_id: '550e8400-e29b-41d4-a716-446655440000',
         portfolio_id: '1',
         isin: 'US0378331005',
         quantity: 10,
@@ -298,7 +298,7 @@ describe('HoldingService', () => {
   describe('getHoldingValue', () => {
     it('should return current value and metrics', async () => {
       const mockDBHolding = {
-        holding_id: '1',
+        holding_id: '550e8400-e29b-41d4-a716-446655440000',
         portfolio_id: '1',
         isin: 'US0378331005',
         quantity: 10,
@@ -339,7 +339,7 @@ describe('HoldingService', () => {
   describe('getHoldingHistory', () => {
     it('should return historical data', async () => {
       const mockDBHolding = {
-        holding_id: '1',
+        holding_id: '550e8400-e29b-41d4-a716-446655440000',
         portfolio_id: '1',
         isin: 'US0378331005',
         quantity: 10,
@@ -374,7 +374,7 @@ describe('HoldingService', () => {
 
     it('should generate valid UUIDs for holdings', async () => {
       const mockDBHolding = {
-        holding_id: '1',
+        holding_id: '550e8400-e29b-41d4-a716-446655440000',
         portfolio_id: '1',
         isin: 'US0378331005',
         quantity: 10,
@@ -399,7 +399,7 @@ describe('HoldingService', () => {
 
       for (let i = 0; i < iterations; i++) {
         const mockDBHolding = {
-          holding_id: `mock-${i}`,
+          holding_id: crypto.randomUUID(),
           portfolio_id: '1',
           isin: 'US0378331005',
           quantity: 10,
@@ -428,7 +428,7 @@ describe('HoldingService', () => {
         isin: 'US0378331005',
         quantity: 10,
         price: 150.50
-      })).to.be.rejectedWith('Failed to create holding');
+      })).to.be.rejectedWith('ID generation failed');
     });
   });
 });

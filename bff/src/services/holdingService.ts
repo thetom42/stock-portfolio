@@ -87,6 +87,9 @@ class HoldingService {
   // Helper function to calculate total value
   private async calculateTotalValue(holdingId: string): Promise<Decimal> {
     const transactions = await this.transactionRepository.findByHoldingId(holdingId);
+    if (!transactions || transactions.length === 0) {
+      return new Decimal(0);
+    }
     return transactions.reduce((total, t) => {
       const value = t.price.mul(t.amount);
       return t.buy ? total.add(value) : total.sub(value);

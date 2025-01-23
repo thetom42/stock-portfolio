@@ -34,7 +34,7 @@ describe('PortfolioService', () => {
     };
 
     const mockDBPortfolio = {
-      portfolio_id: '1',
+      portfolio_id: '550e8400-e29b-41d4-a716-446655440000',
       user_id: 'user1',
       name: 'Test Portfolio',
       created_at: new Date()
@@ -80,7 +80,7 @@ describe('PortfolioService', () => {
 
   describe('getPortfolioById', () => {
     const mockDBPortfolio = {
-      portfolio_id: '1',
+      portfolio_id: '550e8400-e29b-41d4-a716-446655440000',
       user_id: 'user1',
       name: 'Test Portfolio',
       created_at: new Date()
@@ -116,7 +116,7 @@ describe('PortfolioService', () => {
     };
 
     const mockDBPortfolio = {
-      portfolio_id: '1',
+      portfolio_id: '550e8400-e29b-41d4-a716-446655440000',
       user_id: 'user1',
       name: 'Test Portfolio',
       created_at: new Date()
@@ -157,7 +157,7 @@ describe('PortfolioService', () => {
 
   describe('deletePortfolio', () => {
     const mockDBPortfolio = {
-      portfolio_id: '1',
+      portfolio_id: '550e8400-e29b-41d4-a716-446655440000',
       user_id: 'user1',
       name: 'Test Portfolio',
       created_at: new Date()
@@ -192,7 +192,7 @@ describe('PortfolioService', () => {
 
     it('should generate valid UUIDs for portfolios', async () => {
       const mockDBPortfolio = {
-        portfolio_id: '1',
+        portfolio_id: '550e8400-e29b-41d4-a716-446655440000',
         user_id: 'user1',
         name: 'Test Portfolio',
         created_at: new Date()
@@ -205,6 +205,7 @@ describe('PortfolioService', () => {
       });
 
       expect(result.id).to.match(uuidRegex);
+      expect(result.id).to.equal('550e8400-e29b-41d4-a716-446655440000');
     });
 
     it('should generate unique portfolio IDs', async () => {
@@ -233,10 +234,12 @@ describe('PortfolioService', () => {
     it('should handle ID generation errors', async () => {
       mockRepo.create.rejects(new Error('ID generation failed'));
 
-      await expect(testPortfolioService.createPortfolio('user1', {
-        name: 'Test Portfolio',
-        description: 'Test Description'
-      })).to.be.rejectedWith('Failed to create portfolio');
+      await expect(
+        testPortfolioService.createPortfolio('user1', {
+          name: 'Test Portfolio',
+          description: 'Test Description'
+        })
+      ).to.be.rejectedWith('ID generation failed');
     });
   });
 });

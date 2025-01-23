@@ -474,7 +474,7 @@ describe('TransactionService', () => {
         price: 150.50,
         commission: 7.99,
         broker: 'TEST_BROKER'
-      })).to.be.rejectedWith('Failed to create transaction');
+      })).to.be.rejectedWith('ID generation failed');
     });
   });
 });

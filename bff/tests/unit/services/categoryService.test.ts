@@ -23,12 +23,12 @@ describe('CategoryService', () => {
     it('should return all categories', async () => {
       const mockDBCategories = [
         {
-          category_id: '1',
+          category_id: '550e8400-e29b-41d4-a716-446655440000',
           name: 'Technology',
           created_at: new Date()
         },
         {
-          category_id: '2',
+          category_id: '550e8400-e29b-41d4-a716-446655440001',
           name: 'Healthcare',
           created_at: new Date()
         }
@@ -40,11 +40,11 @@ describe('CategoryService', () => {
 
       expect(result).to.be.an('array').with.lengthOf(2);
       expect(result[0]).to.deep.include({
-        id: '1',
+        id: '550e8400-e29b-41d4-a716-446655440000',
         name: 'Technology'
       });
       expect(result[1]).to.deep.include({
-        id: '2',
+        id: '550e8400-e29b-41d4-a716-446655440001',
         name: 'Healthcare'
       });
       expect(mockRepo.findAll.calledOnce).to.be.true;
@@ -70,7 +70,7 @@ describe('CategoryService', () => {
   describe('getCategoryById', () => {
     it('should return category if found', async () => {
       const mockDBCategory = {
-        category_id: '1',
+        category_id: '550e8400-e29b-41d4-a716-446655440000',
         name: 'Technology',
         created_at: new Date()
       };
@@ -80,7 +80,7 @@ describe('CategoryService', () => {
       const result = await categoryService.getCategoryById('1');
 
       expect(result).to.deep.include({
-        id: '1',
+        id: '550e8400-e29b-41d4-a716-446655440000',
         name: 'Technology'
       });
       expect(mockRepo.findById.calledWith('1')).to.be.true;
@@ -110,7 +110,7 @@ describe('CategoryService', () => {
 
     it('should create category successfully', async () => {
       const mockDBCategory = {
-        category_id: '1',
+        category_id: '550e8400-e29b-41d4-a716-446655440000',
         name: createData.name,
         created_at: new Date()
       };
@@ -120,7 +120,7 @@ describe('CategoryService', () => {
       const result = await categoryService.createCategory(createData);
 
       expect(result).to.deep.include({
-        id: '1',
+        id: '550e8400-e29b-41d4-a716-446655440000',
         name: createData.name
       });
       expect(mockRepo.create.firstCall.args[0]).to.deep.include({
@@ -143,7 +143,7 @@ describe('CategoryService', () => {
 
     it('should update category successfully', async () => {
       const mockDBCategory = {
-        category_id: '1',
+        category_id: '550e8400-e29b-41d4-a716-446655440000',
         name: updateData.name,
         created_at: new Date()
       };
@@ -153,7 +153,7 @@ describe('CategoryService', () => {
       const result = await categoryService.updateCategory('1', updateData);
 
       expect(result).to.deep.include({
-        id: '1',
+        id: '550e8400-e29b-41d4-a716-446655440000',
         name: updateData.name
       });
       expect(mockRepo.update.firstCall.args).to.deep.equal([
@@ -185,7 +185,7 @@ describe('CategoryService', () => {
   describe('deleteCategory', () => {
     it('should delete category successfully', async () => {
       const mockDBCategory = {
-        category_id: '1',
+        category_id: '550e8400-e29b-41d4-a716-446655440000',
         name: 'Technology',
         created_at: new Date()
       };
@@ -195,7 +195,7 @@ describe('CategoryService', () => {
       const result = await categoryService.deleteCategory('1');
 
       expect(result).to.deep.include({
-        id: '1',
+        id: '550e8400-e29b-41d4-a716-446655440000',
         name: 'Technology'
       });
       expect(mockRepo.delete.calledWith('1')).to.be.true;
@@ -214,7 +214,7 @@ describe('CategoryService', () => {
 
     it('should generate valid UUIDs', async () => {
       const mockDBCategory = {
-        category_id: '1',
+        category_id: '550e8400-e29b-41d4-a716-446655440000',
         name: 'Test Category',
         created_at: new Date()
       };
@@ -223,6 +223,7 @@ describe('CategoryService', () => {
       const result = await categoryService.createCategory({ name: 'Test Category' });
 
       expect(result.id).to.match(uuidRegex);
+      expect(result.id).to.equal('550e8400-e29b-41d4-a716-446655440000');
     });
 
     it('should generate unique IDs', async () => {

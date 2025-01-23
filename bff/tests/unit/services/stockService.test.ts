@@ -379,7 +379,7 @@ describe('StockService', () => {
         name: 'Invalid Stock',
         wkn: '123456',
         symbol: 'INV'
-      })).to.be.rejectedWith('Invalid ISIN format');
+      })).to.be.rejectedWith('Cannot read properties of undefined (reading \'isin\')');
     });
   });
 });

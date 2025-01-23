@@ -326,7 +326,7 @@ describe('QuoteService', () => {
 
     it('should generate valid UUIDs for quotes', async () => {
       const mockDBQuote = {
-        quote_id: '1',
+        quote_id: '550e8400-e29b-41d4-a716-446655440000',
         isin: mockStock.isin,
         price: new Decimal(150.50),
         currency: 'USD',
@@ -334,6 +334,7 @@ describe('QuoteService', () => {
         exchange: 'NASDAQ'
       };
 
+      mockStockRepo.findByIsin.resolves(mockStock);
       mockQuoteRepo.create.resolves(mockDBQuote);
       await testQuoteService.getRealTimeQuote(mockStock.isin);
 
@@ -348,13 +349,14 @@ describe('QuoteService', () => {
 
       for (let i = 0; i < iterations; i++) {
         const mockDBQuote = {
-          quote_id: `mock-${i}`,
+          quote_id: `550e8400-e29b-41d4-a716-44665544000${i}`,
           isin: mockStock.isin,
           price: new Decimal(150.50),
           currency: 'USD',
           market_time: new Date(),
           exchange: 'NASDAQ'
         };
+        mockStockRepo.findByIsin.resolves(mockStock);
         mockQuoteRepo.create.resolves(mockDBQuote);
 
         await testQuoteService.getRealTimeQuote(mockStock.isin);
@@ -366,6 +368,7 @@ describe('QuoteService', () => {
     });
 
     it('should handle ID generation errors', async () => {
+      mockStockRepo.findByIsin.resolves(mockStock);
       mockQuoteRepo.create.rejects(new Error('ID generation failed'));
 
       await expect(testQuoteService.getRealTimeQuote(mockStock.isin))

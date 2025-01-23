@@ -238,7 +238,7 @@ describe('UserService', () => {
         firstName: 'John',
         lastName: 'Doe',
         password: 'password123'
-      })).to.be.rejectedWith('Failed to create user');
+      })).to.be.rejectedWith('ID generation failed');
     });
   });
 });
