@@ -31,7 +31,7 @@ class CategoryService {
   async createCategory(categoryData: CreateCategoryDTO): Promise<CategoryResponse> {
     try {
       const dbCategory = await this.repository.create({
-        category_id: '', // Will be generated
+        category_id: crypto.randomUUID(), // Generate UUID
         name: categoryData.name
       });
 

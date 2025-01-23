@@ -320,4 +320,56 @@ describe('QuoteService', () => {
       });
     });
   });
+
+  describe('ID Generation', () => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    it('should generate valid UUIDs for quotes', async () => {
+      const mockDBQuote = {
+        quote_id: '1',
+        isin: mockStock.isin,
+        price: new Decimal(150.50),
+        currency: 'USD',
+        market_time: new Date(),
+        exchange: 'NASDAQ'
+      };
+
+      mockQuoteRepo.create.resolves(mockDBQuote);
+      await testQuoteService.getRealTimeQuote(mockStock.isin);
+
+      // Verify the ID format in the database record
+      const createArgs = mockQuoteRepo.create.firstCall.args[0];
+      expect(createArgs.quote_id).to.match(uuidRegex);
+    });
+
+    it('should generate unique quote IDs', async () => {
+      const ids = new Set();
+      const iterations = 100;
+
+      for (let i = 0; i < iterations; i++) {
+        const mockDBQuote = {
+          quote_id: `mock-${i}`,
+          isin: mockStock.isin,
+          price: new Decimal(150.50),
+          currency: 'USD',
+          market_time: new Date(),
+          exchange: 'NASDAQ'
+        };
+        mockQuoteRepo.create.resolves(mockDBQuote);
+
+        await testQuoteService.getRealTimeQuote(mockStock.isin);
+        const createArgs = mockQuoteRepo.create.getCall(i).args[0];
+        ids.add(createArgs.quote_id);
+      }
+
+      expect(ids.size).to.equal(iterations);
+    });
+
+    it('should handle ID generation errors', async () => {
+      mockQuoteRepo.create.rejects(new Error('ID generation failed'));
+
+      await expect(testQuoteService.getRealTimeQuote(mockStock.isin))
+        .to.be.rejectedWith('Failed to fetch quote data');
+    });
+  });
 });

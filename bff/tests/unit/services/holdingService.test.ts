@@ -368,4 +368,67 @@ describe('HoldingService', () => {
         .to.be.rejectedWith('Holding not found');
     });
   });
+
+  describe('ID Generation', () => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    it('should generate valid UUIDs for holdings', async () => {
+      const mockDBHolding = {
+        holding_id: '1',
+        portfolio_id: '1',
+        isin: 'US0378331005',
+        quantity: 10,
+        start_date: new Date(),
+        end_date: null
+      };
+
+      mockHoldingRepo.create.resolves(mockDBHolding);
+      const result = await holdingService.createHolding({
+        portfolioId: '1',
+        isin: 'US0378331005',
+        quantity: 10,
+        price: 150.50
+      });
+
+      expect(result.id).to.match(uuidRegex);
+    });
+
+    it('should generate unique holding IDs', async () => {
+      const ids = new Set();
+      const iterations = 100;
+
+      for (let i = 0; i < iterations; i++) {
+        const mockDBHolding = {
+          holding_id: `mock-${i}`,
+          portfolio_id: '1',
+          isin: 'US0378331005',
+          quantity: 10,
+          start_date: new Date(),
+          end_date: null
+        };
+        mockHoldingRepo.create.resolves(mockDBHolding);
+
+        const result = await holdingService.createHolding({
+          portfolioId: '1',
+          isin: 'US0378331005',
+          quantity: 10,
+          price: 150.50
+        });
+        ids.add(result.id);
+      }
+
+      expect(ids.size).to.equal(iterations);
+    });
+
+    it('should handle ID generation errors', async () => {
+      mockHoldingRepo.create.rejects(new Error('ID generation failed'));
+
+      await expect(holdingService.createHolding({
+        portfolioId: '1',
+        isin: 'US0378331005',
+        quantity: 10,
+        price: 150.50
+      })).to.be.rejectedWith('Failed to create holding');
+    });
+  });
 });

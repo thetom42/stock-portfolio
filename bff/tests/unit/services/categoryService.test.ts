@@ -208,4 +208,47 @@ describe('CategoryService', () => {
         .to.be.rejectedWith('Failed to delete category');
     });
   });
+
+  describe('ID Generation', () => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    it('should generate valid UUIDs', async () => {
+      const mockDBCategory = {
+        category_id: '1',
+        name: 'Test Category',
+        created_at: new Date()
+      };
+
+      mockRepo.create.resolves(mockDBCategory);
+      const result = await categoryService.createCategory({ name: 'Test Category' });
+
+      expect(result.id).to.match(uuidRegex);
+    });
+
+    it('should generate unique IDs', async () => {
+      const ids = new Set();
+      const iterations = 100;
+
+      for (let i = 0; i < iterations; i++) {
+        const mockDBCategory = {
+          category_id: `mock-${i}`,
+          name: `Test Category ${i}`,
+          created_at: new Date()
+        };
+        mockRepo.create.resolves(mockDBCategory);
+
+        const result = await categoryService.createCategory({ name: `Test Category ${i}` });
+        ids.add(result.id);
+      }
+
+      expect(ids.size).to.equal(iterations);
+    });
+
+    it('should handle ID generation errors', async () => {
+      mockRepo.create.rejects(new Error('ID generation failed'));
+
+      await expect(categoryService.createCategory({ name: 'Test Category' }))
+        .to.be.rejectedWith('Failed to create category');
+    });
+  });
 });

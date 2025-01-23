@@ -173,4 +173,72 @@ describe('UserService', () => {
         .to.be.rejectedWith('User not found');
     });
   });
+
+  describe('ID Generation', () => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    it('should generate valid UUIDs for users', async () => {
+      const mockDBUser = {
+        user_id: '1',
+        email: 'test@example.com',
+        name: 'John',
+        surname: 'Doe',
+        nickname: 'John',
+        password: 'hashedpassword123',
+        join_date: new Date()
+      };
+
+      mockRepo.create.resolves(mockDBUser);
+      await testUserService.createUser({
+        email: 'test@example.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        password: 'password123'
+      });
+
+      // Verify the ID format in the database record
+      const createArgs = mockRepo.create.firstCall.args[0];
+      expect(createArgs.user_id).to.match(uuidRegex);
+    });
+
+    it('should generate unique user IDs', async () => {
+      const ids = new Set();
+      const iterations = 100;
+
+      for (let i = 0; i < iterations; i++) {
+        const mockDBUser = {
+          user_id: `mock-${i}`,
+          email: `test${i}@example.com`,
+          name: 'John',
+          surname: 'Doe',
+          nickname: 'John',
+          password: 'hashedpassword123',
+          join_date: new Date()
+        };
+        mockRepo.create.resolves(mockDBUser);
+
+        await testUserService.createUser({
+          email: `test${i}@example.com`,
+          firstName: 'John',
+          lastName: 'Doe',
+          password: 'password123'
+        });
+        const createArgs = mockRepo.create.getCall(i).args[0];
+        ids.add(createArgs.user_id);
+      }
+
+      expect(ids.size).to.equal(iterations);
+    });
+
+    it('should handle ID generation errors', async () => {
+      mockRepo.create.rejects(new Error('ID generation failed'));
+
+      await expect(testUserService.createUser({
+        email: 'test@example.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        password: 'password123'
+      })).to.be.rejectedWith('Failed to create user');
+    });
+  });
 });

@@ -396,4 +396,85 @@ describe('TransactionService', () => {
       sinon.assert.notCalled(mockHoldingRepo.findByPortfolioId);
     });
   });
+
+  describe('ID Generation', () => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    it('should generate valid UUIDs for transactions', async () => {
+      const mockDBTransaction = {
+        transaction_id: '1',
+        holding_id: holdingId,
+        buy: true,
+        transaction_time: new Date(),
+        amount: 100,
+        price: createDecimal(150.50),
+        commission: createDecimal(7.99),
+        broker: 'TEST_BROKER'
+      };
+
+      mockHoldingRepo.findById.resolves({ portfolio_id: portfolioId });
+      mockPortfolioRepo.findById.resolves({ user_id: userId });
+      mockTransactionRepo.create.resolves(mockDBTransaction);
+
+      await transactionService.createTransaction(userId, holdingId, {
+        buy: true,
+        amount: 100,
+        price: 150.50,
+        commission: 7.99,
+        broker: 'TEST_BROKER'
+      });
+
+      // Verify the ID format in the database record
+      const createArgs = mockTransactionRepo.create.firstCall.args[0];
+      expect(createArgs.transaction_id).to.match(uuidRegex);
+    });
+
+    it('should generate unique transaction IDs', async () => {
+      const ids = new Set();
+      const iterations = 100;
+
+      for (let i = 0; i < iterations; i++) {
+        const mockDBTransaction = {
+          transaction_id: `mock-${i}`,
+          holding_id: holdingId,
+          buy: true,
+          transaction_time: new Date(),
+          amount: 100,
+          price: createDecimal(150.50),
+          commission: createDecimal(7.99),
+          broker: 'TEST_BROKER'
+        };
+
+        mockHoldingRepo.findById.resolves({ portfolio_id: portfolioId });
+        mockPortfolioRepo.findById.resolves({ user_id: userId });
+        mockTransactionRepo.create.resolves(mockDBTransaction);
+
+        await transactionService.createTransaction(userId, holdingId, {
+          buy: true,
+          amount: 100,
+          price: 150.50,
+          commission: 7.99,
+          broker: 'TEST_BROKER'
+        });
+        const createArgs = mockTransactionRepo.create.getCall(i).args[0];
+        ids.add(createArgs.transaction_id);
+      }
+
+      expect(ids.size).to.equal(iterations);
+    });
+
+    it('should handle ID generation errors', async () => {
+      mockHoldingRepo.findById.resolves({ portfolio_id: portfolioId });
+      mockPortfolioRepo.findById.resolves({ user_id: userId });
+      mockTransactionRepo.create.rejects(new Error('ID generation failed'));
+
+      await expect(transactionService.createTransaction(userId, holdingId, {
+        buy: true,
+        amount: 100,
+        price: 150.50,
+        commission: 7.99,
+        broker: 'TEST_BROKER'
+      })).to.be.rejectedWith('Failed to create transaction');
+    });
+  });
 });

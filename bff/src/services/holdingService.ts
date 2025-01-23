@@ -103,7 +103,7 @@ class HoldingService {
 
       // Create the holding using repository
       const dbHolding = await this.holdingRepository.create({
-        holding_id: '', // Will be generated
+        holding_id: crypto.randomUUID(), // Generate UUID
         portfolio_id: holdingData.portfolioId,
         isin: holdingData.isin,
         quantity: holdingData.quantity,
@@ -113,7 +113,7 @@ class HoldingService {
 
       // Create initial transaction using repository
       await this.transactionRepository.create({
-        transaction_id: '', // Will be generated
+        transaction_id: crypto.randomUUID(), // Generate UUID
         holding_id: dbHolding.holding_id,
         buy: true, // Initial transaction is always a buy
         amount: holdingData.quantity,

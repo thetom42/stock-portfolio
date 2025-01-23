@@ -186,4 +186,57 @@ describe('PortfolioService', () => {
         .to.be.rejectedWith('Portfolio not found');
     });
   });
+
+  describe('ID Generation', () => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    it('should generate valid UUIDs for portfolios', async () => {
+      const mockDBPortfolio = {
+        portfolio_id: '1',
+        user_id: 'user1',
+        name: 'Test Portfolio',
+        created_at: new Date()
+      };
+
+      mockRepo.create.resolves(mockDBPortfolio);
+      const result = await testPortfolioService.createPortfolio('user1', {
+        name: 'Test Portfolio',
+        description: 'Test Description'
+      });
+
+      expect(result.id).to.match(uuidRegex);
+    });
+
+    it('should generate unique portfolio IDs', async () => {
+      const ids = new Set();
+      const iterations = 100;
+
+      for (let i = 0; i < iterations; i++) {
+        const mockDBPortfolio = {
+          portfolio_id: `mock-${i}`,
+          user_id: 'user1',
+          name: `Test Portfolio ${i}`,
+          created_at: new Date()
+        };
+        mockRepo.create.resolves(mockDBPortfolio);
+
+        const result = await testPortfolioService.createPortfolio('user1', {
+          name: `Test Portfolio ${i}`,
+          description: 'Test Description'
+        });
+        ids.add(result.id);
+      }
+
+      expect(ids.size).to.equal(iterations);
+    });
+
+    it('should handle ID generation errors', async () => {
+      mockRepo.create.rejects(new Error('ID generation failed'));
+
+      await expect(testPortfolioService.createPortfolio('user1', {
+        name: 'Test Portfolio',
+        description: 'Test Description'
+      })).to.be.rejectedWith('Failed to create portfolio');
+    });
+  });
 });

@@ -320,4 +320,66 @@ describe('StockService', () => {
       expect(mockRepo.delete.calledWith(mockStock.isin)).to.be.true;
     });
   });
+
+  describe('ID Generation', () => {
+    const isinRegex = /^[A-Z]{2}[A-Z0-9]{9}\d$/;
+
+    it('should validate ISIN format', async () => {
+      const mockDBStock = {
+        isin: 'US0378331005',
+        symbol: 'AAPL',
+        name: 'Apple Inc.',
+        wkn: '123456',
+        category_id: 'tech-category'
+      };
+
+      mockRepo.create.resolves(mockDBStock);
+      await testStockService.createStock('tech-category', {
+        isin: 'US0378331005',
+        name: 'Apple Inc.',
+        wkn: '123456',
+        symbol: 'AAPL'
+      });
+
+      // Verify the ISIN format in the database record
+      const createArgs = mockRepo.create.firstCall.args[0];
+      expect(createArgs.isin).to.match(isinRegex);
+    });
+
+    it('should generate unique ISINs', async () => {
+      const isins = new Set();
+      const iterations = 100;
+
+      for (let i = 0; i < iterations; i++) {
+        const mockDBStock = {
+          isin: `US${String(i).padStart(9, '0')}5`,
+          symbol: `STK${i}`,
+          name: `Stock ${i}`,
+          wkn: '123456',
+          category_id: 'tech-category'
+        };
+        mockRepo.create.resolves(mockDBStock);
+
+        await testStockService.createStock('tech-category', {
+          isin: mockDBStock.isin,
+          name: mockDBStock.name,
+          wkn: mockDBStock.wkn,
+          symbol: mockDBStock.symbol
+        });
+        const createArgs = mockRepo.create.getCall(i).args[0];
+        isins.add(createArgs.isin);
+      }
+
+      expect(isins.size).to.equal(iterations);
+    });
+
+    it('should handle invalid ISIN format', async () => {
+      await expect(testStockService.createStock('tech-category', {
+        isin: 'INVALID-ISIN',
+        name: 'Invalid Stock',
+        wkn: '123456',
+        symbol: 'INV'
+      })).to.be.rejectedWith('Invalid ISIN format');
+    });
+  });
 });
