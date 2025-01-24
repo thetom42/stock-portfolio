@@ -1,5 +1,6 @@
 import { prisma, UserRepository } from '@stock-portfolio/db';
 import type { User as DBUser } from '@stock-portfolio/db/dist/models/User';
+import crypto from 'crypto';
 import type { User, CreateUserDTO, UpdateUserDTO } from '../models/User';
 
 // Helper function to map DB User to BFF User

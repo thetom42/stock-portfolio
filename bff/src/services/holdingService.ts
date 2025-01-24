@@ -1,5 +1,6 @@
 import { getPrismaClient } from '../utils/database';
 import { CreateHoldingDTO, UpdateHoldingDTO, HoldingDetails } from '../models/Holding';
+import crypto from 'crypto';
 import { Transaction as BFFTransaction } from '../models/Transaction';
 import { stockService } from './stockService';
 import { quoteService } from './quoteService';

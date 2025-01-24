@@ -1,5 +1,6 @@
 import { CreateTransactionDTO, Transaction as BFFTransaction, TransactionQueryParams, PaginatedTransactions } from '../models/Transaction';
 import { getPrismaClient } from '../utils/database';
+import crypto from 'crypto';
 import {
     TransactionRepository,
     HoldingRepository,

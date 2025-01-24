@@ -379,7 +379,7 @@
                   "    pm.expect(response.category).to.be.an('object');",
                   "    pm.expect(response.category.id).to.eql(pm.collectionVariables.get('createdCategoryId'));",
                   "    pm.expect(response.category.name).to.eql(pm.collectionVariables.get('newCategoryName') + '_Updated');",
-                  "    pm.expect(response.category).to.have.property('description');",
+                  "    // Description field removed as it's not part of the data model",
                   "});"
                 ]
               }

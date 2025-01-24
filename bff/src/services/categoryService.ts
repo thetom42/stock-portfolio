@@ -1,6 +1,7 @@
 import { Category, CreateCategoryDTO, UpdateCategoryDTO, CategoryResponse } from '../models/Category';
 import { CategoryRepository } from '@stock-portfolio/db';
 import { getPrismaClient } from '../utils/database';
+import crypto from 'crypto';
 
 // Helper function to map DB Category to BFF Category
 const mapDBCategoryToBFF = (dbCategory: any): CategoryResponse => ({
@@ -30,6 +31,11 @@ class CategoryService {
 
   async createCategory(categoryData: CreateCategoryDTO): Promise<CategoryResponse> {
     try {
+      // Validate input
+      if (!categoryData.name || typeof categoryData.name !== 'string') {
+        throw new Error('Invalid category name');
+      }
+
       const dbCategory = await this.repository.create({
         category_id: crypto.randomUUID(), // Generate UUID
         name: categoryData.name
@@ -37,10 +43,21 @@ class CategoryService {
 
       return mapDBCategoryToBFF(dbCategory);
     } catch (error) {
-      if (error instanceof Error && error.message.includes('already exists')) {
-        throw new Error('Category with this name already exists');
+      console.error('CategoryService.createCategory error:', error);
+
+      if (error instanceof Error) {
+        if (error.message.includes('already exists')) {
+          throw new Error('Category with this name already exists');
+        }
+        if (error.message.includes('validation')) {
+          throw new Error(`Invalid category data: ${error.message}`);
+        }
+        if (error.message.includes('connection')) {
+          throw new Error('Database connection error');
+        }
       }
-      throw new Error('Failed to create category');
+
+      throw new Error(`Failed to create category: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

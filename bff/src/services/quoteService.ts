@@ -1,5 +1,6 @@
 import { Quote, HistoricalQuote, QuoteInterval, RealTimeQuote, QuoteHistory } from '../models/Quote';
 import { getYahooFinanceService } from './yahooFinanceService';
+import crypto from 'crypto';
 import { getPrismaClient } from '../utils/database';
 import { QuoteRepository, StockRepository } from '@stock-portfolio/db';
 import type { Quote as DBQuote } from '@stock-portfolio/db/dist/models/Quote';

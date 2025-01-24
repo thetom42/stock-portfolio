@@ -1,5 +1,6 @@
 import { prisma, PortfolioRepository } from '@stock-portfolio/db';
 import type { Portfolio as DBPortfolio } from '@stock-portfolio/db/dist/models/Portfolio';
+import crypto from 'crypto';
 import type { Portfolio, CreatePortfolioDTO, UpdatePortfolioDTO, PortfolioSummary, PerformanceData, AllocationData, ReturnsData, HistoryData } from '../models/Portfolio';
 
 // Helper function to map DB Portfolio to BFF Portfolio
