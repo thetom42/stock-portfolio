@@ -42,31 +42,61 @@ First, we examine the Postman collection to understand how test data is currentl
 - Clean up created data in test scripts
 - Example: Create test category before each operation that needs it, then delete it after
 
-### Detailed Pre-request Script Example
+### Current Collection Variable Usage
+
+The Categories collection uses the following collection variables:
+
+- `createdCategoryId`: Stores ID of created category for use in subsequent operations
+- `newCategoryName`: Unique name generated for new categories
+- `newCategoryDescription`: Unique description generated for new categories
+- `baseUrl`: API endpoint URL
+
+These variables are managed through pre-request scripts:
 
 ```javascript
-// Example: Creating test data for category operations
-const categoryData = {
-  name: `TestCategory-{{$guid}}`,
-  description: "Automatically generated test category"
-};
+// Initialize collection variables for new category creation
+if (pm.info.requestName === 'Admin Create Category') {
+    // Get initial values from environment
+    const baseName = pm.environment.get('categoryName');
+    const baseDescription = pm.environment.get('categoryDescription');
+    
+    // Create unique values for the new category
+    const timestamp = new Date().getTime();
+    pm.collectionVariables.set('newCategoryName', `${baseName}-${timestamp}`);
+    pm.collectionVariables.set('newCategoryDescription', `${baseDescription}-${timestamp}`);
+}
 
-pm.variables.set("testCategory", JSON.stringify(categoryData));
-pm.sendRequest({
-  url: `${pm.environment.get("BASE_URL")}/categories`,
-  method: 'POST',
-  header: {
-    'Content-Type': 'application/json'
-  },
-  body: {
-    mode: 'raw',
-    raw: JSON.stringify(categoryData)
-  }
-}, function (err, res) {
-  pm.expect(err).to.be.null;
-  pm.expect(res.code).to.be.oneOf([200, 201]);
-  pm.variables.set("createdCategoryId", res.json().id);
-});
+// Store created category ID
+if (pm.info.requestName === 'Admin Create Category') {
+    const response = pm.response.json();
+    pm.collectionVariables.set('createdCategoryId', response.category.id);
+}
+```
+
+### Token Management
+
+The collection uses environment variables for authentication:
+
+```javascript
+// Main token management function
+const manageToken = async (isAdmin = false) => {
+    const tokenVar = isAdmin ? 'adminAccessToken' : 'accessToken';
+    const currentToken = pm.environment.get(tokenVar);
+
+    // If token exists, check if it's expired
+    if (currentToken && !isTokenExpired(currentToken)) {
+        return; // Token is valid, no action needed
+    }
+
+    // Try to refresh token first
+    const refreshed = await refreshToken(isAdmin);
+    if (refreshed) {
+        return; // Successfully refreshed
+    }
+
+    // If refresh failed, get new token
+    await getNewToken(isAdmin);
+};
 ```
 
 3. Environment Variable Management
