@@ -76,7 +76,7 @@ The Stock Portfolio project is a full-stack application developed using AI tools
   - Unit tests are located in bff/tests/unit
   - The package.json of the BFF layer defines test runs of different granularity like 'test:unit:services' or 'test:unit:services'
   - Integration tests are located in bff/tests/integration
-  - Postman Collections are located in bff/tests/postman and named eg. like 'Categories.postman_collection.json'
+  - Postman Collections are located in bff/tests/postman and named eg. like 'Categories.postman_collection.json' (note that entity names are plural!)
   - Postman Environment is in bff/tests/postman/Stock_Portfolio_BFF.postman_environment.json
   - Test Data Strategy for Postman Tests is located in docs/test-data-strategies.md
 
@@ -170,3 +170,8 @@ The Stock Portfolio project is a full-stack application developed using AI tools
 - Implement pagination for large datasets
 - Monitor resource usage
 - Profile and optimize critical paths
+
+### Important
+
+- When asked to fix issues of a certain number, exlude the cline folder in your approaches, but instead read the issue with that number from Github.
+- Before suggesting to close an issue in Github, make sure that all relevant changes are staged, committed with a good commit message, referencing the issue and then pushed, all of this using the git MCP server.

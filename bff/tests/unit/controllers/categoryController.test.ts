@@ -53,7 +53,7 @@ describe('CategoryController', () => {
 
       await categoryController.createCategory(req as any, res as any, next);
 
-      verifyResponse(res, 409, { error: 'Category name already exists' });
+      verifyResponse(res, 409, { error: { message: 'Category name already exists' } });
     });
 
     it('should handle errors gracefully', async () => {
@@ -109,10 +109,10 @@ describe('CategoryController', () => {
       await categoryController.getCategoryById(req as any, res as any, next);
 
       verifyResponse(res, 200, {
-        category: {
+        categories: [{
           id: '1',
           name: 'Technology'
-        }
+        }]
       });
     });
 
@@ -122,7 +122,7 @@ describe('CategoryController', () => {
 
       await categoryController.getCategoryById(req as any, res as any, next);
 
-      verifyResponse(res, 404, { error: 'Category not found' });
+      verifyResponse(res, 404, { error: { message: 'Category not found' } });
     });
 
     it('should handle errors gracefully', async () => {
@@ -170,7 +170,7 @@ describe('CategoryController', () => {
 
       await categoryController.updateCategory(req as any, res as any, next);
 
-      verifyResponse(res, 404, { error: 'Category not found' });
+      verifyResponse(res, 404, { error: { message: 'Category not found' } });
     });
 
     it('should handle errors gracefully', async () => {
@@ -206,7 +206,7 @@ describe('CategoryController', () => {
 
       await categoryController.deleteCategory(req as any, res as any, next);
 
-      verifyResponse(res, 404, { error: 'Category not found' });
+      verifyResponse(res, 404, { error: { message: 'Category not found' } });
     });
 
     it('should handle errors gracefully', async () => {

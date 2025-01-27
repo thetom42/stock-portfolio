@@ -139,10 +139,20 @@ export const verifyResponse = (
     }
 
     if (expectedData.error) {
-      // For error responses, check if either error or message property matches
-      const actualError = actualData.error || actualData.message;
-      if (actualError !== expectedData.error) {
-        throw new Error(`Expected error "${expectedData.error}" but got "${actualError}"`);
+      // For error responses, handle both simple string errors and error objects with message
+      const actualError = actualData.error;
+      const expectedError = expectedData.error;
+
+      if (typeof expectedError === 'string') {
+        // Handle legacy string error format
+        if (actualError !== expectedError) {
+          throw new Error(`Expected error "${expectedError}" but got "${actualError}"`);
+        }
+      } else if (typeof expectedError === 'object') {
+        // Handle error object with message
+        if (!actualError || actualError.message !== expectedError.message) {
+          throw new Error(`Expected error message "${expectedError.message}" but got "${actualError?.message}"`);
+        }
       }
     } else {
       // For success responses, verify each expected property exists and matches
