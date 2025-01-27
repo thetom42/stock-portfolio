@@ -4396,3 +4396,170 @@ Now that the changes are pushed, I can close the issue since we've:
 </arguments>
 </use_mcp_tool>
 
+---
+
+**User:**
+
+[use_mcp_tool for 'github'] Result:
+{
+  "url": "https://api.github.com/repos/thetom42/stock-portfolio/issues/39",
+  "repository_url": "https://api.github.com/repos/thetom42/stock-portfolio",
+  "labels_url": "https://api.github.com/repos/thetom42/stock-portfolio/issues/39/labels{/name}",
+  "comments_url": "https://api.github.com/repos/thetom42/stock-portfolio/issues/39/comments",
+  "events_url": "https://api.github.com/repos/thetom42/stock-portfolio/issues/39/events",
+  "html_url": "https://github.com/thetom42/stock-portfolio/issues/39",
+  "id": 2812912261,
+  "node_id": "I_kwDONKrwnM6nqaKF",
+  "number": 39,
+  "title": "Failing Unit Tests in CategoryController",
+  "user": {
+    "login": "thetom42",
+    "id": 4638810,
+    "node_id": "MDQ6VXNlcjQ2Mzg4MTA=",
+    "avatar_url": "https://avatars.githubusercontent.com/u/4638810?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/thetom42",
+    "html_url": "https://github.com/thetom42",
+    "followers_url": "https://api.github.com/users/thetom42/followers",
+    "following_url": "https://api.github.com/users/thetom42/following{/other_user}",
+    "gists_url": "https://api.github.com/users/thetom42/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/thetom42/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/thetom42/subscriptions",
+    "organizations_url": "https://api.github.com/users/thetom42/orgs",
+    "repos_url": "https://api.github.com/users/thetom42/repos",
+    "events_url": "https://api.github.com/users/thetom42/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/thetom42/received_events",
+    "type": "User",
+    "user_view_type": "public",
+    "site_admin": false
+  },
+  "labels": [
+    {
+      "id": 7703271174,
+      "node_id": "LA_kwDONKrwnM8AAAAByyaXBg",
+      "url": "https://api.github.com/repos/thetom42/stock-portfolio/labels/bug",
+      "name": "bug",
+      "color": "d73a4a",
+      "default": true,
+      "description": "Something isn't working"
+    },
+    {
+      "id": 8061143976,
+      "node_id": "LA_kwDONKrwnM8AAAAB4HtLqA",
+      "url": "https://api.github.com/repos/thetom42/stock-portfolio/labels/tests",
+      "name": "tests",
+      "color": "ededed",
+      "default": false,
+      "description": null
+    }
+  ],
+  "state": "closed",
+  "locked": false,
+  "assignee": {
+    "login": "thetom42",
+    "id": 4638810,
+    "node_id": "MDQ6VXNlcjQ2Mzg4MTA=",
+    "avatar_url": "https://avatars.githubusercontent.com/u/4638810?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/thetom42",
+    "html_url": "https://github.com/thetom42",
+    "followers_url": "https://api.github.com/users/thetom42/followers",
+    "following_url": "https://api.github.com/users/thetom42/following{/other_user}",
+    "gists_url": "https://api.github.com/users/thetom42/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/thetom42/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/thetom42/subscriptions",
+    "organizations_url": "https://api.github.com/users/thetom42/orgs",
+    "repos_url": "https://api.github.com/users/thetom42/repos",
+    "events_url": "https://api.github.com/users/thetom42/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/thetom42/received_events",
+    "type": "User",
+    "user_view_type": "public",
+    "site_admin": false
+  },
+  "assignees": [
+    {
+      "login": "thetom42",
+      "id": 4638810,
+      "node_id": "MDQ6VXNlcjQ2Mzg4MTA=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4638810?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/thetom42",
+      "html_url": "https://github.com/thetom42",
+      "followers_url": "https://api.github.com/users/thetom42/followers",
+      "following_url": "https://api.github.com/users/thetom42/following{/other_user}",
+      "gists_url": "https://api.github.com/users/thetom42/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/thetom42/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/thetom42/subscriptions",
+      "organizations_url": "https://api.github.com/users/thetom42/orgs",
+      "repos_url": "https://api.github.com/users/thetom42/repos",
+      "events_url": "https://api.github.com/users/thetom42/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/thetom42/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    }
+  ],
+  "milestone": null,
+  "comments": 1,
+  "created_at": "2025-01-27T12:36:26Z",
+  "updated_at": "2025-01-27T16:40:43Z",
+  "closed_at": "2025-01-27T16:40:43Z",
+  "author_association": "OWNER",
+  "sub_issues_summary": {
+    "total": 0,
+    "completed": 0,
+    "percent_completed": 0
+  },
+  "active_lock_reason": null,
+  "body": "The following unit tests are failing in CategoryController:\n\n1. `createCategory - should return 409 if category already exists`\n   Error: Expected error \"Category name already exists\" but got \"[object Object]\"\n\n2. `getCategoryById - should return category if found`\n   Error: Missing key \"category\" in response\n\n3. `getCategoryById - should return 404 if category not found`\n   Error: Expected error \"Category not found\" but got \"[object Object]\"\n\n4. `updateCategory - should return 404 if category not found`\n   Error: Expected error \"Category not found\" but got \"[object Object]\"\n\n5. `deleteCategory - should return 404 if category not found`\n   Error: Expected error \"Category not found\" but got \"[object Object]\"\n\n**Test File:** bff/tests/unit/controllers/categoryController.test.ts\n\n**Command to reproduce:**\n```\nnpm run test:unit:controller\n```",
+  "closed_by": {
+    "login": "thetom42",
+    "id": 4638810,
+    "node_id": "MDQ6VXNlcjQ2Mzg4MTA=",
+    "avatar_url": "https://avatars.githubusercontent.com/u/4638810?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/thetom42",
+    "html_url": "https://github.com/thetom42",
+    "followers_url": "https://api.github.com/users/thetom42/followers",
+    "following_url": "https://api.github.com/users/thetom42/following{/other_user}",
+    "gists_url": "https://api.github.com/users/thetom42/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/thetom42/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/thetom42/subscriptions",
+    "organizations_url": "https://api.github.com/users/thetom42/orgs",
+    "repos_url": "https://api.github.com/users/thetom42/repos",
+    "events_url": "https://api.github.com/users/thetom42/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/thetom42/received_events",
+    "type": "User",
+    "user_view_type": "public",
+    "site_admin": false
+  },
+  "reactions": {
+    "url": "https://api.github.com/repos/thetom42/stock-portfolio/issues/39/reactions",
+    "total_count": 0,
+    "+1": 0,
+    "-1": 0,
+    "laugh": 0,
+    "hooray": 0,
+    "confused": 0,
+    "heart": 0,
+    "rocket": 0,
+    "eyes": 0
+  },
+  "timeline_url": "https://api.github.com/repos/thetom42/stock-portfolio/issues/39/timeline",
+  "performed_via_github_app": null,
+  "state_reason": "completed"
+}
+<environment_details>
+# VSCode Visible Files
+(No visible files)
+
+# VSCode Open Tabs
+(No open tabs)
+
+# Current Time
+27.1.2025, 5:40:44 PM (Europe/Berlin, UTC+1:00)
+
+# Current Mode
+code
+</environment_details>
+
