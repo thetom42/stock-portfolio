@@ -1,5 +1,10 @@
 # AI Coding Assistant Guidelines for Stock Portfolio Project
 
+## Most Important
+
+- Exclude the 'cline' folder from the environment_details
+- When using the postman-runner tool, always provide absolute filenames
+
 ## 1. Project Information
 
 ### Github repository information
@@ -9,7 +14,7 @@
 
 ### Overview
 
-The Stock Portfolio project is a full-stack application developed using AI tools. It serves as a comprehensive example of AI-assisted software development, with detailed documentation of the development process in the `cline` folder.
+The Stock Portfolio project is a full-stack application developed using AI tools. It serves as a comprehensive example of AI-assisted software development.
 
 ### Main Features
 
@@ -27,7 +32,7 @@ The Stock Portfolio project is a full-stack application developed using AI tools
 - **Database**: PostgreSQL
 - **Authentication**: JWT (Keycloak)
 - **External APIs**: Yahoo Finance integration
-- **Testing**: Mocha framework
+- **Testing**: BFF layer uses Mocha framework, DB layer uses Jest
 
 ## 2. Architectural and Design Guidelines
 
@@ -79,99 +84,18 @@ The Stock Portfolio project is a full-stack application developed using AI tools
   - Postman Collections are located in bff/tests/postman and named eg. like 'Categories.postman_collection.json' (note that entity names are plural!)
   - Postman Environment is in bff/tests/postman/Stock_Portfolio_BFF.postman_environment.json
   - Test Data Strategy for Postman Tests is located in docs/test-data-strategies.md
+  - The test data that the DB is initialized with can be found in db/sql/test-data.sql.
 
 ### UI layer  (ui folder)
 
 - yet to be implemented
 
-## 3. TypeScript Coding Guidelines
-
-### General Principles
-
-- Use strict type checking (`strict: true` in tsconfig)
-- Prefer interfaces over types for object shapes
-- Use readonly for immutable properties
-- Avoid any type
-- Use union and intersection types appropriately
-
-### Code Organization
-
-- Follow the project's layered architecture
-- Keep files focused and single-purpose
-- Use barrel files for cleaner imports
-- Group related functionality in modules
-
-### Error Handling
-
-- Use custom error classes
-- Implement type-safe error handling
-- Use discriminated unions for error states
-- Document error cases in function signatures
-
-### Testing
-
-- Write comprehensive unit tests
-- Use type-safe mocks
-- Test edge cases and error conditions
-- Maintain high test coverage
-
-### Best Practices
-
-- Use async/await for asynchronous code
-- Implement proper type guards
-- Use generics for reusable components
-- Leverage utility types (Partial, Pick, Omit)
-- Use decorators judiciously
-
-## 4. General Instructions for Coding Assistant
-
-### General Guidelines
-
-- **Think Step by Step Before Acting**: Break down tasks into smaller steps. Consider each step carefully before proceeding.
-- **Communicate Clearly**: If you encounter any issues or have questions, communicate them clearly and promptly.
-- **Follow Instructions Closely**: Adhere strictly to the given instructions and requirements.
-- **Documentation**: Write clear and concise documentation for the application, including setup instructions and API documentation. Document decisions and trade-offs.
-- If you are not able to retrieve the command output from the Terminal, always ask the user to share the ouput.
-
-### Project Understanding
-
-- Review existing documentation before making changes
-- Understand the layered architecture
-- Follow established patterns and conventions
-- Maintain consistency with existing code
-
-### Development Process
-
-- Make small, focused changes
-- Write tests for new functionality
-- Document changes in the appropriate files
-- Follow the project's version control practices
-
-### Code Quality
-
-- Write clean, maintainable code
-- Follow SOLID principles
-- Keep functions small and focused
-- Use meaningful names for variables and functions
-- Write self-documenting code
-
-### Security Considerations
-
-- Validate all inputs
-- Use parameterized queries
-- Implement proper authentication and authorization
-- Follow secure coding practices
-- Keep dependencies up-to-date
-
-### Performance
-
-- Optimize database queries
-- Use caching where appropriate
-- Implement pagination for large datasets
-- Monitor resource usage
-- Profile and optimize critical paths
-
 ### Important
 
-- When asked to fix issues of a certain number, exlude the cline folder in your approaches, but instead read the issue with that number from Github.
-- Before suggesting to close an issue in Github, make sure that all relevant changes are staged, committed with a good commit message, referencing the issue and then pushed, all of this using the git MCP server.
+- When asked to fix issues of a certain number, always read the issue with that number from Github. Exclude the cline folder from the context.
+- Before suggesting to close an issue in Github, make sure that:
+  1. All unit tests pass in case there are changes to the implemenation or test code,
+  2. All Postman test assertions pass, if the changes are inside a Postman collection,
+  3. All relevant changes are staged,
+  4. Staged files are committed with a good commit message, referencing the issue, all of this using the git MCP server.
+  5. Then Ask the user to make the push himself.
