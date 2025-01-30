@@ -5,6 +5,7 @@ import * as portfolioController from '../../../src/controllers/portfolioControll
 import { CreatePortfolioDTO, PortfolioDetails } from '../../../src/models/Portfolio';
 import { createMockRequest, RequestWithUser } from '../../helpers/mockRequest';
 import { createMockResponse, MockResponse, verifyResponse } from '../../helpers/mockResponse';
+
 describe('PortfolioController', () => {
   // Date matcher for response verification
   const dateMatcher = { kind: 'date' };
@@ -12,6 +13,7 @@ describe('PortfolioController', () => {
   let req: Partial<RequestWithUser>;
   let res: MockResponse;
   let next: sinon.SinonSpy;
+
   beforeEach(() => {
     res = createMockResponse();
     next = sinon.spy();
@@ -34,8 +36,7 @@ describe('PortfolioController', () => {
 
   describe('createPortfolio', () => {
     const mockCreateData: CreatePortfolioDTO = {
-      name: 'Test Portfolio',
-      description: 'Test portfolio description'
+      name: 'Test Portfolio'
     };
 
     it('should create a portfolio and return 201 status', async () => {
@@ -49,8 +50,7 @@ describe('PortfolioController', () => {
         id: '1',
         userId: 'user1',
         name: mockCreateData.name,
-        createdAt,
-        updatedAt: createdAt
+        createdAt
       });
 
       await portfolioController.createPortfolio(req as any, res as any, next);
@@ -60,8 +60,7 @@ describe('PortfolioController', () => {
           id: '1',
           userId: 'user1',
           name: mockCreateData.name,
-          createdAt,
-          updatedAt: createdAt
+          createdAt
         }
       });
     });
@@ -93,8 +92,7 @@ describe('PortfolioController', () => {
         id: '1',
         userId: 'user1',
         name: 'Test Portfolio',
-        createdAt,
-        updatedAt: createdAt
+        createdAt
       });
 
       await portfolioController.getPortfolio(req as any, res as any, next);
@@ -104,8 +102,7 @@ describe('PortfolioController', () => {
           id: '1',
           userId: 'user1',
           name: 'Test Portfolio',
-          createdAt,
-          updatedAt: createdAt
+          createdAt
         }
       });
     });
@@ -126,8 +123,7 @@ describe('PortfolioController', () => {
 
   describe('updatePortfolio', () => {
     const mockUpdateData = {
-      name: 'Updated Portfolio',
-      description: 'Updated description'
+      name: 'Updated Portfolio'
     };
 
     it('should update portfolio and return updated data', async () => {
@@ -142,8 +138,7 @@ describe('PortfolioController', () => {
         id: '1',
         userId: 'user1',
         name: 'Updated Portfolio',
-        createdAt,
-        updatedAt: createdAt
+        createdAt
       });
 
       await portfolioController.updatePortfolio(req as any, res as any, next);
@@ -153,8 +148,7 @@ describe('PortfolioController', () => {
           id: '1',
           userId: 'user1',
           name: 'Updated Portfolio',
-          createdAt,
-          updatedAt: createdAt
+          createdAt
         }
       });
     });
@@ -186,8 +180,7 @@ describe('PortfolioController', () => {
         id: '1',
         userId: 'user1',
         name: 'Test Portfolio',
-        createdAt,
-        updatedAt: createdAt
+        createdAt
       });
 
       await portfolioController.deletePortfolio(req as any, res as any, next);

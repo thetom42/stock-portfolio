@@ -19,8 +19,7 @@ export const mockUsers: Record<string, AuthUser> = {
     firstName: 'John',
     lastName: 'Doe',
     roles: ['user'],
-    createdAt: new Date('2023-01-01'),
-    updatedAt: new Date('2023-01-01')
+    createdAt: new Date('2023-01-01')
   },
   admin: {
     id: 'admin123',
@@ -28,8 +27,7 @@ export const mockUsers: Record<string, AuthUser> = {
     firstName: 'Admin',
     lastName: 'User',
     roles: ['user', 'admin'],
-    createdAt: new Date('2023-01-01'),
-    updatedAt: new Date('2023-01-01')
+    createdAt: new Date('2023-01-01')
   }
 };
 
@@ -39,9 +37,7 @@ export const mockPortfolios: Record<string, Portfolio> = {
     id: 'portfolio123',
     userId: mockUsers.regular.id,
     name: 'My Portfolio',
-    description: 'Test portfolio',
-    createdAt: new Date('2023-01-01'),
-    updatedAt: new Date('2023-01-01')
+    createdAt: new Date('2023-01-01')
   }
 };
 
@@ -60,32 +56,16 @@ export const mockCategories: Record<string, Category> = {
 // Stock test data
 export const mockStocks: Record<string, Stock> = {
   apple: {
-    id: 'stock123',
-    symbol: 'AAPL',
     isin: 'US0378331005',
+    symbol: 'AAPL',
     name: 'Apple Inc.',
-    description: 'Consumer electronics company',
-    sector: 'Technology',
-    industry: 'Consumer Electronics',
-    currency: 'USD',
-    exchange: 'NASDAQ',
-    country: 'US',
-    createdAt: new Date('2023-01-01'),
-    updatedAt: new Date('2023-01-01')
+    wkn: '865985'
   },
   microsoft: {
-    id: 'stock456',
-    symbol: 'MSFT',
     isin: 'US5949181045',
+    symbol: 'MSFT',
     name: 'Microsoft Corporation',
-    description: 'Software company',
-    sector: 'Technology',
-    industry: 'Software',
-    currency: 'USD',
-    exchange: 'NASDAQ',
-    country: 'US',
-    createdAt: new Date('2023-01-01'),
-    updatedAt: new Date('2023-01-01')
+    wkn: '870747'
   }
 };
 
@@ -129,16 +109,11 @@ export const mockTransactions: Record<string, Transaction> = {
 export const mockQuotes: Record<string, Quote> = {
   appleQuote: {
     id: 'quote123',
-    stockId: mockStocks.apple.id,
+    isin: mockStocks.apple.isin,
     price: 150.50,
     currency: 'USD',
-    timestamp: new Date('2023-01-01T12:00:00Z'),
-    volume: 1000000,
-    open: 149.50,
-    high: 152.00,
-    low: 148.50,
-    close: 150.50,
-    adjustedClose: 150.50
+    exchange: 'NASDAQ',
+    timestamp: new Date('2023-01-01T12:00:00Z')
   }
 };
 
