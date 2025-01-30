@@ -23,23 +23,19 @@ describe('HoldingService', () => {
 
     // Stub external service calls
     sinon.stub(stockService, 'getStockByIsin').resolves({
-      id: 'US0378331005',
       isin: 'US0378331005',
       symbol: 'AAPL',
       name: 'Apple Inc.',
-      currency: 'USD',
-      exchange: 'NASDAQ',
-      country: 'US',
-      createdAt: new Date(),
-      updatedAt: new Date()
+      wkn: '865985'
     });
 
     sinon.stub(quoteService, 'getLatestQuotes').resolves([{
       id: '1',
-      stockId: 'US0378331005',
+      isin: 'US0378331005',
       price: 150.50,
       currency: 'USD',
-      timestamp: new Date()
+      timestamp: new Date(),
+      exchange: 'NASDAQ'
     }]);
 
     sinon.stub(quoteService, 'getHistoricalQuotes').resolves({
@@ -399,7 +395,7 @@ describe('HoldingService', () => {
 
       for (let i = 0; i < iterations; i++) {
         const mockDBHolding = {
-          holding_id: crypto.randomUUID(),
+          holding_id: `550e8400-e29b-41d4-a716-44665544000${i}`,
           portfolio_id: '1',
           isin: 'US0378331005',
           quantity: 10,

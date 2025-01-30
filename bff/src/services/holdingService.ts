@@ -56,8 +56,9 @@ class HoldingService {
   private async mapDBHoldingToDetails(dbHolding: Holding): Promise<HoldingDetails> {
     const stock = await stockService.getStockByIsin(dbHolding.isin);
     const quotes = await quoteService.getLatestQuotes([dbHolding.isin]);
+    const quote = quotes[0];
 
-    const currentPrice = quotes[0]?.price || 0;
+    const currentPrice = quote?.price || 0;
     const totalValue = currentPrice * dbHolding.quantity;
 
     // Calculate gain/loss using transaction history
@@ -76,7 +77,7 @@ class HoldingService {
       stock: {
         symbol: stock?.symbol || '',
         name: stock?.name || '',
-        currency: stock?.currency || 'USD'
+        currency: quote?.currency || 'USD'  // Get currency from quote instead of stock
       },
       currentPrice,
       totalValue,
@@ -107,7 +108,7 @@ class HoldingService {
 
       // Create the holding using repository
       const dbHolding = await this.holdingRepository.create({
-        holding_id: crypto.randomUUID(), // Generate UUID
+        holding_id: crypto.randomUUID(),
         portfolio_id: holdingData.portfolioId,
         isin: holdingData.isin,
         quantity: holdingData.quantity,
@@ -117,7 +118,7 @@ class HoldingService {
 
       // Create initial transaction using repository
       await this.transactionRepository.create({
-        transaction_id: crypto.randomUUID(), // Generate UUID
+        transaction_id: crypto.randomUUID(),
         holding_id: dbHolding.holding_id,
         buy: true, // Initial transaction is always a buy
         amount: holdingData.quantity,
@@ -138,11 +139,9 @@ class HoldingService {
 
   async getHoldingById(holdingId: string): Promise<HoldingDetails | null> {
     const holding = await this.holdingRepository.findById(holdingId);
-
     if (!holding) {
       return null;
     }
-
     return await this.mapDBHoldingToDetails(holding);
   }
 

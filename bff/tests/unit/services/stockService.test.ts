@@ -41,7 +41,6 @@ describe('StockService', () => {
     const setup = setupMockStockRepo();
     mockRepo = setup.mockRepo;
 
-    // Create a new StockService instance with mock repository
     testStockService = new StockService(mockRepo);
 
     sinon.stub(yahooFinanceService, 'getYahooFinanceService').returns({
@@ -63,9 +62,10 @@ describe('StockService', () => {
 
       expect(result).to.not.be.null;
       expect(result).to.deep.include({
-        id: mockStock.isin,
+        isin: mockStock.isin,
         symbol: mockStock.symbol,
-        name: mockStock.name
+        name: mockStock.name,
+        wkn: mockStock.wkn
       });
       expect(mockRepo.findByIsin.calledWith(mockStock.isin)).to.be.true;
     });
@@ -87,9 +87,10 @@ describe('StockService', () => {
 
       expect(result).to.not.be.null;
       expect(result).to.deep.include({
-        id: mockStock.isin,
+        isin: mockStock.isin,
         symbol: mockStock.symbol,
-        name: mockStock.name
+        name: mockStock.name,
+        wkn: mockStock.wkn
       });
       expect(mockRepo.findBySymbol.calledWith(mockStock.symbol)).to.be.true;
     });
@@ -111,9 +112,10 @@ describe('StockService', () => {
 
       expect(result).to.not.be.null;
       expect(result).to.deep.include({
-        id: mockStock.isin,
+        isin: mockStock.isin,
         symbol: mockStock.symbol,
-        name: mockStock.name
+        name: mockStock.name,
+        wkn: mockStock.wkn
       });
       expect(mockRepo.findByWkn.calledWith(mockStock.wkn)).to.be.true;
     });
@@ -135,9 +137,10 @@ describe('StockService', () => {
 
       expect(result).to.be.an('array');
       expect(result[0]).to.deep.include({
-        id: mockStock.isin,
+        isin: mockStock.isin,
         symbol: mockStock.symbol,
-        name: mockStock.name
+        name: mockStock.name,
+        wkn: mockStock.wkn
       });
       expect(mockRepo.findAll.called).to.be.true;
     });
@@ -159,9 +162,10 @@ describe('StockService', () => {
 
       expect(result).to.be.an('array');
       expect(result[0]).to.deep.include({
-        id: mockStock.isin,
+        isin: mockStock.isin,
         symbol: mockStock.symbol,
-        name: mockStock.name
+        name: mockStock.name,
+        wkn: mockStock.wkn
       });
       expect(mockRepo.findByCategory.calledWith('tech-category')).to.be.true;
     });
@@ -181,9 +185,11 @@ describe('StockService', () => {
 
       expect(result).to.be.an('array');
       expect(result[0]).to.deep.include({
+        id: mockSearchResult.symbol,
         symbol: mockSearchResult.symbol,
         name: mockSearchResult.name,
-        exchange: mockSearchResult.exchange
+        exchange: mockSearchResult.exchange,
+        currency: 'USD'
       });
       const yahooService = yahooFinanceService.getYahooFinanceService() as any;
       expect(yahooService.searchStocks.calledWith('AAPL')).to.be.true;
@@ -206,12 +212,18 @@ describe('StockService', () => {
 
       expect(result).to.not.be.null;
       expect(result).to.deep.include({
-        id: mockStock.isin,
+        isin: mockStock.isin,
         symbol: mockStock.symbol,
         name: mockStock.name,
+        wkn: mockStock.wkn,
         currentPrice: mockYahooQuote.price,
         currency: mockYahooQuote.currency,
-        exchange: mockYahooQuote.exchange
+        exchange: mockYahooQuote.exchange,
+        volume: mockYahooQuote.volume,
+        open: mockYahooQuote.open,
+        high: mockYahooQuote.high,
+        low: mockYahooQuote.low,
+        close: mockYahooQuote.close
       });
       expect(result).to.have.property('priceChange');
       expect(result).to.have.property('priceChangePercentage');
@@ -226,7 +238,7 @@ describe('StockService', () => {
       expect(mockRepo.findByIsin.calledWith('invalid-isin')).to.be.true;
     });
 
-    it('should return basic stock info when Yahoo Finance fails', async () => {
+    it('should return basic stock info with default values when Yahoo Finance fails', async () => {
       mockRepo.findByIsin.resolves(mockStock);
       const yahooService = yahooFinanceService.getYahooFinanceService() as any;
       yahooService.getRealTimeQuote.rejects(new Error('Yahoo Finance error'));
@@ -235,9 +247,20 @@ describe('StockService', () => {
 
       expect(result).to.not.be.null;
       expect(result).to.deep.include({
-        id: mockStock.isin,
+        isin: mockStock.isin,
         symbol: mockStock.symbol,
-        name: mockStock.name
+        name: mockStock.name,
+        wkn: mockStock.wkn,
+        currentPrice: 0,
+        currency: 'USD',
+        exchange: 'DEFAULT',
+        volume: 0,
+        open: 0,
+        high: 0,
+        low: 0,
+        close: 0,
+        priceChange: 0,
+        priceChangePercentage: 0
       });
       expect(mockRepo.findByIsin.calledWith(mockStock.isin)).to.be.true;
     });
@@ -257,9 +280,10 @@ describe('StockService', () => {
       const result = await testStockService.createStock('tech-category', createData);
 
       expect(result).to.deep.include({
-        id: mockStock.isin,
+        isin: mockStock.isin,
         symbol: mockStock.symbol,
-        name: mockStock.name
+        name: mockStock.name,
+        wkn: mockStock.wkn
       });
       expect(mockRepo.create.firstCall.args[0]).to.deep.equal({
         isin: createData.isin,
@@ -274,24 +298,27 @@ describe('StockService', () => {
   describe('updateStock', () => {
     const updateData = {
       name: 'Updated Apple Inc.',
+      wkn: '654321',
       categoryId: 'new-category'
     };
 
     it('should update stock when found', async () => {
-      const updatedStock = { ...mockStock, name: updateData.name, category_id: updateData.categoryId };
+      const updatedStock = { ...mockStock, name: updateData.name, wkn: updateData.wkn, category_id: updateData.categoryId };
       mockRepo.update.resolves(updatedStock);
 
       const result = await testStockService.updateStock(mockStock.isin, updateData);
 
       expect(result).to.not.be.null;
       expect(result).to.deep.include({
-        id: mockStock.isin,
-        name: updateData.name
+        isin: mockStock.isin,
+        name: updateData.name,
+        wkn: updateData.wkn
       });
       expect(mockRepo.update.firstCall.args).to.deep.equal([
         mockStock.isin,
         {
           name: updateData.name,
+          wkn: updateData.wkn,
           category_id: updateData.categoryId
         }
       ]);
@@ -306,6 +333,7 @@ describe('StockService', () => {
         'invalid-isin',
         {
           name: updateData.name,
+          wkn: updateData.wkn,
           category_id: updateData.categoryId
         }
       ]);

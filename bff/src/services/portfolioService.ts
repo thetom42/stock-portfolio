@@ -8,8 +8,7 @@ const mapDBPortfolioToBFF = (dbPortfolio: DBPortfolio): Portfolio => ({
   id: dbPortfolio.portfolio_id,
   userId: dbPortfolio.user_id,
   name: dbPortfolio.name,
-  createdAt: dbPortfolio.created_at,
-  updatedAt: dbPortfolio.created_at, // Using created_at as we don't have updated_at in DB
+  createdAt: dbPortfolio.created_at
 });
 
 export class PortfolioService {

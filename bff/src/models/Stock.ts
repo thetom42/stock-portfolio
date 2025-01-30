@@ -1,16 +1,8 @@
 export interface Stock {
-  id: string;
-  symbol: string;
   isin: string;
+  symbol: string;
   name: string;
-  description?: string;
-  sector?: string;
-  industry?: string;
-  currency: string;
-  exchange: string;
-  country: string;
-  createdAt: Date;
-  updatedAt: Date;
+  wkn: string;
 }
 
 export interface StockSearchResult {
@@ -21,20 +13,15 @@ export interface StockSearchResult {
   currency: string;
 }
 
-export interface StockCategory {
-  id: string;
-  name: string;
-  description?: string;
-}
-
 export interface StockDetails extends Stock {
-  currentPrice?: number;
+  currentPrice: number;
+  currency?: string;
+  exchange?: string;
+  volume?: number;
+  open?: number;
+  high?: number;
+  low?: number;
+  close?: number;
   priceChange?: number;
   priceChangePercentage?: number;
-  marketCap?: number;
-  volume?: number;
-  peRatio?: number;
-  dividendYield?: number;
-  yearHigh?: number;
-  yearLow?: number;
 }

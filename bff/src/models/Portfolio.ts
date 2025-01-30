@@ -1,25 +1,21 @@
+// Base interface matching DB model
 export interface Portfolio {
   id: string;
   userId: string;
   name: string;
-  description?: string;
   createdAt: Date;
-  updatedAt: Date;
-  totalValue?: number;
-  totalGainLoss?: number;
-  totalGainLossPercentage?: number;
 }
 
+// DTOs for API requests
 export interface CreatePortfolioDTO {
   name: string;
-  description?: string;
 }
 
 export interface UpdatePortfolioDTO {
   name?: string;
-  description?: string;
 }
 
+// Summary with calculated values
 export interface PortfolioSummary {
   totalValue: number;
   totalGainLoss: number;
@@ -31,13 +27,15 @@ export interface PortfolioSummary {
   }>;
 }
 
+// Portfolio with its holdings
 export interface PortfolioDetails extends Portfolio {
   holdings: PortfolioHolding[];
 }
 
+// Holding within a portfolio context
 export interface PortfolioHolding {
   id: string;
-  stockId: string;
+  isin: string;  // Changed from stockId to isin to match Stock model
   quantity: number;
   averageCost: number;
   currentValue: number;
@@ -45,7 +43,7 @@ export interface PortfolioHolding {
   gainLossPercentage: number;
 }
 
-// Performance types matching service implementation
+// Performance tracking
 export interface TimeSeriesData {
   date: string;
   value: number;
@@ -57,7 +55,7 @@ export interface PerformanceData {
   monthly: TimeSeriesData[];
 }
 
-// Allocation types matching service implementation
+// Asset allocation
 export interface SectorAllocation {
   sector: string;
   percentage: number;
@@ -73,7 +71,7 @@ export interface AllocationData {
   byAssetType: AssetTypeAllocation[];
 }
 
-// Returns types matching service implementation
+// Return calculations
 export interface PeriodReturns {
   '1d': number;
   '1w': number;
@@ -91,7 +89,7 @@ export interface ReturnsData {
   periodReturns: PeriodReturns;
 }
 
-// History types matching service implementation
+// Historical data
 export interface Transaction {
   date: string;
   type: string;

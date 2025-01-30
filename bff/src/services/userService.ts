@@ -9,8 +9,7 @@ const mapDBUserToBFF = (dbUser: DBUser): User => ({
   email: dbUser.email,
   firstName: dbUser.name,        // Map name to firstName
   lastName: dbUser.surname,      // Map surname to lastName
-  createdAt: dbUser.join_date,  // Map join_date to createdAt
-  updatedAt: dbUser.join_date   // Using join_date as we don't have updated_at in DB
+  createdAt: dbUser.join_date   // Map join_date to createdAt
 });
 
 export class UserService {

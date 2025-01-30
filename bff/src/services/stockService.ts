@@ -12,16 +12,26 @@ export class StockService {
   }
 
   // Helper function to map DB Stock to BFF Stock
-  private mapDBStockToBFF = (dbStock: DBStock, yahooQuote?: any): Stock => ({
-    id: dbStock.isin,
-    symbol: dbStock.symbol,
+  private mapDBStockToBFF = (dbStock: DBStock): Stock => ({
     isin: dbStock.isin,
+    symbol: dbStock.symbol,
     name: dbStock.name,
-    currency: yahooQuote?.currency || 'USD', // Use Yahoo data if available
-    exchange: yahooQuote?.exchange || 'DEFAULT', // Use Yahoo data if available
-    country: 'US', // Default since DB doesn't store this
-    createdAt: new Date(), // Default since DB doesn't store this
-    updatedAt: new Date() // Default since DB doesn't store this
+    wkn: dbStock.wkn
+  });
+
+  // Helper function to create StockDetails with default values
+  private createStockDetails = (stock: Stock): StockDetails => ({
+    ...stock,
+    currentPrice: 0,
+    currency: 'USD',
+    exchange: 'DEFAULT',
+    volume: 0,
+    open: 0,
+    high: 0,
+    low: 0,
+    close: 0,
+    priceChange: 0,
+    priceChangePercentage: 0
   });
 
   // Get stock by ISIN
@@ -61,14 +71,14 @@ export class StockService {
       const results = await yahooFinance.searchStocks(query);
 
       return results.map((result: YahooFinanceSearchResult) => ({
-        id: result.symbol, // Using symbol as ID since we don't have ISIN yet
+        id: result.symbol,
         symbol: result.symbol,
         name: result.name,
         exchange: result.exchange,
-        currency: 'USD' // Default since Yahoo Finance API doesn't always provide currency
+        currency: 'USD'
       }));
     } catch (error) {
-      return []; // Return empty array on error
+      return [];
     }
   }
 
@@ -81,21 +91,28 @@ export class StockService {
       return null;
     }
 
+    const baseStock = this.mapDBStockToBFF(stock);
+
     // Get real-time quote from Yahoo Finance
     try {
       const quote = await yahooFinance.getRealTimeQuote(stock.isin);
-      const stockWithYahooData = this.mapDBStockToBFF(stock, quote);
 
       return {
-        ...stockWithYahooData,
+        ...baseStock,
         currentPrice: quote.price,
-        priceChange: quote.price - (quote.open || quote.price), // Fallback to current price if open is not available
-        priceChangePercentage: ((quote.price - (quote.open || quote.price)) / (quote.open || quote.price)) * 100,
-        volume: quote.volume
+        currency: quote.currency,
+        exchange: quote.exchange,
+        volume: quote.volume,
+        open: quote.open,
+        high: quote.high,
+        low: quote.low,
+        close: quote.close,
+        priceChange: quote.price - (quote.open || quote.price),
+        priceChangePercentage: ((quote.price - (quote.open || quote.price)) / (quote.open || quote.price)) * 100
       };
     } catch (error) {
-      // If Yahoo Finance data is not available, return basic stock info
-      return this.mapDBStockToBFF(stock);
+      // If Yahoo Finance data is not available, return stock info with default values
+      return this.createStockDetails(baseStock);
     }
   }
 

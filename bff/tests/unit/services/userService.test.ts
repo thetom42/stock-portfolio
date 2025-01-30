@@ -12,7 +12,6 @@ describe('UserService', () => {
   beforeEach(() => {
     const setup = setupMockUserRepo();
     mockRepo = setup.mockRepo;
-    // Create a new UserService instance with mock repository
     testUserService = setUserRepository(mockRepo);
   });
 
@@ -36,8 +35,7 @@ describe('UserService', () => {
     email: mockUser.email,
     firstName: mockUser.name,
     lastName: mockUser.surname,
-    createdAt: mockUser.join_date,
-    updatedAt: mockUser.join_date
+    createdAt: mockUser.join_date
   };
 
   describe('createUser', () => {
@@ -60,7 +58,6 @@ describe('UserService', () => {
         surname: createUserDTO.lastName,
         nickname: `${createUserDTO.firstName} ${createUserDTO.lastName}`
       });
-      // Just verify password is a string, don't check exact value since it might be hashed
       expect(mockRepo.create.firstCall.args[0].password).to.be.a('string');
     });
 
@@ -132,10 +129,11 @@ describe('UserService', () => {
       const result = await testUserService.updateUser('user123', updateData);
 
       expect(result).to.deep.equal({
-        ...mockBFFUser,
+        id: mockUser.user_id,
+        email: 'jane@example.com',
         firstName: 'Jane',
         lastName: 'Smith',
-        email: 'jane@example.com'
+        createdAt: mockUser.join_date
       });
 
       expect(mockRepo.update.firstCall.args).to.deep.equal([
@@ -196,7 +194,6 @@ describe('UserService', () => {
         password: 'password123'
       });
 
-      // Verify the ID format in the database record
       const createArgs = mockRepo.create.firstCall.args[0];
       expect(createArgs.user_id).to.match(uuidRegex);
     });

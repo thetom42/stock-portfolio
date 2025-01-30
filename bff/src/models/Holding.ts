@@ -1,6 +1,6 @@
 import { Transaction } from './Transaction';
 
-// Base interface matching DB model
+// Base interface
 export interface Holding {
     id: string;
     portfolioId: string;
@@ -22,7 +22,7 @@ export interface UpdateHoldingDTO {
     quantity?: number;
 }
 
-// Extended interfaces for API responses
+// Extended interface with real-time data
 export interface HoldingDetails extends Holding {
     stock: {
         symbol: string;
@@ -35,14 +35,15 @@ export interface HoldingDetails extends Holding {
     gainLossPercentage: number;
 }
 
+// Performance data calculated at runtime
 export interface HoldingPerformance {
-    totalInvested: number;
-    currentValue: number;
     totalReturn: number;
-    totalReturnPercentage: number;
-    transactions: Transaction[];
+    percentageReturn: number;
+    annualizedReturn: number;
+    holdingPeriod: number;
 }
 
+// Value data calculated at runtime
 export interface HoldingValue {
     currentValue: number;
     costBasis: number;
@@ -50,6 +51,7 @@ export interface HoldingValue {
     unrealizedGainLossPercentage: number;
 }
 
+// Historical data from quote service
 export interface HoldingHistory {
     date: Date;
     price: number;

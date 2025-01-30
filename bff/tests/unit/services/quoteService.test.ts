@@ -62,7 +62,6 @@ describe('QuoteService', () => {
     mockQuoteRepo = setup.mockQuoteRepo;
     mockStockRepo = setup.mockStockRepo;
 
-    // Create a new QuoteService instance with mock repositories
     testQuoteService = new QuoteService(mockQuoteRepo, mockStockRepo);
 
     sinon.stub(yahooFinanceService, 'getYahooFinanceService').returns({
@@ -107,7 +106,7 @@ describe('QuoteService', () => {
         isin: mockStock.isin,
         price: new Decimal(150.50),
         currency: 'USD',
-        market_time: new Date(), // Current time
+        market_time: new Date(),
         exchange: 'NASDAQ'
       };
       mockQuoteRepo.findLatestByIsin.resolves(freshQuote);
@@ -126,7 +125,7 @@ describe('QuoteService', () => {
         isin: mockStock.isin,
         price: new Decimal(150.50),
         currency: 'USD',
-        market_time: new Date(Date.now() - 20 * 60 * 1000), // 20 minutes old
+        market_time: new Date(Date.now() - 20 * 60 * 1000),
         exchange: 'NASDAQ'
       };
       mockQuoteRepo.findLatestByIsin.resolves(staleQuote);
@@ -215,10 +214,11 @@ describe('QuoteService', () => {
       expect(result).to.be.an('array');
       expect(result[0]).to.deep.include({
         id: mockDBQuote.quote_id,
-        stockId: mockDBQuote.isin,
+        isin: mockDBQuote.isin,
         price: Number(mockDBQuote.price),
         currency: mockDBQuote.currency,
-        timestamp: mockDBQuote.market_time
+        timestamp: mockDBQuote.market_time,
+        exchange: mockDBQuote.exchange
       });
       expect(mockQuoteRepo.findLatestByIsin.calledWith(mockStock.isin)).to.be.true;
     });
@@ -242,7 +242,7 @@ describe('QuoteService', () => {
         isin: mockStock.isin,
         price: new Decimal(150.50),
         currency: 'USD',
-        market_time: new Date('2023-06-15'), // Date within range
+        market_time: new Date('2023-06-15'),
         exchange: 'NASDAQ'
       }];
       mockQuoteRepo.findByIsin.resolves(mockDBQuotes);
@@ -256,10 +256,11 @@ describe('QuoteService', () => {
       expect(result).to.be.an('array');
       expect(result[0]).to.deep.include({
         id: mockDBQuotes[0].quote_id,
-        stockId: mockDBQuotes[0].isin,
+        isin: mockDBQuotes[0].isin,
         price: Number(mockDBQuotes[0].price),
         currency: mockDBQuotes[0].currency,
-        timestamp: mockDBQuotes[0].market_time
+        timestamp: mockDBQuotes[0].market_time,
+        exchange: mockDBQuotes[0].exchange
       });
       expect(mockQuoteRepo.findByIsin.calledWith(mockStock.isin)).to.be.true;
     });
@@ -283,7 +284,7 @@ describe('QuoteService', () => {
           isin: mockStock.isin,
           price: new Decimal(150.50),
           currency: 'USD',
-          market_time: new Date('2023-06-15'), // Within range
+          market_time: new Date('2023-06-15'),
           exchange: 'NASDAQ'
         },
         {
@@ -291,7 +292,7 @@ describe('QuoteService', () => {
           isin: mockStock.isin,
           price: new Decimal(151.50),
           currency: 'USD',
-          market_time: new Date('2022-12-31'), // Before range
+          market_time: new Date('2022-12-31'),
           exchange: 'NASDAQ'
         },
         {
@@ -299,7 +300,7 @@ describe('QuoteService', () => {
           isin: mockStock.isin,
           price: new Decimal(152.50),
           currency: 'USD',
-          market_time: new Date('2024-01-01'), // After range
+          market_time: new Date('2024-01-01'),
           exchange: 'NASDAQ'
         }
       ];
@@ -314,9 +315,11 @@ describe('QuoteService', () => {
       expect(result).to.have.lengthOf(1);
       expect(result[0]).to.deep.include({
         id: mockDBQuotes[0].quote_id,
-        stockId: mockDBQuotes[0].isin,
+        isin: mockDBQuotes[0].isin,
         price: Number(mockDBQuotes[0].price),
-        timestamp: mockDBQuotes[0].market_time
+        currency: mockDBQuotes[0].currency,
+        timestamp: mockDBQuotes[0].market_time,
+        exchange: mockDBQuotes[0].exchange
       });
     });
   });
@@ -338,7 +341,6 @@ describe('QuoteService', () => {
       mockQuoteRepo.create.resolves(mockDBQuote);
       await testQuoteService.getRealTimeQuote(mockStock.isin);
 
-      // Verify the ID format in the database record
       const createArgs = mockQuoteRepo.create.firstCall.args[0];
       expect(createArgs.quote_id).to.match(uuidRegex);
     });

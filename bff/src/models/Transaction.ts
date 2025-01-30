@@ -1,25 +1,25 @@
-// Base interface matching DB model
+// Base interface matching DB model with BFF naming conventions
 export interface Transaction {
     id: string;
     holdingId: string;
     buy: boolean;
     transactionTime: Date;
     amount: number;
-    price: number;
-    commission: number;
+    price: number;        // Decimal in DB, number in BFF
+    commission: number;   // Decimal in DB, number in BFF
     broker: string;
 }
 
-// DTO for API requests
+// DTO for API requests with optional fields that have defaults
 export interface CreateTransactionDTO {
     amount: number;
     price: number;
     buy: boolean;
-    commission?: number;
-    broker?: string;
+    commission?: number;  // Defaults to 0
+    broker?: string;     // Defaults to 'SYSTEM'
 }
 
-// Query parameters for transaction filtering
+// Query parameters for filtering and sorting
 export interface TransactionQueryParams {
     startDate?: string;
     endDate?: string;

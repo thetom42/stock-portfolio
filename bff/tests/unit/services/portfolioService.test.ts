@@ -29,8 +29,7 @@ describe('PortfolioService', () => {
 
   describe('createPortfolio', () => {
     const mockCreateData: CreatePortfolioDTO = {
-      name: 'Test Portfolio',
-      description: 'Test Description'
+      name: 'Test Portfolio'
     };
 
     const mockDBPortfolio = {
@@ -49,11 +48,9 @@ describe('PortfolioService', () => {
         id: mockDBPortfolio.portfolio_id,
         userId: mockDBPortfolio.user_id,
         name: mockDBPortfolio.name,
-        createdAt: mockDBPortfolio.created_at,
-        updatedAt: mockDBPortfolio.created_at
+        createdAt: mockDBPortfolio.created_at
       });
 
-      // Use sinon.match for the portfolio_id since it's generated
       // Verify the create call arguments
       const createArgs = mockRepo.create.firstCall.args[0];
       expect(createArgs.user_id).to.equal('user1');
@@ -95,8 +92,7 @@ describe('PortfolioService', () => {
         id: mockDBPortfolio.portfolio_id,
         userId: mockDBPortfolio.user_id,
         name: mockDBPortfolio.name,
-        createdAt: mockDBPortfolio.created_at,
-        updatedAt: mockDBPortfolio.created_at
+        createdAt: mockDBPortfolio.created_at
       });
 
       expect(mockRepo.findById.calledWith('1')).to.be.true;
@@ -136,8 +132,7 @@ describe('PortfolioService', () => {
         id: mockUpdatedDBPortfolio.portfolio_id,
         userId: mockUpdatedDBPortfolio.user_id,
         name: mockUpdatedDBPortfolio.name,
-        createdAt: mockUpdatedDBPortfolio.created_at,
-        updatedAt: mockUpdatedDBPortfolio.created_at
+        createdAt: mockUpdatedDBPortfolio.created_at
       });
 
       expect(mockRepo.update.firstCall.args).to.deep.equal([
@@ -172,8 +167,7 @@ describe('PortfolioService', () => {
         id: mockDBPortfolio.portfolio_id,
         userId: mockDBPortfolio.user_id,
         name: mockDBPortfolio.name,
-        createdAt: mockDBPortfolio.created_at,
-        updatedAt: mockDBPortfolio.created_at
+        createdAt: mockDBPortfolio.created_at
       });
 
       expect(mockRepo.delete.calledWith('1')).to.be.true;
@@ -200,8 +194,7 @@ describe('PortfolioService', () => {
 
       mockRepo.create.resolves(mockDBPortfolio);
       const result = await testPortfolioService.createPortfolio('user1', {
-        name: 'Test Portfolio',
-        description: 'Test Description'
+        name: 'Test Portfolio'
       });
 
       expect(result.id).to.match(uuidRegex);
@@ -222,8 +215,7 @@ describe('PortfolioService', () => {
         mockRepo.create.resolves(mockDBPortfolio);
 
         const result = await testPortfolioService.createPortfolio('user1', {
-          name: `Test Portfolio ${i}`,
-          description: 'Test Description'
+          name: `Test Portfolio ${i}`
         });
         ids.add(result.id);
       }
@@ -236,8 +228,7 @@ describe('PortfolioService', () => {
 
       await expect(
         testPortfolioService.createPortfolio('user1', {
-          name: 'Test Portfolio',
-          description: 'Test Description'
+          name: 'Test Portfolio'
         })
       ).to.be.rejectedWith('ID generation failed');
     });

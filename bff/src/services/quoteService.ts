@@ -20,10 +20,11 @@ export class QuoteService {
   // Helper function to map DB Quote to BFF Quote
   private mapDBQuoteToBFF = (dbQuote: DBQuote): Quote => ({
     id: dbQuote.quote_id,
-    stockId: dbQuote.isin,
+    isin: dbQuote.isin,
     price: Number(dbQuote.price),
     currency: dbQuote.currency,
-    timestamp: dbQuote.market_time
+    timestamp: dbQuote.market_time,
+    exchange: dbQuote.exchange
   });
 
   // Check if a quote is stale (older than 15 minutes)
@@ -34,9 +35,9 @@ export class QuoteService {
   };
 
   // Get real-time quote for a stock
-  async getRealTimeQuote(stockId: string): Promise<RealTimeQuote> {
+  async getRealTimeQuote(isin: string): Promise<RealTimeQuote> {
     try {
-      const stock = await this.stockRepository.findByIsin(stockId);
+      const stock = await this.stockRepository.findByIsin(isin);
       if (!stock) {
         throw new Error('Stock not found');
       }
@@ -59,7 +60,7 @@ export class QuoteService {
 
       // Store the quote in our database
       await this.quoteRepository.create({
-        quote_id: crypto.randomUUID(), // Generate UUID
+        quote_id: crypto.randomUUID(),
         isin: stock.isin,
         price: new Decimal(quote.price),
         currency: quote.currency,
@@ -88,9 +89,9 @@ export class QuoteService {
   }
 
   // Get historical quotes for a stock
-  async getHistoricalQuotes(stockId: string, interval: QuoteInterval): Promise<QuoteHistory> {
+  async getHistoricalQuotes(isin: string, interval: QuoteInterval): Promise<QuoteHistory> {
     try {
-      const stock = await this.stockRepository.findByIsin(stockId);
+      const stock = await this.stockRepository.findByIsin(isin);
       if (!stock) {
         throw new Error('Stock not found');
       }
@@ -106,7 +107,7 @@ export class QuoteService {
         yahooQuotes.map(async (yq) => {
           // Store only the closing price in our database
           await this.quoteRepository.create({
-            quote_id: crypto.randomUUID(), // Generate UUID
+            quote_id: crypto.randomUUID(),
             isin: stock.isin,
             price: new Decimal(yq.close),
             currency: 'USD', // Yahoo Finance default
@@ -114,7 +115,6 @@ export class QuoteService {
             exchange: 'YAHOO'
           });
 
-          // Return the full historical quote data without storing extra fields
           return {
             date: yq.date,
             open: yq.open,
@@ -141,15 +141,15 @@ export class QuoteService {
   }
 
   // Get latest quotes for multiple stocks
-  async getLatestQuotes(stockIds: string[]): Promise<Quote[]> {
-    if (stockIds.length === 0) {
+  async getLatestQuotes(isins: string[]): Promise<Quote[]> {
+    if (isins.length === 0) {
       return [];
     }
 
     const quotes: Quote[] = [];
 
-    for (const stockId of stockIds) {
-      const quote = await this.quoteRepository.findLatestByIsin(stockId);
+    for (const isin of isins) {
+      const quote = await this.quoteRepository.findLatestByIsin(isin);
       if (quote) {
         quotes.push(this.mapDBQuoteToBFF(quote));
       }
@@ -159,9 +159,8 @@ export class QuoteService {
   }
 
   // Get quote history from database
-  async getQuoteHistory(stockId: string, startDate: Date, endDate: Date): Promise<Quote[]> {
-    // Since findByStockAndTimeRange is not available, we'll get all quotes and filter
-    const quotes = await this.quoteRepository.findByIsin(stockId);
+  async getQuoteHistory(isin: string, startDate: Date, endDate: Date): Promise<Quote[]> {
+    const quotes = await this.quoteRepository.findByIsin(isin);
     const filteredQuotes = quotes.filter(quote => {
       const quoteDate = new Date(quote.market_time);
       return quoteDate >= startDate && quoteDate <= endDate;
@@ -170,9 +169,9 @@ export class QuoteService {
   }
 
   // Get intraday quotes
-  async getIntradayQuotes(stockId: string): Promise<Quote[]> {
+  async getIntradayQuotes(isin: string): Promise<Quote[]> {
     try {
-      const stock = await this.stockRepository.findByIsin(stockId);
+      const stock = await this.stockRepository.findByIsin(isin);
       if (!stock) {
         throw new Error('Stock not found');
       }
@@ -184,7 +183,7 @@ export class QuoteService {
       const dbQuotes = await Promise.all(
         yahooQuotes.map(async (yq) => {
           const quote = await this.quoteRepository.create({
-            quote_id: crypto.randomUUID(), // Generate UUID
+            quote_id: crypto.randomUUID(),
             isin: stock.isin,
             price: new Decimal(yq.price),
             currency: 'USD', // Yahoo Finance default
