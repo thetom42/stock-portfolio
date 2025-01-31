@@ -66,9 +66,6 @@ export const validatePortfolioCreation = [
     .trim()
     .isLength({ min: 1 })
     .withMessage('Portfolio name is required'),
-  body('description')
-    .optional()
-    .trim(),
   handleValidationErrors
 ] as const;
 
@@ -78,17 +75,16 @@ export const validatePortfolioUpdate = [
     .trim()
     .isLength({ min: 1 })
     .withMessage('Portfolio name cannot be empty'),
-  body('description')
-    .optional()
-    .trim(),
   handleValidationErrors
 ] as const;
 
 // Holding validation rules
 export const validateHoldingCreation = [
-  body('stockId')
-    .isUUID()
-    .withMessage('Invalid stock ID'),
+  body('isin')
+    .trim()
+    .isLength({ min: 12, max: 12 })
+    .matches(/^[A-Z]{2}[A-Z0-9]{9}\d$/)
+    .withMessage('Invalid ISIN format'),
   body('quantity')
     .isFloat({ min: 0.000001 })
     .withMessage('Quantity must be greater than 0'),

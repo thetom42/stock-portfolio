@@ -35,9 +35,9 @@ describe('Validation Middleware', () => {
     it('should call next if no validation errors', () => {
       // Mock validationResult to return empty errors
       sinon.stub(validationResult(req as Request), 'isEmpty').returns(true);
-      
+
       validation.handleValidationErrors(req as Request, res as Response, next as NextFunction);
-      
+
       sinon.assert.called(next);
       sinon.assert.notCalled(statusStub);
     });
@@ -45,7 +45,7 @@ describe('Validation Middleware', () => {
     it('should return 400 if validation errors exist', async () => {
       // Create a request with validation errors
       req.body = { email: 'invalid-email' };
-      
+
       // Apply email validation and check result
       await validation.validateUserCreation[0](req as Request, res as Response, next as NextFunction);
       validation.handleValidationErrors(req as Request, res as Response, next as NextFunction);
@@ -224,6 +224,131 @@ describe('Validation Middleware', () => {
         sinon.assert.calledWith(statusStub, 400);
         const errors = jsonSpy.firstCall.args[0].errors;
         expect(errors[0].msg).to.equal('Search query is required');
+      });
+    });
+  });
+
+  describe('Portfolio Validation', () => {
+    describe('validatePortfolioCreation', () => {
+      it('should validate valid portfolio data', async () => {
+        req.body = {
+          name: 'My Portfolio'
+        };
+
+        for (const validator of validation.validatePortfolioCreation.slice(0, -1)) {
+          await validator(req as Request, res as Response, next as NextFunction);
+        }
+        validation.handleValidationErrors(req as Request, res as Response, next as NextFunction);
+
+        sinon.assert.called(next);
+        sinon.assert.notCalled(statusStub);
+      });
+
+      it('should reject empty portfolio name', async () => {
+        req.body = {
+          name: ''
+        };
+
+        await validation.validatePortfolioCreation[0](req as Request, res as Response, next as NextFunction);
+        validation.handleValidationErrors(req as Request, res as Response, next as NextFunction);
+
+        sinon.assert.calledWith(statusStub, 400);
+        const errors = jsonSpy.firstCall.args[0].errors;
+        expect(errors[0].msg).to.equal('Portfolio name is required');
+      });
+    });
+
+    describe('validatePortfolioUpdate', () => {
+      it('should validate valid update data', async () => {
+        req.body = {
+          name: 'Updated Portfolio'
+        };
+
+        for (const validator of validation.validatePortfolioUpdate.slice(0, -1)) {
+          await validator(req as Request, res as Response, next as NextFunction);
+        }
+        validation.handleValidationErrors(req as Request, res as Response, next as NextFunction);
+
+        sinon.assert.called(next);
+        sinon.assert.notCalled(statusStub);
+      });
+
+      it('should reject empty portfolio name in update', async () => {
+        req.body = {
+          name: ''
+        };
+
+        await validation.validatePortfolioUpdate[0](req as Request, res as Response, next as NextFunction);
+        validation.handleValidationErrors(req as Request, res as Response, next as NextFunction);
+
+        sinon.assert.calledWith(statusStub, 400);
+        const errors = jsonSpy.firstCall.args[0].errors;
+        expect(errors[0].msg).to.equal('Portfolio name cannot be empty');
+      });
+    });
+  });
+
+  describe('Holding Validation', () => {
+    describe('validateHoldingCreation', () => {
+      it('should validate valid holding data', async () => {
+        req.body = {
+          isin: 'US0378331005',
+          quantity: 10,
+          purchasePrice: 150.50
+        };
+
+        for (const validator of validation.validateHoldingCreation.slice(0, -1)) {
+          await validator(req as Request, res as Response, next as NextFunction);
+        }
+        validation.handleValidationErrors(req as Request, res as Response, next as NextFunction);
+
+        sinon.assert.called(next);
+        sinon.assert.notCalled(statusStub);
+      });
+
+      it('should reject invalid ISIN', async () => {
+        req.body = {
+          isin: 'invalid-isin',
+          quantity: 10,
+          purchasePrice: 150.50
+        };
+
+        await validation.validateHoldingCreation[0](req as Request, res as Response, next as NextFunction);
+        validation.handleValidationErrors(req as Request, res as Response, next as NextFunction);
+
+        sinon.assert.calledWith(statusStub, 400);
+        const errors = jsonSpy.firstCall.args[0].errors;
+        expect(errors[0].msg).to.equal('Invalid ISIN format');
+      });
+
+      it('should reject invalid quantity', async () => {
+        req.body = {
+          isin: 'US0378331005',
+          quantity: 0,
+          purchasePrice: 150.50
+        };
+
+        await validation.validateHoldingCreation[1](req as Request, res as Response, next as NextFunction);
+        validation.handleValidationErrors(req as Request, res as Response, next as NextFunction);
+
+        sinon.assert.calledWith(statusStub, 400);
+        const errors = jsonSpy.firstCall.args[0].errors;
+        expect(errors[0].msg).to.equal('Quantity must be greater than 0');
+      });
+
+      it('should reject negative purchase price', async () => {
+        req.body = {
+          isin: 'US0378331005',
+          quantity: 10,
+          purchasePrice: -1
+        };
+
+        await validation.validateHoldingCreation[2](req as Request, res as Response, next as NextFunction);
+        validation.handleValidationErrors(req as Request, res as Response, next as NextFunction);
+
+        sinon.assert.calledWith(statusStub, 400);
+        const errors = jsonSpy.firstCall.args[0].errors;
+        expect(errors[0].msg).to.equal('Purchase price must be greater than or equal to 0');
       });
     });
   });
