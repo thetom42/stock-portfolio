@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Stock Portfolio BFF - Holdings",
-    "description": "Collection for managing stock holdings in the Stock Portfolio application.\n\nAuthentication:\nThis collection uses Keycloak for authentication. Holdings are user-specific resources, requiring authentication to ensure users can only access and modify their own holdings through their portfolios.\n\nRequired Environment Variables:\n- Regular User Authentication:\n  * username: Regular test user username\n  * password: Regular test user password\n  * accessToken: Regular user access token\n\nAdditional Variables:\n- portfolioId: ID of the portfolio containing the holdings\n- holdingId: ID of the specific holding being accessed\n\nThe collection includes operations for managing holdings within portfolios, including creation, updates, and retrieving performance metrics. All operations require authentication and verify resource ownership.",
+    "description": "Collection for managing stock holdings in the Stock Portfolio application.\n\nAuthentication:\nThis collection uses Keycloak for authentication. Holdings are user-specific resources, requiring authentication to ensure users can only access and modify their own holdings through their portfolios.\n\nTest Data Strategy:\nEach operation uses independent test data from test-data.sql to ensure operations can be run in any order:\n- Read operations use existing holdings (holding-5, holding-6) from portfolio-3\n- Create/Update operations use unique data\n- Delete operation uses a dedicated holding for deletion\n\nRequired Environment Variables:\n- Regular User Authentication:\n  * username: Regular test user username (janes)\n  * password: Regular test user password\n  * accessToken: Regular user access token",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "event": [
@@ -157,11 +157,11 @@
               "",
               "pm.test('Response has correct holding data', function() {",
               "    const response = pm.response.json();",
-              "    pm.expect(response).to.have.property('id');",
-              "    pm.expect(response.portfolioId).to.eql(pm.environment.get('portfolioId'));",
-              "    pm.expect(response.isin).to.eql('US0378331005');",
-              "    pm.expect(response.quantity).to.eql(100);",
-              "    pm.environment.set('holdingId', response.id);",
+              "    pm.expect(response).to.have.property('holding');",
+              "    pm.expect(response.holding).to.have.property('holding_id');",
+              "    pm.expect(response.holding.portfolio_id).to.eql(pm.collectionVariables.get('portfolioId'));",
+              "    pm.expect(response.holding.isin).to.eql(pm.collectionVariables.get('newHoldingIsin'));",
+              "    pm.expect(response.holding.quantity).to.eql(100);",
               "});"
             ]
           }
@@ -181,12 +181,16 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n    \"portfolioId\": \"{{portfolioId}}\",\n    \"isin\": \"US0378331005\",\n    \"quantity\": 100,\n    \"price\": 150.50\n}"
+          "raw": "{\n    \"portfolio_id\": \"{{portfolioId}}\",\n    \"isin\": \"{{newHoldingIsin}}\",\n    \"quantity\": 100,\n    \"start_date\": \"2025-01-31\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/holdings",
-          "host": ["{{baseUrl}}"],
-          "path": ["holdings"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "holdings"
+          ]
         }
       }
     },
@@ -203,10 +207,11 @@
               "",
               "pm.test('Response has correct holding data', function() {",
               "    const response = pm.response.json();",
-              "    pm.expect(response.id).to.eql(pm.environment.get('holdingId'));",
-              "    pm.expect(response.portfolioId).to.eql(pm.environment.get('portfolioId'));",
-              "    pm.expect(response).to.have.property('stock');",
-              "    pm.expect(response).to.have.property('currentPrice');",
+              "    pm.expect(response).to.have.property('holding');",
+              "    pm.expect(response.holding.holding_id).to.eql(pm.collectionVariables.get('readHoldingId'));",
+              "    pm.expect(response.holding.portfolio_id).to.eql(pm.collectionVariables.get('portfolioId'));",
+              "    pm.expect(response.holding).to.have.property('isin');",
+              "    pm.expect(response.holding).to.have.property('quantity');",
               "});"
             ]
           }
@@ -221,9 +226,14 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/holdings/{{holdingId}}",
-          "host": ["{{baseUrl}}"],
-          "path": ["holdings", "{{holdingId}}"]
+          "raw": "{{baseUrl}}/holdings/{{readHoldingId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "holdings",
+            "{{readHoldingId}}"
+          ]
         }
       }
     },
@@ -240,8 +250,9 @@
               "",
               "pm.test('Response has updated holding data', function() {",
               "    const response = pm.response.json();",
-              "    pm.expect(response.id).to.eql(pm.environment.get('holdingId'));",
-              "    pm.expect(response.quantity).to.eql(150);",
+              "    pm.expect(response).to.have.property('holding');",
+              "    pm.expect(response.holding.holding_id).to.eql(pm.collectionVariables.get('updateHoldingId'));",
+              "    pm.expect(response.holding.quantity).to.eql(150);",
               "});"
             ]
           }
@@ -264,9 +275,14 @@
           "raw": "{\n    \"quantity\": 150\n}"
         },
         "url": {
-          "raw": "{{baseUrl}}/holdings/{{holdingId}}",
-          "host": ["{{baseUrl}}"],
-          "path": ["holdings", "{{holdingId}}"]
+          "raw": "{{baseUrl}}/holdings/{{updateHoldingId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "holdings",
+            "{{updateHoldingId}}"
+          ]
         }
       }
     },
@@ -283,10 +299,11 @@
               "",
               "pm.test('Response has performance metrics', function() {",
               "    const response = pm.response.json();",
-              "    pm.expect(response).to.have.property('totalInvested');",
-              "    pm.expect(response).to.have.property('currentValue');",
-              "    pm.expect(response).to.have.property('totalReturn');",
-              "    pm.expect(response).to.have.property('totalReturnPercentage');",
+              "    pm.expect(response).to.have.property('performance');",
+              "    pm.expect(response.performance).to.have.property('total_invested');",
+              "    pm.expect(response.performance).to.have.property('current_value');",
+              "    pm.expect(response.performance).to.have.property('total_return');",
+              "    pm.expect(response.performance).to.have.property('total_return_percentage');",
               "});"
             ]
           }
@@ -301,9 +318,15 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/holdings/{{holdingId}}/performance",
-          "host": ["{{baseUrl}}"],
-          "path": ["holdings", "{{holdingId}}", "performance"]
+          "raw": "{{baseUrl}}/holdings/{{performanceHoldingId}}/performance",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "holdings",
+            "{{performanceHoldingId}}",
+            "performance"
+          ]
         }
       }
     },
@@ -320,11 +343,12 @@
               "",
               "pm.test('Response has value details', function() {",
               "    const response = pm.response.json();",
-              "    pm.expect(response).to.have.property('quantity');",
-              "    pm.expect(response).to.have.property('costBasis');",
-              "    pm.expect(response).to.have.property('averageCost');",
-              "    pm.expect(response).to.have.property('currentValue');",
-              "    pm.expect(response).to.have.property('unrealizedGainLoss');",
+              "    pm.expect(response).to.have.property('value');",
+              "    pm.expect(response.value).to.have.property('quantity');",
+              "    pm.expect(response.value).to.have.property('cost_basis');",
+              "    pm.expect(response.value).to.have.property('average_cost');",
+              "    pm.expect(response.value).to.have.property('current_value');",
+              "    pm.expect(response.value).to.have.property('unrealized_gain_loss');",
               "});"
             ]
           }
@@ -339,9 +363,15 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/holdings/{{holdingId}}/value",
-          "host": ["{{baseUrl}}"],
-          "path": ["holdings", "{{holdingId}}", "value"]
+          "raw": "{{baseUrl}}/holdings/{{valueHoldingId}}/value",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "holdings",
+            "{{valueHoldingId}}",
+            "value"
+          ]
         }
       }
     },
@@ -358,12 +388,13 @@
               "",
               "pm.test('Response is an array of transactions', function() {",
               "    const response = pm.response.json();",
-              "    pm.expect(response).to.be.an('array');",
-              "    if (response.length > 0) {",
-              "        pm.expect(response[0]).to.have.property('id');",
-              "        pm.expect(response[0]).to.have.property('type');",
-              "        pm.expect(response[0]).to.have.property('quantity');",
-              "        pm.expect(response[0]).to.have.property('price');",
+              "    pm.expect(response).to.have.property('transactions');",
+              "    pm.expect(response.transactions).to.be.an('array');",
+              "    if (response.transactions.length > 0) {",
+              "        pm.expect(response.transactions[0]).to.have.property('transaction_id');",
+              "        pm.expect(response.transactions[0]).to.have.property('buy');",
+              "        pm.expect(response.transactions[0]).to.have.property('amount');",
+              "        pm.expect(response.transactions[0]).to.have.property('price');",
               "    }",
               "});"
             ]
@@ -379,9 +410,15 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/holdings/{{holdingId}}/transactions",
-          "host": ["{{baseUrl}}"],
-          "path": ["holdings", "{{holdingId}}", "transactions"]
+          "raw": "{{baseUrl}}/holdings/{{transactionsHoldingId}}/transactions",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "holdings",
+            "{{transactionsHoldingId}}",
+            "transactions"
+          ]
         }
       }
     },
@@ -398,11 +435,12 @@
               "",
               "pm.test('Response has history data', function() {",
               "    const response = pm.response.json();",
-              "    pm.expect(response).to.be.an('array');",
-              "    if (response.length > 0) {",
-              "        pm.expect(response[0]).to.have.property('date');",
-              "        pm.expect(response[0]).to.have.property('value');",
-              "        pm.expect(response[0]).to.have.property('quantity');",
+              "    pm.expect(response).to.have.property('history');",
+              "    pm.expect(response.history).to.be.an('array');",
+              "    if (response.history.length > 0) {",
+              "        pm.expect(response.history[0]).to.have.property('date');",
+              "        pm.expect(response.history[0]).to.have.property('value');",
+              "        pm.expect(response.history[0]).to.have.property('quantity');",
               "    }",
               "});"
             ]
@@ -418,9 +456,15 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/holdings/{{holdingId}}/history",
-          "host": ["{{baseUrl}}"],
-          "path": ["holdings", "{{holdingId}}", "history"]
+          "raw": "{{baseUrl}}/holdings/{{historyHoldingId}}/history",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "holdings",
+            "{{historyHoldingId}}",
+            "history"
+          ]
         }
       }
     },
@@ -437,6 +481,7 @@
               "",
               "pm.test('Response has correct error message', function() {",
               "    const response = pm.response.json();",
+              "    pm.expect(response).to.have.property('error');",
               "    pm.expect(response.error).to.have.property('message');",
               "    pm.expect(response.error.message).to.include('Forbidden');",
               "});"
@@ -453,9 +498,14 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/holdings/other-user-holding-id",
-          "host": ["{{baseUrl}}"],
-          "path": ["holdings", "other-user-holding-id"]
+          "raw": "{{baseUrl}}/holdings/{{otherUserHoldingId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "holdings",
+            "{{otherUserHoldingId}}"
+          ]
         }
       }
     },
@@ -482,9 +532,14 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/holdings/{{holdingId}}",
-          "host": ["{{baseUrl}}"],
-          "path": ["holdings", "{{holdingId}}"]
+          "raw": "{{baseUrl}}/holdings/{{deleteHoldingId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "holdings",
+            "{{deleteHoldingId}}"
+          ]
         }
       }
     }
@@ -493,6 +548,56 @@
     {
       "key": "baseUrl",
       "value": "http://localhost:3000/api"
+    },
+    {
+      "key": "portfolioId",
+      "value": "portfolio-3",
+      "description": "Healthcare Focus portfolio owned by test user janes"
+    },
+    {
+      "key": "readHoldingId",
+      "value": "holding-5",
+      "description": "Existing holding from test data for read operations"
+    },
+    {
+      "key": "updateHoldingId",
+      "value": "holding-6",
+      "description": "Existing holding from test data for update operations"
+    },
+    {
+      "key": "performanceHoldingId",
+      "value": "holding-5",
+      "description": "Existing holding from test data for performance metrics"
+    },
+    {
+      "key": "valueHoldingId",
+      "value": "holding-5",
+      "description": "Existing holding from test data for value calculations"
+    },
+    {
+      "key": "transactionsHoldingId",
+      "value": "holding-5",
+      "description": "Existing holding from test data for transaction history"
+    },
+    {
+      "key": "historyHoldingId",
+      "value": "holding-5",
+      "description": "Existing holding from test data for historical data"
+    },
+    {
+      "key": "deleteHoldingId",
+      "value": "holding-6",
+      "description": "Existing holding from test data for deletion"
+    },
+    {
+      "key": "otherUserHoldingId",
+      "value": "holding-1",
+      "description": "Holding owned by user-1 (johnd) for testing forbidden access"
+    },
+    {
+      "key": "newHoldingIsin",
+      "value": "US0378331005",
+      "description": "Apple Inc. stock ISIN for creating new holdings"
     }
   ]
 }
