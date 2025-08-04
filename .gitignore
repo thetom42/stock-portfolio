@@ -6,3 +6,5 @@ dist/
 *.db*
 .env
 coverage/
+.crush/
+.qodo/

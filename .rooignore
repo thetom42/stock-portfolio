@@ -1,0 +1,5 @@
+history/
+.qodo/
+.crush
+node_modules/
+crush.md
