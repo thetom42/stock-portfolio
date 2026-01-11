@@ -2,6 +2,7 @@ import type { TypedResponse, NextFunction, AuthenticatedRequest } from '../types
 import { CreateHoldingDTO, UpdateHoldingDTO, HoldingDetails, HoldingPerformance, HoldingValue, HoldingHistory } from '../models/Holding';
 import { Transaction } from '../models/Transaction';
 import { holdingService } from '../services/holdingService';
+import { portfolioService } from '../services/portfolioService';
 
 // Define response types
 type HoldingResponse = { holding: HoldingDetails };
@@ -24,13 +25,26 @@ export const createHolding = async (
   next: NextFunction
 ) => {
   try {
+    const userId = req.user.id;
     const holdingData = req.body;
+
+    // Verify user owns the target portfolio
+    const portfolio = await portfolioService.getPortfolioById(holdingData.portfolioId);
+    if (!portfolio) {
+      return res.status(404).json({ error: 'Portfolio not found' });
+    }
+
+    // Ownership check
+    if (portfolio.userId !== userId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
     const holding = await holdingService.createHolding(holdingData);
     res.status(201).json({ holding });
   } catch (error) {
     if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        res.status(403).json({ error: error.message });
+      if (error.message === 'Stock not found') {
+        res.status(404).json({ error: error.message });
       } else {
         next(error);
       }
@@ -46,11 +60,18 @@ export const getHolding = async (
   next: NextFunction
 ) => {
   try {
+    const userId = req.user.id;
     const holdingId = req.params.id;
     const holding = await holdingService.getHoldingById(holdingId);
 
     if (!holding) {
       return res.status(404).json({ error: 'Holding not found' });
+    }
+
+    // Verify user owns the portfolio that contains this holding
+    const portfolio = await portfolioService.getPortfolioById(holding.portfolioId);
+    if (!portfolio || portfolio.userId !== userId) {
+      return res.status(403).json({ error: 'Forbidden' });
     }
 
     res.json({ holding });
@@ -65,13 +86,23 @@ export const updateHolding = async (
   next: NextFunction
 ) => {
   try {
+    const userId = req.user.id;
     const holdingId = req.params.id;
     const updateData = req.body;
 
-    const updatedHolding = await holdingService.updateHolding(holdingId, updateData);
-    if (!updatedHolding) {
+    // First check if holding exists
+    const existingHolding = await holdingService.getHoldingById(holdingId);
+    if (!existingHolding) {
       return res.status(404).json({ error: 'Holding not found' });
     }
+
+    // Verify user owns the portfolio that contains this holding
+    const portfolio = await portfolioService.getPortfolioById(existingHolding.portfolioId);
+    if (!portfolio || portfolio.userId !== userId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const updatedHolding = await holdingService.updateHolding(holdingId, updateData);
     res.json({ holding: updatedHolding });
   } catch (error) {
     next(error);
@@ -84,19 +115,25 @@ export const deleteHolding = async (
   next: NextFunction
 ) => {
   try {
+    const userId = req.user.id;
     const holdingId = req.params.id;
+
+    // First check if holding exists
+    const existingHolding = await holdingService.getHoldingById(holdingId);
+    if (!existingHolding) {
+      return res.status(404).json({ error: 'Holding not found' });
+    }
+
+    // Verify user owns the portfolio that contains this holding
+    const portfolio = await portfolioService.getPortfolioById(existingHolding.portfolioId);
+    if (!portfolio || portfolio.userId !== userId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
     await holdingService.closeHolding(holdingId);
     res.status(204).send();
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Holding not found') {
-        res.status(404).json({ error: error.message });
-      } else {
-        next(error);
-      }
-    } else {
-      next(error);
-    }
+    next(error);
   }
 };
 
@@ -106,19 +143,25 @@ export const getHoldingPerformance = async (
   next: NextFunction
 ) => {
   try {
+    const userId = req.user.id;
     const holdingId = req.params.id;
+
+    // First check if holding exists
+    const holding = await holdingService.getHoldingById(holdingId);
+    if (!holding) {
+      return res.status(404).json({ error: 'Holding not found' });
+    }
+
+    // Verify user owns the portfolio that contains this holding
+    const portfolio = await portfolioService.getPortfolioById(holding.portfolioId);
+    if (!portfolio || portfolio.userId !== userId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
     const performance = await holdingService.getHoldingPerformance(holdingId);
     res.json({ performance });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Holding not found') {
-        res.status(404).json({ error: error.message });
-      } else {
-        next(error);
-      }
-    } else {
-      next(error);
-    }
+    next(error);
   }
 };
 
@@ -128,19 +171,25 @@ export const getHoldingTransactions = async (
   next: NextFunction
 ) => {
   try {
+    const userId = req.user.id;
     const holdingId = req.params.id;
+
+    // First check if holding exists
+    const holding = await holdingService.getHoldingById(holdingId);
+    if (!holding) {
+      return res.status(404).json({ error: 'Holding not found' });
+    }
+
+    // Verify user owns the portfolio that contains this holding
+    const portfolio = await portfolioService.getPortfolioById(holding.portfolioId);
+    if (!portfolio || portfolio.userId !== userId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
     const transactions = await holdingService.getHoldingTransactions(holdingId);
     res.json({ transactions });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Holding not found') {
-        res.status(404).json({ error: error.message });
-      } else {
-        next(error);
-      }
-    } else {
-      next(error);
-    }
+    next(error);
   }
 };
 
@@ -150,19 +199,25 @@ export const getHoldingValue = async (
   next: NextFunction
 ) => {
   try {
+    const userId = req.user.id;
     const holdingId = req.params.id;
+
+    // First check if holding exists
+    const holding = await holdingService.getHoldingById(holdingId);
+    if (!holding) {
+      return res.status(404).json({ error: 'Holding not found' });
+    }
+
+    // Verify user owns the portfolio that contains this holding
+    const portfolio = await portfolioService.getPortfolioById(holding.portfolioId);
+    if (!portfolio || portfolio.userId !== userId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
     const value = await holdingService.getHoldingValue(holdingId);
     res.json({ value });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Holding not found') {
-        res.status(404).json({ error: error.message });
-      } else {
-        next(error);
-      }
-    } else {
-      next(error);
-    }
+    next(error);
   }
 };
 
@@ -172,18 +227,24 @@ export const getHoldingHistory = async (
   next: NextFunction
 ) => {
   try {
+    const userId = req.user.id;
     const holdingId = req.params.id;
+
+    // First check if holding exists
+    const holding = await holdingService.getHoldingById(holdingId);
+    if (!holding) {
+      return res.status(404).json({ error: 'Holding not found' });
+    }
+
+    // Verify user owns the portfolio that contains this holding
+    const portfolio = await portfolioService.getPortfolioById(holding.portfolioId);
+    if (!portfolio || portfolio.userId !== userId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
     const history = await holdingService.getHoldingHistory(holdingId);
     res.json({ history });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Holding not found') {
-        res.status(404).json({ error: error.message });
-      } else {
-        next(error);
-      }
-    } else {
-      next(error);
-    }
+    next(error);
   }
 };

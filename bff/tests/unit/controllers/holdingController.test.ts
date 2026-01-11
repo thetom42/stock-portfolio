@@ -1,10 +1,12 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { holdingService } from '../../../src/services/holdingService';
+import { portfolioService } from '../../../src/services/portfolioService';
 import * as holdingController from '../../../src/controllers/holdingController';
 import { CreateHoldingDTO, UpdateHoldingDTO } from '../../../src/models/Holding';
 import { createMockRequest, RequestWithUser } from '../../helpers/mockRequest';
 import { createMockResponse, MockResponse, verifyResponse } from '../../helpers/mockResponse';
+
 describe('HoldingController', () => {
   // Date matcher for response verification
   const dateMatcher = { kind: 'date' };
@@ -24,6 +26,8 @@ describe('HoldingController', () => {
     sinon.stub(holdingService, 'getHoldingTransactions');
     sinon.stub(holdingService, 'getHoldingValue');
     sinon.stub(holdingService, 'getHoldingHistory');
+    // Stub portfolioService for ownership checks
+    sinon.stub(portfolioService, 'getPortfolioById');
   });
 
   afterEach(() => {
@@ -39,8 +43,16 @@ describe('HoldingController', () => {
     };
 
     it('should create holding and return 201 status', async () => {
-      req = createMockRequest({ body: mockCreateData });
+      req = createMockRequest({ body: mockCreateData, user: { id: 'user1' } });
       const startDate = new Date();
+      const createdAt = new Date();
+      // Mock portfolio ownership check
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'user1',
+        name: 'Test Portfolio',
+        createdAt
+      });
       (holdingService.createHolding as sinon.SinonStub).resolves({
         id: '1',
         portfolioId: mockCreateData.portfolioId,
@@ -64,8 +76,39 @@ describe('HoldingController', () => {
       });
     });
 
+    it('should return 404 if portfolio not found', async () => {
+      req = createMockRequest({ body: mockCreateData, user: { id: 'user1' } });
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves(null);
+
+      await holdingController.createHolding(req as any, res as any, next);
+
+      verifyResponse(res, 404, { error: 'Portfolio not found' });
+    });
+
+    it('should return 403 if user does not own portfolio', async () => {
+      req = createMockRequest({ body: mockCreateData, user: { id: 'user1' } });
+      const createdAt = new Date();
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'other-user',
+        name: 'Test Portfolio',
+        createdAt
+      });
+
+      await holdingController.createHolding(req as any, res as any, next);
+
+      verifyResponse(res, 403, { error: 'Forbidden' });
+    });
+
     it('should handle errors gracefully', async () => {
-      req = createMockRequest({ body: mockCreateData });
+      req = createMockRequest({ body: mockCreateData, user: { id: 'user1' } });
+      const createdAt = new Date();
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'user1',
+        name: 'Test Portfolio',
+        createdAt
+      });
       const error = new Error('Failed to create holding');
       (holdingService.createHolding as sinon.SinonStub).rejects(error);
 
@@ -77,8 +120,9 @@ describe('HoldingController', () => {
 
   describe('getHolding', () => {
     it('should return holding if found', async () => {
-      req = createMockRequest({ params: { id: '1' } });
+      req = createMockRequest({ params: { id: '1' }, user: { id: 'user1' } });
       const startDate = new Date();
+      const createdAt = new Date();
       (holdingService.getHoldingById as sinon.SinonStub).resolves({
         id: '1',
         portfolioId: '1',
@@ -86,6 +130,13 @@ describe('HoldingController', () => {
         quantity: 10,
         startDate,
         endDate: null
+      });
+      // Mock portfolio ownership check
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'user1',
+        name: 'Test Portfolio',
+        createdAt
       });
 
       await holdingController.getHolding(req as any, res as any, next);
@@ -103,7 +154,7 @@ describe('HoldingController', () => {
     });
 
     it('should return 404 if holding not found', async () => {
-      req = createMockRequest({ params: { id: '999' } });
+      req = createMockRequest({ params: { id: '999' }, user: { id: 'user1' } });
       (holdingService.getHoldingById as sinon.SinonStub).resolves(null);
 
       await holdingController.getHolding(req as any, res as any, next);
@@ -111,8 +162,32 @@ describe('HoldingController', () => {
       verifyResponse(res, 404, { error: 'Holding not found' });
     });
 
+    it('should return 403 if user does not own portfolio', async () => {
+      req = createMockRequest({ params: { id: '1' }, user: { id: 'user1' } });
+      const startDate = new Date();
+      const createdAt = new Date();
+      (holdingService.getHoldingById as sinon.SinonStub).resolves({
+        id: '1',
+        portfolioId: '1',
+        isin: 'US0378331005',
+        quantity: 10,
+        startDate,
+        endDate: null
+      });
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'other-user',
+        name: 'Test Portfolio',
+        createdAt
+      });
+
+      await holdingController.getHolding(req as any, res as any, next);
+
+      verifyResponse(res, 403, { error: 'Forbidden' });
+    });
+
     it('should handle errors gracefully', async () => {
-      req = createMockRequest({ params: { id: '1' } });
+      req = createMockRequest({ params: { id: '1' }, user: { id: 'user1' } });
       const error = new Error('Failed to fetch holding');
       (holdingService.getHoldingById as sinon.SinonStub).rejects(error);
 
@@ -130,9 +205,27 @@ describe('HoldingController', () => {
     it('should update holding successfully', async () => {
       req = createMockRequest({
         params: { id: '1' },
-        body: mockUpdateData
+        body: mockUpdateData,
+        user: { id: 'user1' }
       });
       const startDate = new Date();
+      const createdAt = new Date();
+      // Mock getHoldingById for existence and ownership check
+      (holdingService.getHoldingById as sinon.SinonStub).resolves({
+        id: '1',
+        portfolioId: '1',
+        isin: 'US0378331005',
+        quantity: 10,
+        startDate,
+        endDate: null
+      });
+      // Mock portfolio ownership check
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'user1',
+        name: 'Test Portfolio',
+        createdAt
+      });
       (holdingService.updateHolding as sinon.SinonStub).resolves({
         id: '1',
         portfolioId: '1',
@@ -159,19 +252,65 @@ describe('HoldingController', () => {
     it('should return 404 if holding not found', async () => {
       req = createMockRequest({
         params: { id: '999' },
-        body: mockUpdateData
+        body: mockUpdateData,
+        user: { id: 'user1' }
       });
-      (holdingService.updateHolding as sinon.SinonStub).resolves(null);
+      (holdingService.getHoldingById as sinon.SinonStub).resolves(null);
 
       await holdingController.updateHolding(req as any, res as any, next);
 
       verifyResponse(res, 404, { error: 'Holding not found' });
     });
 
+    it('should return 403 if user does not own portfolio', async () => {
+      req = createMockRequest({
+        params: { id: '1' },
+        body: mockUpdateData,
+        user: { id: 'user1' }
+      });
+      const startDate = new Date();
+      const createdAt = new Date();
+      (holdingService.getHoldingById as sinon.SinonStub).resolves({
+        id: '1',
+        portfolioId: '1',
+        isin: 'US0378331005',
+        quantity: 10,
+        startDate,
+        endDate: null
+      });
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'other-user',
+        name: 'Test Portfolio',
+        createdAt
+      });
+
+      await holdingController.updateHolding(req as any, res as any, next);
+
+      verifyResponse(res, 403, { error: 'Forbidden' });
+    });
+
     it('should handle errors gracefully', async () => {
       req = createMockRequest({
         params: { id: '1' },
-        body: mockUpdateData
+        body: mockUpdateData,
+        user: { id: 'user1' }
+      });
+      const startDate = new Date();
+      const createdAt = new Date();
+      (holdingService.getHoldingById as sinon.SinonStub).resolves({
+        id: '1',
+        portfolioId: '1',
+        isin: 'US0378331005',
+        quantity: 10,
+        startDate,
+        endDate: null
+      });
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'user1',
+        name: 'Test Portfolio',
+        createdAt
       });
       const error = new Error('Failed to update holding');
       (holdingService.updateHolding as sinon.SinonStub).rejects(error);
@@ -184,9 +323,26 @@ describe('HoldingController', () => {
 
   describe('deleteHolding', () => {
     it('should close holding successfully', async () => {
-      req = createMockRequest({ params: { id: '1' } });
+      req = createMockRequest({ params: { id: '1' }, user: { id: 'user1' } });
       const startDate = new Date();
       const endDate = new Date();
+      const createdAt = new Date();
+      // Mock getHoldingById for existence and ownership check
+      (holdingService.getHoldingById as sinon.SinonStub).resolves({
+        id: '1',
+        portfolioId: '1',
+        isin: 'US0378331005',
+        quantity: 10,
+        startDate,
+        endDate: null
+      });
+      // Mock portfolio ownership check
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'user1',
+        name: 'Test Portfolio',
+        createdAt
+      });
       (holdingService.closeHolding as sinon.SinonStub).resolves({
         id: '1',
         portfolioId: '1',
@@ -202,16 +358,56 @@ describe('HoldingController', () => {
     });
 
     it('should return 404 if holding not found', async () => {
-      req = createMockRequest({ params: { id: '999' } });
-      (holdingService.closeHolding as sinon.SinonStub).rejects(new Error('Holding not found'));
+      req = createMockRequest({ params: { id: '999' }, user: { id: 'user1' } });
+      (holdingService.getHoldingById as sinon.SinonStub).resolves(null);
 
       await holdingController.deleteHolding(req as any, res as any, next);
 
       verifyResponse(res, 404, { error: 'Holding not found' });
     });
 
+    it('should return 403 if user does not own portfolio', async () => {
+      req = createMockRequest({ params: { id: '1' }, user: { id: 'user1' } });
+      const startDate = new Date();
+      const createdAt = new Date();
+      (holdingService.getHoldingById as sinon.SinonStub).resolves({
+        id: '1',
+        portfolioId: '1',
+        isin: 'US0378331005',
+        quantity: 10,
+        startDate,
+        endDate: null
+      });
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'other-user',
+        name: 'Test Portfolio',
+        createdAt
+      });
+
+      await holdingController.deleteHolding(req as any, res as any, next);
+
+      verifyResponse(res, 403, { error: 'Forbidden' });
+    });
+
     it('should handle errors gracefully', async () => {
-      req = createMockRequest({ params: { id: '1' } });
+      req = createMockRequest({ params: { id: '1' }, user: { id: 'user1' } });
+      const startDate = new Date();
+      const createdAt = new Date();
+      (holdingService.getHoldingById as sinon.SinonStub).resolves({
+        id: '1',
+        portfolioId: '1',
+        isin: 'US0378331005',
+        quantity: 10,
+        startDate,
+        endDate: null
+      });
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'user1',
+        name: 'Test Portfolio',
+        createdAt
+      });
       const error = new Error('Failed to close holding');
       (holdingService.closeHolding as sinon.SinonStub).rejects(error);
 
@@ -223,7 +419,25 @@ describe('HoldingController', () => {
 
   describe('getHoldingPerformance', () => {
     it('should return performance metrics', async () => {
-      req = createMockRequest({ params: { id: '1' } });
+      req = createMockRequest({ params: { id: '1' }, user: { id: 'user1' } });
+      const startDate = new Date();
+      const createdAt = new Date();
+      // Mock getHoldingById for existence and ownership check
+      (holdingService.getHoldingById as sinon.SinonStub).resolves({
+        id: '1',
+        portfolioId: '1',
+        isin: 'US0378331005',
+        quantity: 10,
+        startDate,
+        endDate: null
+      });
+      // Mock portfolio ownership check
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'user1',
+        name: 'Test Portfolio',
+        createdAt
+      });
       (holdingService.getHoldingPerformance as sinon.SinonStub).resolves({
         totalReturn: 1000,
         percentageReturn: 10,
@@ -244,18 +458,60 @@ describe('HoldingController', () => {
     });
 
     it('should return 404 if holding not found', async () => {
-      req = createMockRequest({ params: { id: '999' } });
-      (holdingService.getHoldingPerformance as sinon.SinonStub).rejects(new Error('Holding not found'));
+      req = createMockRequest({ params: { id: '999' }, user: { id: 'user1' } });
+      (holdingService.getHoldingById as sinon.SinonStub).resolves(null);
 
       await holdingController.getHoldingPerformance(req as any, res as any, next);
 
       verifyResponse(res, 404, { error: 'Holding not found' });
     });
+
+    it('should return 403 if user does not own portfolio', async () => {
+      req = createMockRequest({ params: { id: '1' }, user: { id: 'user1' } });
+      const startDate = new Date();
+      const createdAt = new Date();
+      (holdingService.getHoldingById as sinon.SinonStub).resolves({
+        id: '1',
+        portfolioId: '1',
+        isin: 'US0378331005',
+        quantity: 10,
+        startDate,
+        endDate: null
+      });
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'other-user',
+        name: 'Test Portfolio',
+        createdAt
+      });
+
+      await holdingController.getHoldingPerformance(req as any, res as any, next);
+
+      verifyResponse(res, 403, { error: 'Forbidden' });
+    });
   });
 
   describe('getHoldingTransactions', () => {
     it('should return transactions', async () => {
-      req = createMockRequest({ params: { id: '1' } });
+      req = createMockRequest({ params: { id: '1' }, user: { id: 'user1' } });
+      const startDate = new Date();
+      const createdAt = new Date();
+      // Mock getHoldingById for existence and ownership check
+      (holdingService.getHoldingById as sinon.SinonStub).resolves({
+        id: '1',
+        portfolioId: '1',
+        isin: 'US0378331005',
+        quantity: 10,
+        startDate,
+        endDate: null
+      });
+      // Mock portfolio ownership check
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'user1',
+        name: 'Test Portfolio',
+        createdAt
+      });
       (holdingService.getHoldingTransactions as sinon.SinonStub).resolves([
         {
           id: '1',
@@ -286,18 +542,60 @@ describe('HoldingController', () => {
     });
 
     it('should return 404 if holding not found', async () => {
-      req = createMockRequest({ params: { id: '999' } });
-      (holdingService.getHoldingTransactions as sinon.SinonStub).rejects(new Error('Holding not found'));
+      req = createMockRequest({ params: { id: '999' }, user: { id: 'user1' } });
+      (holdingService.getHoldingById as sinon.SinonStub).resolves(null);
 
       await holdingController.getHoldingTransactions(req as any, res as any, next);
 
       verifyResponse(res, 404, { error: 'Holding not found' });
     });
+
+    it('should return 403 if user does not own portfolio', async () => {
+      req = createMockRequest({ params: { id: '1' }, user: { id: 'user1' } });
+      const startDate = new Date();
+      const createdAt = new Date();
+      (holdingService.getHoldingById as sinon.SinonStub).resolves({
+        id: '1',
+        portfolioId: '1',
+        isin: 'US0378331005',
+        quantity: 10,
+        startDate,
+        endDate: null
+      });
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'other-user',
+        name: 'Test Portfolio',
+        createdAt
+      });
+
+      await holdingController.getHoldingTransactions(req as any, res as any, next);
+
+      verifyResponse(res, 403, { error: 'Forbidden' });
+    });
   });
 
   describe('getHoldingValue', () => {
     it('should return value metrics', async () => {
-      req = createMockRequest({ params: { id: '1' } });
+      req = createMockRequest({ params: { id: '1' }, user: { id: 'user1' } });
+      const startDate = new Date();
+      const createdAt = new Date();
+      // Mock getHoldingById for existence and ownership check
+      (holdingService.getHoldingById as sinon.SinonStub).resolves({
+        id: '1',
+        portfolioId: '1',
+        isin: 'US0378331005',
+        quantity: 10,
+        startDate,
+        endDate: null
+      });
+      // Mock portfolio ownership check
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'user1',
+        name: 'Test Portfolio',
+        createdAt
+      });
       (holdingService.getHoldingValue as sinon.SinonStub).resolves({
         currentValue: 2000,
         costBasis: 1500,
@@ -318,18 +616,60 @@ describe('HoldingController', () => {
     });
 
     it('should return 404 if holding not found', async () => {
-      req = createMockRequest({ params: { id: '999' } });
-      (holdingService.getHoldingValue as sinon.SinonStub).rejects(new Error('Holding not found'));
+      req = createMockRequest({ params: { id: '999' }, user: { id: 'user1' } });
+      (holdingService.getHoldingById as sinon.SinonStub).resolves(null);
 
       await holdingController.getHoldingValue(req as any, res as any, next);
 
       verifyResponse(res, 404, { error: 'Holding not found' });
     });
+
+    it('should return 403 if user does not own portfolio', async () => {
+      req = createMockRequest({ params: { id: '1' }, user: { id: 'user1' } });
+      const startDate = new Date();
+      const createdAt = new Date();
+      (holdingService.getHoldingById as sinon.SinonStub).resolves({
+        id: '1',
+        portfolioId: '1',
+        isin: 'US0378331005',
+        quantity: 10,
+        startDate,
+        endDate: null
+      });
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'other-user',
+        name: 'Test Portfolio',
+        createdAt
+      });
+
+      await holdingController.getHoldingValue(req as any, res as any, next);
+
+      verifyResponse(res, 403, { error: 'Forbidden' });
+    });
   });
 
   describe('getHoldingHistory', () => {
     it('should return historical data', async () => {
-      req = createMockRequest({ params: { id: '1' } });
+      req = createMockRequest({ params: { id: '1' }, user: { id: 'user1' } });
+      const startDate = new Date();
+      const createdAt = new Date();
+      // Mock getHoldingById for existence and ownership check
+      (holdingService.getHoldingById as sinon.SinonStub).resolves({
+        id: '1',
+        portfolioId: '1',
+        isin: 'US0378331005',
+        quantity: 10,
+        startDate,
+        endDate: null
+      });
+      // Mock portfolio ownership check
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'user1',
+        name: 'Test Portfolio',
+        createdAt
+      });
       (holdingService.getHoldingHistory as sinon.SinonStub).resolves([
         {
           date: new Date(),
@@ -354,12 +694,36 @@ describe('HoldingController', () => {
     });
 
     it('should return 404 if holding not found', async () => {
-      req = createMockRequest({ params: { id: '999' } });
-      (holdingService.getHoldingHistory as sinon.SinonStub).rejects(new Error('Holding not found'));
+      req = createMockRequest({ params: { id: '999' }, user: { id: 'user1' } });
+      (holdingService.getHoldingById as sinon.SinonStub).resolves(null);
 
       await holdingController.getHoldingHistory(req as any, res as any, next);
 
       verifyResponse(res, 404, { error: 'Holding not found' });
+    });
+
+    it('should return 403 if user does not own portfolio', async () => {
+      req = createMockRequest({ params: { id: '1' }, user: { id: 'user1' } });
+      const startDate = new Date();
+      const createdAt = new Date();
+      (holdingService.getHoldingById as sinon.SinonStub).resolves({
+        id: '1',
+        portfolioId: '1',
+        isin: 'US0378331005',
+        quantity: 10,
+        startDate,
+        endDate: null
+      });
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'other-user',
+        name: 'Test Portfolio',
+        createdAt
+      });
+
+      await holdingController.getHoldingHistory(req as any, res as any, next);
+
+      verifyResponse(res, 403, { error: 'Forbidden' });
     });
   });
 });

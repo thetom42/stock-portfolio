@@ -54,10 +54,16 @@ export const getPortfolio = async (
 ) => {
   try {
     const portfolioId = req.params.id;
+    const userId = req.user.id;
     const portfolio = await portfolioService.getPortfolioById(portfolioId);
 
     if (!portfolio) {
       return res.status(404).json({ error: 'Portfolio not found' });
+    }
+
+    // Ownership check
+    if (portfolio.userId !== userId) {
+      return res.status(403).json({ error: 'Forbidden' });
     }
 
     res.json({ portfolio });
@@ -73,14 +79,21 @@ export const updatePortfolio = async (
 ) => {
   try {
     const portfolioId = req.params.id;
+    const userId = req.user.id;
     const updateData = req.body;
 
-    const updatedPortfolio = await portfolioService.updatePortfolio(portfolioId, updateData);
-
-    if (!updatedPortfolio) {
+    // First check ownership before updating
+    const existingPortfolio = await portfolioService.getPortfolioById(portfolioId);
+    if (!existingPortfolio) {
       return res.status(404).json({ error: 'Portfolio not found' });
     }
 
+    // Ownership check
+    if (existingPortfolio.userId !== userId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const updatedPortfolio = await portfolioService.updatePortfolio(portfolioId, updateData);
     res.json({ portfolio: updatedPortfolio });
   } catch (error) {
     next(error);
@@ -94,12 +107,22 @@ export const deletePortfolio = async (
 ) => {
   try {
     const portfolioId = req.params.id;
+    const userId = req.user.id;
+
+    // First check ownership before deleting
+    const existingPortfolio = await portfolioService.getPortfolioById(portfolioId);
+    if (!existingPortfolio) {
+      return res.status(404).json({ error: 'Portfolio not found' });
+    }
+
+    // Ownership check
+    if (existingPortfolio.userId !== userId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
     await portfolioService.deletePortfolio(portfolioId);
     res.status(204).send();
   } catch (error) {
-    if (error instanceof Error && error.message === 'Portfolio not found') {
-      return res.status(404).json({ error: error.message });
-    }
     next(error);
   }
 };
@@ -111,12 +134,20 @@ export const getPortfolioSummary = async (
 ) => {
   try {
     const portfolioId = req.params.id;
-    const summary = await portfolioService.getPortfolioSummary(portfolioId);
+    const userId = req.user.id;
 
-    if (!summary) {
+    // First check ownership
+    const portfolio = await portfolioService.getPortfolioById(portfolioId);
+    if (!portfolio) {
       return res.status(404).json({ error: 'Portfolio not found' });
     }
 
+    // Ownership check
+    if (portfolio.userId !== userId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const summary = await portfolioService.getPortfolioSummary(portfolioId);
     res.json({ summary });
   } catch (error) {
     next(error);
@@ -130,12 +161,20 @@ export const getPortfolioPerformance = async (
 ) => {
   try {
     const portfolioId = req.params.id;
-    const performance = await portfolioService.getPortfolioPerformance(portfolioId) as PerformanceData;
+    const userId = req.user.id;
 
-    if (!performance) {
+    // First check ownership
+    const portfolio = await portfolioService.getPortfolioById(portfolioId);
+    if (!portfolio) {
       return res.status(404).json({ error: 'Portfolio not found' });
     }
 
+    // Ownership check
+    if (portfolio.userId !== userId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const performance = await portfolioService.getPortfolioPerformance(portfolioId) as PerformanceData;
     res.json({ performance });
   } catch (error) {
     next(error);
@@ -149,12 +188,20 @@ export const getPortfolioHoldings = async (
 ) => {
   try {
     const portfolioId = req.params.id;
-    const holdings = await portfolioService.getPortfolioHoldings(portfolioId);
+    const userId = req.user.id;
 
-    if (!holdings) {
+    // First check ownership
+    const portfolio = await portfolioService.getPortfolioById(portfolioId);
+    if (!portfolio) {
       return res.status(404).json({ error: 'Portfolio not found' });
     }
 
+    // Ownership check
+    if (portfolio.userId !== userId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const holdings = await portfolioService.getPortfolioHoldings(portfolioId);
     res.json({ holdings });
   } catch (error) {
     next(error);
@@ -168,12 +215,20 @@ export const getPortfolioAllocation = async (
 ) => {
   try {
     const portfolioId = req.params.id;
-    const allocation = await portfolioService.getPortfolioAllocation(portfolioId) as AllocationData;
+    const userId = req.user.id;
 
-    if (!allocation) {
+    // First check ownership
+    const portfolio = await portfolioService.getPortfolioById(portfolioId);
+    if (!portfolio) {
       return res.status(404).json({ error: 'Portfolio not found' });
     }
 
+    // Ownership check
+    if (portfolio.userId !== userId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const allocation = await portfolioService.getPortfolioAllocation(portfolioId) as AllocationData;
     res.json({ allocation });
   } catch (error) {
     next(error);
@@ -187,12 +242,20 @@ export const getPortfolioReturns = async (
 ) => {
   try {
     const portfolioId = req.params.id;
-    const returns = await portfolioService.getPortfolioReturns(portfolioId) as ReturnsData;
+    const userId = req.user.id;
 
-    if (!returns) {
+    // First check ownership
+    const portfolio = await portfolioService.getPortfolioById(portfolioId);
+    if (!portfolio) {
       return res.status(404).json({ error: 'Portfolio not found' });
     }
 
+    // Ownership check
+    if (portfolio.userId !== userId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const returns = await portfolioService.getPortfolioReturns(portfolioId) as ReturnsData;
     res.json({ returns });
   } catch (error) {
     next(error);
@@ -206,12 +269,20 @@ export const getPortfolioHistory = async (
 ) => {
   try {
     const portfolioId = req.params.id;
-    const history = await portfolioService.getPortfolioHistory(portfolioId) as HistoryData;
+    const userId = req.user.id;
 
-    if (!history) {
+    // First check ownership
+    const portfolio = await portfolioService.getPortfolioById(portfolioId);
+    if (!portfolio) {
       return res.status(404).json({ error: 'Portfolio not found' });
     }
 
+    // Ownership check
+    if (portfolio.userId !== userId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const history = await portfolioService.getPortfolioHistory(portfolioId) as HistoryData;
     res.json({ history });
   } catch (error) {
     next(error);
