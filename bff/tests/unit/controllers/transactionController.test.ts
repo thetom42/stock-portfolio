@@ -9,8 +9,6 @@ import { createMockRequest, RequestWithUser } from '../../helpers/mockRequest';
 import { createMockResponse, MockResponse, verifyResponse } from '../../helpers/mockResponse';
 
 describe('TransactionController', () => {
-  const dateMatcher = { kind: 'date' };
-
   let req: Partial<RequestWithUser>;
   let res: MockResponse;
   let next: sinon.SinonSpy;
