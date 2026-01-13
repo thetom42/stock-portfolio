@@ -1,28 +1,35 @@
 import 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { transactionService, setTransactionRepository, setHoldingRepository, setPortfolioRepository } from '../../../src/services/transactionService';
+import { transactionService, setTransactionRepository, setHoldingRepository } from '../../../src/services/transactionService';
 import { Transaction, CreateTransactionDTO, TransactionQueryParams } from '../../../src/models/Transaction';
-import { setupMockTransactionHoldingAndPortfolioRepos, resetAllMocks, createDecimal } from '../../helpers/mockRepositories';
+import { createDecimal, resetAllMocks } from '../../helpers/mockRepositories';
 
 describe('TransactionService', () => {
-  const userId = 'user123';
   const holdingId = 'holding123';
   const portfolioId = 'portfolio123';
   let mockTransactionRepo: any;
   let mockHoldingRepo: any;
-  let mockPortfolioRepo: any;
 
   beforeEach(() => {
-    const setup = setupMockTransactionHoldingAndPortfolioRepos();
-    mockTransactionRepo = setup.mockTransactionRepo;
-    mockHoldingRepo = setup.mockHoldingRepo;
-    mockPortfolioRepo = setup.mockPortfolioRepo;
+    // Create mock repositories
+    mockTransactionRepo = {
+      create: sinon.stub(),
+      findById: sinon.stub(),
+      findByHoldingId: sinon.stub(),
+      update: sinon.stub(),
+      delete: sinon.stub()
+    };
+
+    mockHoldingRepo = {
+      findById: sinon.stub(),
+      findByPortfolioId: sinon.stub(),
+      update: sinon.stub()
+    };
 
     // Inject mock repositories into the singleton instance
     setTransactionRepository(mockTransactionRepo);
     setHoldingRepository(mockHoldingRepo);
-    setPortfolioRepository(mockPortfolioRepo);
   });
 
   afterEach(() => {
@@ -72,11 +79,10 @@ describe('TransactionService', () => {
 
     it('should create a buy transaction successfully', async () => {
       mockHoldingRepo.findById.resolves(mockDBHolding);
-      mockPortfolioRepo.findById.resolves({ user_id: userId });
       mockTransactionRepo.create.resolves(mockDBTransaction);
       mockHoldingRepo.update.resolves({ ...mockDBHolding, quantity: 200 });
 
-      const result = await transactionService.createTransaction(userId, holdingId, mockCreateData);
+      const result = await transactionService.createTransaction(holdingId, mockCreateData);
 
       expect(result).to.deep.equal(expectedBFFTransaction);
       sinon.assert.calledWith(mockHoldingRepo.update, holdingId, { quantity: mockDBHolding.quantity + mockCreateData.amount });
@@ -96,11 +102,10 @@ describe('TransactionService', () => {
       };
 
       mockHoldingRepo.findById.resolves(mockDBHolding);
-      mockPortfolioRepo.findById.resolves({ user_id: userId });
       mockTransactionRepo.create.resolves(sellDBTransaction);
       mockHoldingRepo.update.resolves({ ...mockDBHolding, quantity: 50 });
 
-      const result = await transactionService.createTransaction(userId, holdingId, sellData);
+      const result = await transactionService.createTransaction(holdingId, sellData);
 
       expect(result).to.deep.equal(sellBFFTransaction);
       sinon.assert.calledWith(mockHoldingRepo.update, holdingId, { quantity: mockDBHolding.quantity - sellData.amount });
@@ -110,9 +115,8 @@ describe('TransactionService', () => {
       const sellData = { ...mockCreateData, buy: false, amount: 150 };
 
       mockHoldingRepo.findById.resolves(mockDBHolding);
-      mockPortfolioRepo.findById.resolves({ user_id: userId });
 
-      await expect(transactionService.createTransaction(userId, holdingId, sellData))
+      await expect(transactionService.createTransaction(holdingId, sellData))
         .to.be.rejectedWith('Insufficient holding quantity for sell transaction');
 
       sinon.assert.notCalled(mockTransactionRepo.create);
@@ -122,16 +126,8 @@ describe('TransactionService', () => {
     it('should throw error if holding not found', async () => {
       mockHoldingRepo.findById.resolves(null);
 
-      await expect(transactionService.createTransaction(userId, holdingId, mockCreateData))
+      await expect(transactionService.createTransaction(holdingId, mockCreateData))
         .to.be.rejectedWith('Holding not found');
-    });
-
-    it('should throw error if user not authorized', async () => {
-      mockHoldingRepo.findById.resolves(mockDBHolding);
-      mockPortfolioRepo.findById.resolves({ user_id: 'different-user' });
-
-      await expect(transactionService.createTransaction(userId, holdingId, mockCreateData))
-        .to.be.rejectedWith('Unauthorized');
     });
   });
 
@@ -162,38 +158,20 @@ describe('TransactionService', () => {
       broker: mockDBTransaction.broker
     };
 
-    it('should return transaction if authorized', async () => {
+    it('should return transaction if found', async () => {
       mockTransactionRepo.findById.resolves(mockDBTransaction);
-      mockHoldingRepo.findById.resolves({ portfolio_id: portfolioId });
-      mockPortfolioRepo.findById.resolves({ user_id: userId });
 
-      const result = await transactionService.getTransactionById(userId, transactionId);
+      const result = await transactionService.getTransactionById(transactionId);
 
       expect(result).to.deep.equal(expectedBFFTransaction);
     });
 
-    it('should throw error if transaction not found', async () => {
+    it('should return null if transaction not found', async () => {
       mockTransactionRepo.findById.resolves(null);
 
-      await expect(transactionService.getTransactionById(userId, transactionId))
-        .to.be.rejectedWith('Transaction not found');
-    });
+      const result = await transactionService.getTransactionById(transactionId);
 
-    it('should throw error if holding not found', async () => {
-      mockTransactionRepo.findById.resolves(mockDBTransaction);
-      mockHoldingRepo.findById.resolves(null);
-
-      await expect(transactionService.getTransactionById(userId, transactionId))
-        .to.be.rejectedWith('Holding not found');
-    });
-
-    it('should throw error if user not authorized', async () => {
-      mockTransactionRepo.findById.resolves(mockDBTransaction);
-      mockHoldingRepo.findById.resolves({ portfolio_id: portfolioId });
-      mockPortfolioRepo.findById.resolves({ user_id: 'different-user' });
-
-      await expect(transactionService.getTransactionById(userId, transactionId))
-        .to.be.rejectedWith('Unauthorized');
+      expect(result).to.be.null;
     });
   });
 
@@ -235,11 +213,9 @@ describe('TransactionService', () => {
     }));
 
     it('should return transactions with default params', async () => {
-      mockHoldingRepo.findById.resolves({ portfolio_id: portfolioId });
-      mockPortfolioRepo.findById.resolves({ user_id: userId });
       mockTransactionRepo.findByHoldingId.resolves(mockDBTransactions);
 
-      const result = await transactionService.getTransactionsByHolding(userId, holdingId);
+      const result = await transactionService.getTransactionsByHolding(holdingId);
 
       expect(result.transactions).to.deep.equal(expectedBFFTransactions);
       expect(result.total).to.equal(2);
@@ -254,11 +230,9 @@ describe('TransactionService', () => {
         endDate: '2023-03-01'
       };
 
-      mockHoldingRepo.findById.resolves({ portfolio_id: portfolioId });
-      mockPortfolioRepo.findById.resolves({ user_id: userId });
       mockTransactionRepo.findByHoldingId.resolves(mockDBTransactions);
 
-      const result = await transactionService.getTransactionsByHolding(userId, holdingId, queryParams);
+      const result = await transactionService.getTransactionsByHolding(holdingId, queryParams);
 
       expect(result.transactions).to.have.lengthOf(1);
       expect(result.transactions[0].id).to.equal('trans1');
@@ -269,11 +243,9 @@ describe('TransactionService', () => {
         type: 'SELL'
       };
 
-      mockHoldingRepo.findById.resolves({ portfolio_id: portfolioId });
-      mockPortfolioRepo.findById.resolves({ user_id: userId });
       mockTransactionRepo.findByHoldingId.resolves(mockDBTransactions);
 
-      const result = await transactionService.getTransactionsByHolding(userId, holdingId, queryParams);
+      const result = await transactionService.getTransactionsByHolding(holdingId, queryParams);
 
       expect(result.transactions).to.have.lengthOf(1);
       expect(result.transactions[0].buy).to.be.false;
@@ -285,11 +257,9 @@ describe('TransactionService', () => {
         order: 'desc'
       };
 
-      mockHoldingRepo.findById.resolves({ portfolio_id: portfolioId });
-      mockPortfolioRepo.findById.resolves({ user_id: userId });
       mockTransactionRepo.findByHoldingId.resolves(mockDBTransactions);
 
-      const result = await transactionService.getTransactionsByHolding(userId, holdingId, queryParams);
+      const result = await transactionService.getTransactionsByHolding(holdingId, queryParams);
 
       expect(result.transactions[0].price).to.be.greaterThan(result.transactions[1].price);
     });
@@ -300,11 +270,9 @@ describe('TransactionService', () => {
         limit: 1
       };
 
-      mockHoldingRepo.findById.resolves({ portfolio_id: portfolioId });
-      mockPortfolioRepo.findById.resolves({ user_id: userId });
       mockTransactionRepo.findByHoldingId.resolves(mockDBTransactions);
 
-      const result = await transactionService.getTransactionsByHolding(userId, holdingId, queryParams);
+      const result = await transactionService.getTransactionsByHolding(holdingId, queryParams);
 
       expect(result.transactions).to.have.lengthOf(1);
       expect(result.total).to.equal(2);
@@ -357,12 +325,11 @@ describe('TransactionService', () => {
     }));
 
     it('should return transactions for all holdings', async () => {
-      mockPortfolioRepo.findById.resolves({ user_id: userId });
       mockHoldingRepo.findByPortfolioId.resolves(mockDBHoldings);
       mockTransactionRepo.findByHoldingId.onFirstCall().resolves([mockDBTransactions[0]]);
       mockTransactionRepo.findByHoldingId.onSecondCall().resolves([mockDBTransactions[1]]);
 
-      const result = await transactionService.getTransactionsByPortfolio(userId, portfolioId);
+      const result = await transactionService.getTransactionsByPortfolio(portfolioId);
 
       expect(result.transactions).to.deep.equal(expectedBFFTransactions);
       sinon.assert.calledWith(mockTransactionRepo.findByHoldingId, 'holding1');
@@ -376,24 +343,23 @@ describe('TransactionService', () => {
         order: 'asc'
       };
 
-      mockPortfolioRepo.findById.resolves({ user_id: userId });
       mockHoldingRepo.findByPortfolioId.resolves(mockDBHoldings);
       mockTransactionRepo.findByHoldingId.onFirstCall().resolves([mockDBTransactions[0]]);
       mockTransactionRepo.findByHoldingId.onSecondCall().resolves([mockDBTransactions[1]]);
 
-      const result = await transactionService.getTransactionsByPortfolio(userId, portfolioId, queryParams);
+      const result = await transactionService.getTransactionsByPortfolio(portfolioId, queryParams);
 
       expect(result.transactions).to.have.lengthOf(1);
       expect(result.transactions[0].buy).to.be.true;
     });
 
-    it('should throw error if user not authorized', async () => {
-      mockPortfolioRepo.findById.resolves({ user_id: 'different-user' });
+    it('should return empty transactions for portfolio with no holdings', async () => {
+      mockHoldingRepo.findByPortfolioId.resolves([]);
 
-      await expect(transactionService.getTransactionsByPortfolio(userId, portfolioId))
-        .to.be.rejectedWith('Unauthorized');
+      const result = await transactionService.getTransactionsByPortfolio(portfolioId);
 
-      sinon.assert.notCalled(mockHoldingRepo.findByPortfolioId);
+      expect(result.transactions).to.have.lengthOf(0);
+      expect(result.total).to.equal(0);
     });
   });
 
@@ -412,11 +378,10 @@ describe('TransactionService', () => {
         broker: 'TEST_BROKER'
       };
 
-      mockHoldingRepo.findById.resolves({ portfolio_id: portfolioId });
-      mockPortfolioRepo.findById.resolves({ user_id: userId });
+      mockHoldingRepo.findById.resolves({ holding_id: holdingId, portfolio_id: portfolioId, quantity: 100 });
       mockTransactionRepo.create.resolves(mockDBTransaction);
 
-      await transactionService.createTransaction(userId, holdingId, {
+      await transactionService.createTransaction(holdingId, {
         buy: true,
         amount: 100,
         price: 150.50,
@@ -445,11 +410,10 @@ describe('TransactionService', () => {
           broker: 'TEST_BROKER'
         };
 
-        mockHoldingRepo.findById.resolves({ portfolio_id: portfolioId });
-        mockPortfolioRepo.findById.resolves({ user_id: userId });
+        mockHoldingRepo.findById.resolves({ holding_id: holdingId, portfolio_id: portfolioId, quantity: 100 });
         mockTransactionRepo.create.resolves(mockDBTransaction);
 
-        await transactionService.createTransaction(userId, holdingId, {
+        await transactionService.createTransaction(holdingId, {
           buy: true,
           amount: 100,
           price: 150.50,
@@ -464,11 +428,10 @@ describe('TransactionService', () => {
     });
 
     it('should handle ID generation errors', async () => {
-      mockHoldingRepo.findById.resolves({ portfolio_id: portfolioId });
-      mockPortfolioRepo.findById.resolves({ user_id: userId });
+      mockHoldingRepo.findById.resolves({ holding_id: holdingId, portfolio_id: portfolioId, quantity: 100 });
       mockTransactionRepo.create.rejects(new Error('ID generation failed'));
 
-      await expect(transactionService.createTransaction(userId, holdingId, {
+      await expect(transactionService.createTransaction(holdingId, {
         buy: true,
         amount: 100,
         price: 150.50,

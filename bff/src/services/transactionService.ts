@@ -3,8 +3,7 @@ import { getPrismaClient } from '../utils/database';
 import crypto from 'crypto';
 import {
     TransactionRepository,
-    HoldingRepository,
-    PortfolioRepository
+    HoldingRepository
 } from '@stock-portfolio/db';
 import type { Transaction } from '@stock-portfolio/db/dist/models/Transaction';
 import { Decimal } from '@prisma/client/runtime/library';
@@ -24,14 +23,12 @@ const mapDBTransactionToBFF = (dbTransaction: Transaction): BFFTransaction => ({
 class TransactionService {
     private transactionRepository: TransactionRepository;
     private holdingRepository: HoldingRepository;
-    private portfolioRepository: PortfolioRepository;
     private static instance: TransactionService;
 
     private constructor() {
         const prisma = getPrismaClient();
         this.transactionRepository = new TransactionRepository(prisma);
         this.holdingRepository = new HoldingRepository(prisma);
-        this.portfolioRepository = new PortfolioRepository(prisma);
     }
 
     static getInstance(): TransactionService {
@@ -48,10 +45,6 @@ class TransactionService {
 
     setHoldingRepository(repo: HoldingRepository): void {
         this.holdingRepository = repo;
-    }
-
-    setPortfolioRepository(repo: PortfolioRepository): void {
-        this.portfolioRepository = repo;
     }
 
     // Helper function to map array of DB Transactions to BFF Transactions
@@ -123,21 +116,14 @@ class TransactionService {
     }
 
     async createTransaction(
-        userId: string,
         holdingId: string,
         transactionData: CreateTransactionDTO
     ): Promise<BFFTransaction> {
-        // Verify holding ownership through portfolio
+        // Get holding to calculate new quantity
         const holding = await this.holdingRepository.findById(holdingId);
 
         if (!holding) {
             throw new Error('Holding not found');
-        }
-
-        const portfolio = await this.portfolioRepository.findById(holding.portfolio_id);
-
-        if (!portfolio || portfolio.user_id !== userId) {
-            throw new Error('Unauthorized');
         }
 
         // Calculate new quantity before creating transaction
@@ -167,50 +153,20 @@ class TransactionService {
         return mapDBTransactionToBFF(transaction);
     }
 
-    async getTransactionById(
-        userId: string,
-        transactionId: string
-    ): Promise<BFFTransaction> {
+    async getTransactionById(transactionId: string): Promise<BFFTransaction | null> {
         const transaction = await this.transactionRepository.findById(transactionId);
 
         if (!transaction) {
-            throw new Error('Transaction not found');
-        }
-
-        // Verify ownership through holding and portfolio
-        const holding = await this.holdingRepository.findById(transaction.holding_id);
-
-        if (!holding) {
-            throw new Error('Holding not found');
-        }
-
-        const portfolio = await this.portfolioRepository.findById(holding.portfolio_id);
-
-        if (!portfolio || portfolio.user_id !== userId) {
-            throw new Error('Unauthorized');
+            return null;
         }
 
         return mapDBTransactionToBFF(transaction);
     }
 
     async getTransactionsByHolding(
-        userId: string,
         holdingId: string,
         queryParams: TransactionQueryParams = {}
     ): Promise<PaginatedTransactions> {
-        // Verify holding ownership
-        const holding = await this.holdingRepository.findById(holdingId);
-
-        if (!holding) {
-            throw new Error('Holding not found');
-        }
-
-        const portfolio = await this.portfolioRepository.findById(holding.portfolio_id);
-
-        if (!portfolio || portfolio.user_id !== userId) {
-            throw new Error('Unauthorized');
-        }
-
         // Get transactions
         const transactions = await this.transactionRepository.findByHoldingId(holdingId);
         const bffTransactions = this.mapDBTransactionsToBFF(transactions);
@@ -227,17 +183,9 @@ class TransactionService {
     }
 
     async getTransactionsByPortfolio(
-        userId: string,
         portfolioId: string,
         queryParams: TransactionQueryParams = {}
     ): Promise<PaginatedTransactions> {
-        // Verify portfolio ownership
-        const portfolio = await this.portfolioRepository.findById(portfolioId);
-
-        if (!portfolio || portfolio.user_id !== userId) {
-            throw new Error('Unauthorized');
-        }
-
         // Get holdings for the portfolio
         const holdings = await this.holdingRepository.findByPortfolioId(portfolioId);
 
@@ -273,10 +221,5 @@ export const setTransactionRepository = (repo: TransactionRepository) => {
 
 export const setHoldingRepository = (repo: HoldingRepository) => {
     transactionService.setHoldingRepository(repo);
-    return transactionService;
-};
-
-export const setPortfolioRepository = (repo: PortfolioRepository) => {
-    transactionService.setPortfolioRepository(repo);
     return transactionService;
 };

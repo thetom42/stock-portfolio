@@ -134,6 +134,13 @@ describe('PortfolioController', () => {
       });
 
       const createdAt = new Date();
+      // Mock getPortfolioById for ownership check
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'user1',
+        name: 'Test Portfolio',
+        createdAt
+      });
       (portfolioService.updatePortfolio as sinon.SinonStub).resolves({
         id: '1',
         userId: 'user1',
@@ -160,11 +167,31 @@ describe('PortfolioController', () => {
         user: { id: 'user1' }
       });
 
-      (portfolioService.updatePortfolio as sinon.SinonStub).resolves(null);
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves(null);
 
       await portfolioController.updatePortfolio(req as any, res as any, next);
 
       verifyResponse(res, 404, { error: 'Portfolio not found' });
+    });
+
+    it('should return 403 if user does not own portfolio', async () => {
+      req = createMockRequest({
+        params: { id: '1' },
+        body: mockUpdateData,
+        user: { id: 'user1' }
+      });
+
+      const createdAt = new Date();
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'other-user',
+        name: 'Test Portfolio',
+        createdAt
+      });
+
+      await portfolioController.updatePortfolio(req as any, res as any, next);
+
+      verifyResponse(res, 403, { error: 'Forbidden' });
     });
   });
 
@@ -176,6 +203,13 @@ describe('PortfolioController', () => {
       });
 
       const createdAt = new Date();
+      // Mock getPortfolioById for ownership check
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'user1',
+        name: 'Test Portfolio',
+        createdAt
+      });
       (portfolioService.deletePortfolio as sinon.SinonStub).resolves({
         id: '1',
         userId: 'user1',
@@ -194,11 +228,30 @@ describe('PortfolioController', () => {
         user: { id: 'user1' }
       });
 
-      (portfolioService.deletePortfolio as sinon.SinonStub).rejects(new Error('Portfolio not found'));
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves(null);
 
       await portfolioController.deletePortfolio(req as any, res as any, next);
 
       verifyResponse(res, 404, { error: 'Portfolio not found' });
+    });
+
+    it('should return 403 if user does not own portfolio', async () => {
+      req = createMockRequest({
+        params: { id: '1' },
+        user: { id: 'user1' }
+      });
+
+      const createdAt = new Date();
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'other-user',
+        name: 'Test Portfolio',
+        createdAt
+      });
+
+      await portfolioController.deletePortfolio(req as any, res as any, next);
+
+      verifyResponse(res, 403, { error: 'Forbidden' });
     });
   });
 
@@ -209,6 +262,14 @@ describe('PortfolioController', () => {
         user: { id: 'user1' }
       });
 
+      const createdAt = new Date();
+      // Mock getPortfolioById for ownership check
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'user1',
+        name: 'Test Portfolio',
+        createdAt
+      });
       (portfolioService.getPortfolioSummary as sinon.SinonStub).resolves({
         totalValue: 10000,
         totalGainLoss: 1000,
@@ -242,11 +303,30 @@ describe('PortfolioController', () => {
         user: { id: 'user1' }
       });
 
-      (portfolioService.getPortfolioSummary as sinon.SinonStub).resolves(null);
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves(null);
 
       await portfolioController.getPortfolioSummary(req as any, res as any, next);
 
       verifyResponse(res, 404, { error: 'Portfolio not found' });
+    });
+
+    it('should return 403 if user does not own portfolio', async () => {
+      req = createMockRequest({
+        params: { id: '1' },
+        user: { id: 'user1' }
+      });
+
+      const createdAt = new Date();
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'other-user',
+        name: 'Test Portfolio',
+        createdAt
+      });
+
+      await portfolioController.getPortfolioSummary(req as any, res as any, next);
+
+      verifyResponse(res, 403, { error: 'Forbidden' });
     });
   });
 
@@ -257,6 +337,14 @@ describe('PortfolioController', () => {
         user: { id: 'user1' }
       });
 
+      const createdAt = new Date();
+      // Mock getPortfolioById for ownership check
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'user1',
+        name: 'Test Portfolio',
+        createdAt
+      });
       (portfolioService.getPortfolioPerformance as sinon.SinonStub).resolves({
         daily: [{ date: new Date(), value: 10000 }],
         weekly: [{ date: new Date(), value: 9500 }],
@@ -280,11 +368,30 @@ describe('PortfolioController', () => {
         user: { id: 'user1' }
       });
 
-      (portfolioService.getPortfolioPerformance as sinon.SinonStub).resolves(null);
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves(null);
 
       await portfolioController.getPortfolioPerformance(req as any, res as any, next);
 
       verifyResponse(res, 404, { error: 'Portfolio not found' });
+    });
+
+    it('should return 403 if user does not own portfolio', async () => {
+      req = createMockRequest({
+        params: { id: '1' },
+        user: { id: 'user1' }
+      });
+
+      const createdAt = new Date();
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'other-user',
+        name: 'Test Portfolio',
+        createdAt
+      });
+
+      await portfolioController.getPortfolioPerformance(req as any, res as any, next);
+
+      verifyResponse(res, 403, { error: 'Forbidden' });
     });
   });
 
@@ -295,6 +402,14 @@ describe('PortfolioController', () => {
         user: { id: 'user1' }
       });
 
+      const createdAt = new Date();
+      // Mock getPortfolioById for ownership check
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'user1',
+        name: 'Test Portfolio',
+        createdAt
+      });
       (portfolioService.getPortfolioHoldings as sinon.SinonStub).resolves([{
         id: '1',
         portfolioId: '1',
@@ -324,11 +439,30 @@ describe('PortfolioController', () => {
         user: { id: 'user1' }
       });
 
-      (portfolioService.getPortfolioHoldings as sinon.SinonStub).resolves(null);
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves(null);
 
       await portfolioController.getPortfolioHoldings(req as any, res as any, next);
 
       verifyResponse(res, 404, { error: 'Portfolio not found' });
+    });
+
+    it('should return 403 if user does not own portfolio', async () => {
+      req = createMockRequest({
+        params: { id: '1' },
+        user: { id: 'user1' }
+      });
+
+      const createdAt = new Date();
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'other-user',
+        name: 'Test Portfolio',
+        createdAt
+      });
+
+      await portfolioController.getPortfolioHoldings(req as any, res as any, next);
+
+      verifyResponse(res, 403, { error: 'Forbidden' });
     });
   });
 
@@ -339,6 +473,14 @@ describe('PortfolioController', () => {
         user: { id: 'user1' }
       });
 
+      const createdAt = new Date();
+      // Mock getPortfolioById for ownership check
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'user1',
+        name: 'Test Portfolio',
+        createdAt
+      });
       (portfolioService.getPortfolioAllocation as sinon.SinonStub).resolves({
         bySector: [
           { sector: 'Technology', percentage: 60 },
@@ -370,11 +512,30 @@ describe('PortfolioController', () => {
         user: { id: 'user1' }
       });
 
-      (portfolioService.getPortfolioAllocation as sinon.SinonStub).resolves(null);
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves(null);
 
       await portfolioController.getPortfolioAllocation(req as any, res as any, next);
 
       verifyResponse(res, 404, { error: 'Portfolio not found' });
+    });
+
+    it('should return 403 if user does not own portfolio', async () => {
+      req = createMockRequest({
+        params: { id: '1' },
+        user: { id: 'user1' }
+      });
+
+      const createdAt = new Date();
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'other-user',
+        name: 'Test Portfolio',
+        createdAt
+      });
+
+      await portfolioController.getPortfolioAllocation(req as any, res as any, next);
+
+      verifyResponse(res, 403, { error: 'Forbidden' });
     });
   });
 
@@ -385,6 +546,14 @@ describe('PortfolioController', () => {
         user: { id: 'user1' }
       });
 
+      const createdAt = new Date();
+      // Mock getPortfolioById for ownership check
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'user1',
+        name: 'Test Portfolio',
+        createdAt
+      });
       (portfolioService.getPortfolioReturns as sinon.SinonStub).resolves({
         totalReturn: 1000,
         totalReturnPercentage: 10,
@@ -426,11 +595,30 @@ describe('PortfolioController', () => {
         user: { id: 'user1' }
       });
 
-      (portfolioService.getPortfolioReturns as sinon.SinonStub).resolves(null);
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves(null);
 
       await portfolioController.getPortfolioReturns(req as any, res as any, next);
 
       verifyResponse(res, 404, { error: 'Portfolio not found' });
+    });
+
+    it('should return 403 if user does not own portfolio', async () => {
+      req = createMockRequest({
+        params: { id: '1' },
+        user: { id: 'user1' }
+      });
+
+      const createdAt = new Date();
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'other-user',
+        name: 'Test Portfolio',
+        createdAt
+      });
+
+      await portfolioController.getPortfolioReturns(req as any, res as any, next);
+
+      verifyResponse(res, 403, { error: 'Forbidden' });
     });
   });
 
@@ -441,6 +629,14 @@ describe('PortfolioController', () => {
         user: { id: 'user1' }
       });
 
+      const createdAt = new Date();
+      // Mock getPortfolioById for ownership check
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'user1',
+        name: 'Test Portfolio',
+        createdAt
+      });
       (portfolioService.getPortfolioHistory as sinon.SinonStub).resolves({
         transactions: [{
           id: '1',
@@ -486,11 +682,30 @@ describe('PortfolioController', () => {
         user: { id: 'user1' }
       });
 
-      (portfolioService.getPortfolioHistory as sinon.SinonStub).resolves(null);
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves(null);
 
       await portfolioController.getPortfolioHistory(req as any, res as any, next);
 
       verifyResponse(res, 404, { error: 'Portfolio not found' });
+    });
+
+    it('should return 403 if user does not own portfolio', async () => {
+      req = createMockRequest({
+        params: { id: '1' },
+        user: { id: 'user1' }
+      });
+
+      const createdAt = new Date();
+      (portfolioService.getPortfolioById as sinon.SinonStub).resolves({
+        id: '1',
+        userId: 'other-user',
+        name: 'Test Portfolio',
+        createdAt
+      });
+
+      await portfolioController.getPortfolioHistory(req as any, res as any, next);
+
+      verifyResponse(res, 403, { error: 'Forbidden' });
     });
   });
 });

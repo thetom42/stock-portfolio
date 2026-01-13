@@ -8,3 +8,6 @@ dist/
 coverage/
 .crush/
 .qodo/
+.claude-trace/
+session-notes.md
+settings.local.json
