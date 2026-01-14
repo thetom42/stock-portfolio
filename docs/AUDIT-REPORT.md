@@ -37,7 +37,7 @@ A comprehensive security audit was conducted covering OWASP Top 10 vulnerabiliti
 ---
 
 #### P0.2 - Vulnerable Dependencies (CVEs)
-**Status:** ❌ OPEN
+**Status:** 🔄 IN PROGRESS (PR #51)
 **GitHub Issue:** [#47](https://github.com/thetom42/stock-portfolio/issues/47)
 
 **Description:** Multiple known vulnerabilities in npm dependencies.
