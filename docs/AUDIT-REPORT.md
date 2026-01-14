@@ -11,8 +11,7 @@
 A comprehensive security audit was conducted covering OWASP Top 10 vulnerabilities, authentication/authorization, input validation, secrets management, and dependency security.
 
 **Status Overview:**
-- 1 Critical issue fixed (P0.1)
-- 1 Critical issue open (P0.2)
+- 2 Critical issues fixed (P0.1, P0.2)
 - 3 High priority issues open (P1.x)
 - Multiple medium priority issues identified (P2.x)
 
@@ -37,7 +36,7 @@ A comprehensive security audit was conducted covering OWASP Top 10 vulnerabiliti
 ---
 
 #### P0.2 - Vulnerable Dependencies (CVEs)
-**Status:** 🔄 IN PROGRESS (PR #51)
+**Status:** ✅ FIXED (PR #51, merged 2026-01-14)
 **GitHub Issue:** [#47](https://github.com/thetom42/stock-portfolio/issues/47)
 
 **Description:** Multiple known vulnerabilities in npm dependencies.
