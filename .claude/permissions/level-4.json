@@ -1,0 +1,21 @@
+{
+  "_comment": "Level 4: Autonomous AI Teams - Self-organizing agents, minimal human oversight",
+  "_description": "Maximum autonomy with bypassPermissions mode. Self-organizing agent teams. ONLY for fully ephemeral environments.",
+  "_categories": "BYPASS PERMISSIONS (maximum autonomy). All network commands allowed including ssh/scp/nc.",
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "allow": [
+      "Bash(:*)",
+      "Edit(**)",
+      "WebFetch",
+      "WebSearch"
+    ],
+    "ask": [],
+    "deny": [
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.config/gcloud/**)"
+    ]
+  },
+  "_warning": "MAXIMUM AUTONOMY CONFIGURATION. Only use in fully isolated, ephemeral environments that are destroyed after each session. Never use on host systems or with access to production credentials. Network isolation strongly recommended."
+}

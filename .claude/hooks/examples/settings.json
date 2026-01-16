@@ -1,0 +1,61 @@
+{
+  "_description": "Complete Claude Code settings with all recommended hooks",
+  "_usage": "Copy to .claude/settings.json (project) or ~/.claude/settings.json (global)",
+  "_requirements": "Copy scripts/ to .claude/hooks/ and make executable",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "just catchup 2>/dev/null || echo 'No catchup recipe available'"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/session-end.sh",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"import json,sys,re; d=json.load(sys.stdin); p=d.get('tool_input',{}).get('file_path',''); patterns=[r'\\.env$',r'\\.env\\.',r'\\.env/',r'credentials/',r'secrets/',r'api-keys\\.',r'/production\\.',r'/prod\\.',r'\\.git/']; match=any(re.search(pat,p) for pat in patterns); sys.exit(2) if match else sys.exit(0)\" || (echo 'Warning: python3 unavailable, protected-files check skipped' >&2; exit 0)"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mkdir -p .claude && (jq -r '\"[\" + (now | strftime(\"%Y-%m-%d %H:%M:%S\")) + \"] \" + .tool_input.command' >> .claude/command-log.txt 2>/dev/null || echo \"[$(date '+%Y-%m-%d %H:%M:%S')] [jq unavailable]\" >> .claude/command-log.txt)"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "just fmt 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}

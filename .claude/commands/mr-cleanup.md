@@ -32,15 +32,15 @@ Delete it if found (confirm branch name first).
 After cleanup, here's what might need attention:
 
 **Open Issues:**
-!`just issue-list 2>/dev/null | head -10 || glab issue list --per-page=5 2>/dev/null || gh issue list --limit 5 2>/dev/null || echo "No issue CLI available"`
+!`just issue-list 2>/dev/null | head -10`
 
 **Current Status:**
 - Branch: !`git branch --show-current`
 - Uncommitted changes: !`git status --short`
-- Pipeline status: !`just ci-status 2>/dev/null | tail -5 || echo "No CI status available"`
+- Pipeline status: !`just ci-status 2>/dev/null | tail -5`
 
 **Recent Session Notes:**
-!`tail -20 .claude/session-notes.md 2>/dev/null | head -15 || echo "No session notes found"`
+!`tail -20 .claude/session-notes.md 2>/dev/null | head -15`
 
 ---
 

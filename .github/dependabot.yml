@@ -1,0 +1,91 @@
+# Dependabot Configuration
+# Place in .github/dependabot.yml
+#
+# Dependabot automatically creates PRs for dependency updates,
+# including security patches.
+
+version: 2
+updates:
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci"
+    labels:
+      - "dependencies"
+      - "ci"
+
+  # Uncomment the ecosystem(s) your project uses:
+
+  # npm/yarn (Node.js/TypeScript)
+  # - package-ecosystem: "npm"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
+  #   commit-message:
+  #     prefix: "deps"
+  #   labels:
+  #     - "dependencies"
+  #     - "javascript"
+  #   groups:
+  #     dev-dependencies:
+  #       dependency-type: "development"
+  #     production-dependencies:
+  #       dependency-type: "production"
+
+  # pip (Python)
+  # - package-ecosystem: "pip"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
+  #   commit-message:
+  #     prefix: "deps"
+  #   labels:
+  #     - "dependencies"
+  #     - "python"
+
+  # cargo (Rust)
+  # - package-ecosystem: "cargo"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
+  #   commit-message:
+  #     prefix: "deps"
+  #   labels:
+  #     - "dependencies"
+  #     - "rust"
+
+  # gomod (Go)
+  # - package-ecosystem: "gomod"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
+  #   commit-message:
+  #     prefix: "deps"
+  #   labels:
+  #     - "dependencies"
+  #     - "go"
+
+  # Docker
+  # - package-ecosystem: "docker"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
+  #   commit-message:
+  #     prefix: "deps"
+  #   labels:
+  #     - "dependencies"
+  #     - "docker"
+
+  # Terraform
+  # - package-ecosystem: "terraform"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
+  #   commit-message:
+  #     prefix: "deps"
+  #   labels:
+  #     - "dependencies"
+  #     - "terraform"

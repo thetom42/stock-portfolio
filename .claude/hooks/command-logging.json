@@ -1,0 +1,20 @@
+{
+  "_description": "Log all Bash commands for audit and compliance purposes",
+  "_event": "PreToolUse",
+  "_usage": "Merge into .claude/settings.json or ~/.claude/settings.json",
+  "_log_location": ".claude/command-log.txt",
+  "_requires": "jq (optional, falls back to basic logging)",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mkdir -p .claude && (jq -r '\"[\" + (now | strftime(\"%Y-%m-%d %H:%M:%S\")) + \"] \" + .tool_input.command' >> .claude/command-log.txt 2>/dev/null || echo \"[$(date '+%Y-%m-%d %H:%M:%S')] [jq unavailable]\" >> .claude/command-log.txt)"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,14 +1,16 @@
-# Claude Code Custom Slash Command Templates
+# Claude Code User-Invocable Skills
 
-This directory contains slash command templates for collaboration and session management in Claude Code projects.
+This directory contains user-invocable skill templates for collaboration and session management in Claude Code projects.
+
+> **Note:** Since Claude Code v2.1.3, "Slash Commands" and "Skills" are unified. Files in `.claude/commands/` are now called **user-invocable skills** - they are invoked explicitly by the user with `/name`.
 
 ## Purpose
 
-Slash commands complement the Just recipes workflow by providing **collaboration modes** and **session management**—the human-AI interaction layer that surrounds the technical workflow.
+User-invocable skills complement the Just recipes workflow by providing **collaboration modes** and **session management**—the human-AI interaction layer that surrounds the technical workflow.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Slash Commands: Collaboration & Session Management         │
+│  User-Invocable Skills: Collaboration & Session Management  │
 │  - Session types (/concept, /feature, /research)           │
 │  - Collaborative thinking (/brainstorm, /discuss, /decide) │
 │  - Scrum ceremonies (/planning, /refinement)               │
@@ -21,7 +23,7 @@ Slash commands complement the Just recipes workflow by providing **collaboration
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Available Commands
+## Available Skills
 
 ### Session Types
 
@@ -59,8 +61,21 @@ Slash commands complement the Just recipes workflow by providing **collaboration
 | Command | Description |
 |---------|-------------|
 | `/catchup` | Session continuity - review recent activity and restore context |
+| `/catchup-quick` | Quick session catchup - minimal context, no API calls |
 | `/prime` | Load project context and knowledge for new sessions |
 | `/handoff` | End-of-session handoff - summarize work and create session notes |
+
+### Workflow Shortcuts
+
+| Command | Description |
+|---------|-------------|
+| `/do <task>` | Execute task strictly following the workflow |
+
+### Maintenance (juststart only)
+
+| Command | Description |
+|---------|-------------|
+| `/claude-md-update <path>` | Update target project's CLAUDE.md with latest templates (intelligent merge) |
 
 ## Installation
 
@@ -98,14 +113,22 @@ These templates are starting points. Customize them for your project by:
 3. Including relevant `!bash` commands for context gathering
 4. Modifying the `allowed-tools` frontmatter if needed
 
-## Command vs Just Recipe
+## User-Invocable vs Auto-Activated Skills vs Just Recipes
 
-| Use Slash Commands for | Use Just Recipes for |
-|------------------------|---------------------|
-| Session framing | Workflow operations |
-| Collaborative thinking | Deterministic tasks |
-| Discussion structure | CI/CD integration |
-| Planning sessions | Repeatable automation |
+Since Claude Code v2.1.3, both "Slash Commands" and "Skills" are unified under the **Skills** concept:
+
+| Use User-Invocable Skills for | Use Auto-Activated Skills for | Use Just Recipes for |
+|------------------------------|------------------------------|---------------------|
+| Session framing | Complex capabilities | Workflow operations |
+| Collaborative thinking | Scripts + references | Deterministic tasks |
+| Discussion structure | Context-based activation | CI/CD integration |
+| Simple prompts | Multi-file resources | Repeatable automation |
+
+**User-Invocable Skills** (this directory) are single `.md` files in `.claude/commands/` - simple prompts triggered manually via `/name`. They are **deterministic** because the user controls when they run.
+
+**Auto-Activated Skills** (see `../skills/`) are directories in `.claude/skills/` with `SKILL.md` plus optional scripts and reference files. Claude can auto-activate them when relevant, making them **non-deterministic**.
+
+For more details on auto-activated skills, see the [Skills README](../skills/README.md).
 
 ## Session Handoff Strategy
 
@@ -118,9 +141,9 @@ The `/handoff` command works complementarily with the [SessionEnd hook](../hooks
 
 **Recommended approach:** Configure the SessionEnd hook as a baseline safety net, and use `/handoff` explicitly for important work sessions where interactive summarization and git operations are valuable.
 
-See the [Session Handoff Strategies](../../docs/ai-assisted-development-concept.md#session-handoff-strategies) section in the concept paper for detailed comparison.
+See the [Session Handoff Strategies](../../docs/concept/execution-strategy.md#session-handoff-strategies) section in the concept paper for detailed comparison.
 
 ## References
 
-- [Claude Code Slash Commands Documentation](https://docs.anthropic.com/en/docs/claude-code/slash-commands)
-- [AI-Assisted Development Concept Paper](../../docs/ai-assisted-development-concept.md)
+- [Claude Code Skills Documentation](https://docs.anthropic.com/en/docs/claude-code/skills)
+- [AI-Assisted Development Concept Paper](../../docs/concept/README.md)

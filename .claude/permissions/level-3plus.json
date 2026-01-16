@@ -1,0 +1,28 @@
+{
+  "_comment": "Level 3+: Multi-Instance Orchestration - Automated task distribution, result aggregation",
+  "_description": "Full autonomy with bypassPermissions mode. Agents can spawn sub-agents. Ephemeral environments only.",
+  "_categories": "BYPASS PERMISSIONS. Most network commands allowed. ssh/scp/nc still require approval.",
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "allow": [
+      "Bash(:*)",
+      "Edit(**)",
+      "WebFetch",
+      "WebSearch"
+    ],
+    "ask": [
+      "Bash(ssh:*)",
+      "Bash(scp:*)",
+      "Bash(nc:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /:*)",
+      "Bash(rm -rf /*)",
+      "Bash(sudo:*)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.config/gcloud/**)"
+    ]
+  },
+  "_warning": "This configuration uses bypassPermissions mode. Only use in ephemeral, container-isolated environments."
+}

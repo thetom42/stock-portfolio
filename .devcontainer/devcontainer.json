@@ -1,8 +1,37 @@
 {
+    "_comment": "PROJECT-SPECIFIC: This devcontainer is configured for a project with 'bff' and 'db' directories. Adjust 'name', 'service', 'onCreateCommand', 'updateContentCommand', 'postCreateCommand', and 'typescript.tsdk' for your project structure.",
     "name": "Stock Portfolio Dev",
     "dockerComposeFile": "docker-compose.yaml",
     "service": "bff",
     "workspaceFolder": "/workspace",
+
+    "features": {
+        "ghcr.io/devcontainers/features/node:1": {
+            "version": "18"
+        },
+        "ghcr.io/devcontainers/features/github-cli:1": {}
+    },
+
+    "initializeCommand": "mkdir -p ~/.claude ~/.config/ccstatusline ~/.codex .claude-trace 2>/dev/null || true",
+
+    "mounts": [
+        "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind,consistency=cached",
+        "source=${localEnv:HOME}/.config/ccstatusline,target=/home/node/.config/ccstatusline,type=bind,consistency=cached",
+        "source=${localEnv:HOME}/.codex,target=/home/node/.codex,type=bind,consistency=cached",
+        "source=${localWorkspaceFolder}/.claude-trace,target=/workspace/.claude-trace,type=bind,consistency=cached"
+    ],
+
+    "forwardPorts": [
+        3001,
+        5432,
+        8080,
+        9229
+    ],
+
+    "onCreateCommand": "mkdir -p /workspace/bff/node_modules && sudo chown -R node:node /workspace/bff/node_modules",
+    "updateContentCommand": "cp bff/.env.sample bff/.env",
+    "postCreateCommand": "cd db && npm install && npm run prisma:generate && cd ../bff && npm install && npm run build",
+
     "customizations": {
         "vscode": {
             "extensions": [
@@ -16,7 +45,13 @@
                 "Postman.postman-for-vscode",
                 "ryanluker.vscode-coverage-gutters",
                 "christian-kohler.npm-intellisense",
-                "christian-kohler.path-intellisense"
+                "christian-kohler.path-intellisense",
+                "eamodio.gitlens",
+                "mhutchie.git-graph",
+                "usernamehw.errorlens",
+                "anthropic.claude-code",
+                "github.copilot",
+                "github.copilot-chat"
             ],
             "settings": {
                 "typescript.tsdk": "bff/node_modules/typescript/lib",
@@ -37,23 +72,22 @@
                 "files.watcherExclude": {
                     "**/node_modules/**": true,
                     "**/dist/**": true
-                }
+                },
+                "editor.formatOnSave": true,
+                "editor.rulers": [100],
+                "files.trimTrailingWhitespace": true
             }
         }
     },
-    "forwardPorts": [
-        3001,
-        5432,
-        8080,
-        9229
-    ],
-    "onCreateCommand": "mkdir -p /workspace/bff/node_modules && sudo chown -R node:node /workspace/bff/node_modules",
-    "updateContentCommand": "cp bff/.env.sample bff/.env",
-    "postCreateCommand": "cd db && npm install && npm run prisma:generate && cd ../bff && npm install && npm run build",
-    "remoteUser": "node",
-    "features": {
-        "ghcr.io/devcontainers/features/node:1": {
-            "version": "18"
+
+    "secrets": {
+        "ANTHROPIC_API_KEY": {
+            "description": "Anthropic API key (optional if using Claude Max OAuth)"
+        },
+        "GITHUB_TOKEN": {
+            "description": "GitHub personal access token for gh CLI"
         }
-    }
+    },
+
+    "remoteUser": "node"
 }
