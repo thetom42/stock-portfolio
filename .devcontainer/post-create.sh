@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Post-create setup script for dev container
 #
 # This script runs after the container is created and sets up:

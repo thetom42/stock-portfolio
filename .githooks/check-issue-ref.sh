@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Check that commit message contains an issue reference
 # Used by pre-commit hook (commit-msg stage)
 

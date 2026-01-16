@@ -1,4 +1,5 @@
 {
+    "_comment": "PROJECT-SPECIFIC: This devcontainer is configured for a project with 'bff' and 'db' directories. Adjust 'name', 'service', 'onCreateCommand', 'updateContentCommand', 'postCreateCommand', and 'typescript.tsdk' for your project structure.",
     "name": "Stock Portfolio Dev",
     "dockerComposeFile": "docker-compose.yaml",
     "service": "bff",
