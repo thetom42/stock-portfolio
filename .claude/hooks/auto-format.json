@@ -1,0 +1,19 @@
+{
+  "_description": "Run 'just fmt' after file edits to ensure consistent formatting",
+  "_event": "PostToolUse",
+  "_usage": "Merge into .claude/settings.json or ~/.claude/settings.json",
+  "_note": "Errors are silently ignored to avoid blocking workflow",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "just fmt 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}

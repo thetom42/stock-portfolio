@@ -1,0 +1,18 @@
+{
+  "_description": "Run 'just catchup' automatically when a session starts to restore context",
+  "_event": "SessionStart",
+  "_usage": "Merge into .claude/settings.json or ~/.claude/settings.json",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "just catchup 2>/dev/null || echo 'No catchup recipe available'"
+          }
+        ]
+      }
+    ]
+  }
+}

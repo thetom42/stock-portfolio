@@ -1,0 +1,21 @@
+{
+  "_description": "Remind to check Just recipes before using direct CLI commands like glab",
+  "_event": "PreToolUse",
+  "_usage": "Merge into .claude/settings.json - warns but does NOT block",
+  "_requires": "jq (optional, skips silently if unavailable)",
+  "_monitored_commands": ["glab"],
+  "_script": "scripts/just-recipe-reminder.sh",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/just-recipe-reminder.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

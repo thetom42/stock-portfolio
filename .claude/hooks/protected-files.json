@@ -1,0 +1,25 @@
+{
+  "_description": "Block edits to sensitive files (env, credentials, secrets, production configs)",
+  "_event": "PreToolUse",
+  "_usage": "Merge into .claude/settings.json - exit code 2 blocks the tool",
+  "_requires": "python3 (falls back to allow with warning if unavailable)",
+  "_protected_patterns": [
+    ".env files: .env, .env.*, *.env",
+    "Credentials: credentials/, secrets/, **/api-keys.*",
+    "Production: **/production.*, **/prod.*",
+    "Git internals: .git/"
+  ],
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"import json,sys,re; d=json.load(sys.stdin); p=d.get('tool_input',{}).get('file_path',''); patterns=[r'\\.env$',r'\\.env\\.',r'\\.env/',r'credentials/',r'secrets/',r'api-keys\\.',r'/production\\.',r'/prod\\.',r'\\.git/']; match=any(re.search(pat,p) for pat in patterns); sys.exit(2) if match else sys.exit(0)\" || (echo 'Warning: python3 unavailable, protected-files check skipped' >&2; exit 0)"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -10,3 +10,4 @@ coverage/
 .claude-trace/
 session-notes.md
 settings.local.json
+.backups/

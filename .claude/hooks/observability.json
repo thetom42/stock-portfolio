@@ -1,0 +1,43 @@
+{
+  "_description": "Log tool executions and session events for observability",
+  "_event": "PostToolUse, SessionStart, SessionEnd",
+  "_usage": "Merge into .claude/settings.json or ~/.claude/settings.json",
+  "_log_location": ".claude/observability.log",
+  "_requires": "jq (optional, falls back to basic logging)",
+  "_note": "For full OTel integration, use CLAUDE_CODE_ENABLE_TELEMETRY=1",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mkdir -p .claude && (echo \"[$(date -u '+%Y-%m-%dT%H:%M:%SZ')] tool=$(echo $CLAUDE_TOOL_NAME) success=$(echo $CLAUDE_TOOL_SUCCESS)\" >> .claude/observability.log 2>/dev/null || echo \"[$(date -u '+%Y-%m-%dT%H:%M:%SZ')] tool_event\" >> .claude/observability.log)"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mkdir -p .claude && echo \"[$(date -u '+%Y-%m-%dT%H:%M:%SZ')] SESSION_START session_id=$(echo $CLAUDE_SESSION_ID)\" >> .claude/observability.log"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mkdir -p .claude && echo \"[$(date -u '+%Y-%m-%dT%H:%M:%SZ')] SESSION_END session_id=$(echo $CLAUDE_SESSION_ID)\" >> .claude/observability.log"
+          }
+        ]
+      }
+    ]
+  }
+}
