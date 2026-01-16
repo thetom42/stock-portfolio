@@ -217,7 +217,7 @@ pr-create title="":
 
     # Extract issue number from branch name (e.g., feature/123-foo -> 123)
     ISSUE_NUM=""
-    if [[ "$BRANCH" =~ ^[a-z]+/([0-9]+)- ]]; then
+    if [[ "$BRANCH" =~ ^[a-zA-Z]+/([0-9]+)- ]]; then
         ISSUE_NUM="${BASH_REMATCH[1]}"
     fi
 

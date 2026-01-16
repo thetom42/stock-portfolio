@@ -88,7 +88,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 -c \"import json,sys,re; d=json.load(sys.stdin); p=d.get('tool_input',{}).get('file_path',''); patterns=[r'\\.env$',r'\\.env\\.',r'\\.env/',r'credentials/',r'secrets/',r'api-keys\\.',r'/production\\.',r'/prod\\.',r'\\.git/']; match=any(re.search(pat,p) for pat in patterns); sys.exit(2) if match else sys.exit(0)\" || (echo 'Warning: python3 unavailable, protected-files check skipped' >&2; exit 0)"
+            "command": "python3 -c \"import json,sys,re; d=json.load(sys.stdin); p=d.get('tool_input',{}).get('file_path',''); patterns=[r'\\.env$',r'\\.env\\.',r'\\.env/',r'credentials/',r'secrets/',r'api-keys\\.',r'/production\\.',r'/prod\\.',r'\\.git/']; match=any(re.search(pat,p) for pat in patterns); sys.exit(2) if match else sys.exit(0)\" || (echo 'CRITICAL: Protected-files check failed. Blocking operation.' >&2; exit 2)"
           }
         ]
       }

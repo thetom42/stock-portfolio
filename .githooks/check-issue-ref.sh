@@ -7,7 +7,7 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-if grep -qE "(refs|closes|Closes) #[0-9]+|#[0-9]+" "$1"; then
+if grep -qE "(refs|closes|Closes) #[0-9]+|\b#[0-9]+\b" "$1"; then
     exit 0
 else
     echo "ERROR: Commit message must contain issue reference (e.g., refs #42)"

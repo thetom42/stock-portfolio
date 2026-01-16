@@ -23,12 +23,11 @@ def validate_skill(skill_path):
     if not content.startswith("---"):
         return False, "No YAML frontmatter found"
 
-    # Extract frontmatter
-    match = re.match(r"^---\n(.*?)\n---", content, re.DOTALL)
-    if not match:
+    # Extract frontmatter robustly
+    sections = content.split('---', 2)
+    if len(sections) < 3:
         return False, "Invalid frontmatter format"
-
-    frontmatter_text = match.group(1)
+    frontmatter_text = sections[1].strip()
 
     # Parse YAML frontmatter
     try:
@@ -85,9 +84,9 @@ def validate_skill(skill_path):
         return False, f"Description must be a string, got {type(description).__name__}"
     description = description.strip()
     if description:
-        # Check for angle brackets
-        if "<" in description or ">" in description:
-            return False, "Description cannot contain angle brackets (< or >)"
+        # Check for angle brackets and their HTML entities
+        if any(char in description for char in ["<", ">", "&lt;", "&gt;"]):
+            return False, "Description cannot contain angle brackets (<, >) or their HTML entities"
         # Check description length (max 1024 characters per spec)
         if len(description) > 1024:
             return (

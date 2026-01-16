@@ -27,7 +27,10 @@ cwd=$(echo "$input" | jq -r '.cwd // "."')
 reason=$(echo "$input" | jq -r '.reason // "unknown"')
 
 # Change to project directory
-cd "$cwd" || exit 0
+if ! cd "$cwd"; then
+    echo "Error: Could not change to directory '$cwd'. Aborting session summary." >&2
+    exit 1
+fi
 
 # Check if transcript exists
 if [[ -z "$transcript_path" ]] || [[ ! -f "$transcript_path" ]]; then
@@ -54,7 +57,7 @@ extract_git_changes() {
     branch=$(git branch --show-current 2>/dev/null || echo "")
 
     if [[ -n "$branch" ]]; then
-        commits=$(git log --oneline --since="1 hour ago" HEAD 2>/dev/null | head -5 || echo "")
+        commits=$(git log --oneline --since="${GIT_SINCE:-1 day ago}" HEAD 2>/dev/null | head -5 || echo "")
         if [[ -n "$commits" ]]; then
             echo "Recent commits:"
             while IFS= read -r line; do echo "  $line"; done <<< "$commits"

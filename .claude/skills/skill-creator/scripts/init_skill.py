@@ -12,6 +12,8 @@ Examples:
 """
 
 import sys
+import re
+import shutil
 from pathlib import Path
 
 
@@ -191,6 +193,34 @@ def title_case_skill_name(skill_name):
     return " ".join(word.capitalize() for word in skill_name.split("-"))
 
 
+def validate_skill_name(skill_name):
+    """
+    Validate skill name format.
+
+    Args:
+        skill_name: Name to validate
+
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    if not skill_name:
+        return False, "Skill name cannot be empty"
+
+    # Check format: hyphen-case with lowercase letters and digits only
+    if not re.match(r'^[a-z0-9]+(?:-[a-z0-9]+)*$', skill_name):
+        return False, f"Invalid skill name '{skill_name}'. Must be hyphen-case (lowercase letters, digits, and hyphens only)"
+
+    # Check length
+    if len(skill_name) > 40:
+        return False, f"Skill name too long ({len(skill_name)} chars). Maximum is 40 characters"
+
+    # Check for path traversal attempts
+    if '..' in skill_name or '/' in skill_name or '\\' in skill_name:
+        return False, "Skill name cannot contain path separators or '..'"
+
+    return True, ""
+
+
 def init_skill(skill_name, path):
     """
     Initialize a new skill directory with template SKILL.md.
@@ -202,6 +232,12 @@ def init_skill(skill_name, path):
     Returns:
         Path to created skill directory, or None if error
     """
+    # Validate skill name first
+    is_valid, error_msg = validate_skill_name(skill_name)
+    if not is_valid:
+        print(f"❌ Error: {error_msg}")
+        return None
+
     # Determine skill directory path
     skill_dir = Path(path).resolve() / skill_name
 
@@ -210,30 +246,21 @@ def init_skill(skill_name, path):
         print(f"❌ Error: Skill directory already exists: {skill_dir}")
         return None
 
-    # Create skill directory
+    # Create skill directory and its contents atomically
     try:
+        # Create skill directory
         skill_dir.mkdir(parents=True, exist_ok=False)
         print(f"✅ Created skill directory: {skill_dir}")
-    except Exception as e:
-        print(f"❌ Error creating directory: {e}")
-        return None
 
-    # Create SKILL.md from template
-    skill_title = title_case_skill_name(skill_name)
-    skill_content = SKILL_TEMPLATE.format(
-        skill_name=skill_name, skill_title=skill_title
-    )
-
-    skill_md_path = skill_dir / "SKILL.md"
-    try:
+        # Create SKILL.md from template
+        skill_title = title_case_skill_name(skill_name)
+        skill_content = SKILL_TEMPLATE.format(
+            skill_name=skill_name, skill_title=skill_title
+        )
+        skill_md_path = skill_dir / "SKILL.md"
         skill_md_path.write_text(skill_content)
         print("✅ Created SKILL.md")
-    except Exception as e:
-        print(f"❌ Error creating SKILL.md: {e}")
-        return None
 
-    # Create resource directories with example files
-    try:
         # Create scripts/ directory with example script
         scripts_dir = skill_dir / "scripts"
         scripts_dir.mkdir(exist_ok=True)
@@ -255,8 +282,12 @@ def init_skill(skill_name, path):
         example_asset = assets_dir / "example_asset.txt"
         example_asset.write_text(EXAMPLE_ASSET)
         print("✅ Created assets/example_asset.txt")
+
     except Exception as e:
-        print(f"❌ Error creating resource directories: {e}")
+        print(f"❌ Error during skill initialization: {e}")
+        if skill_dir.exists():
+            print(f"🧹 Cleaning up partially created directory: {skill_dir}")
+            shutil.rmtree(skill_dir)
         return None
 
     # Print next steps
