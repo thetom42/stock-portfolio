@@ -6,7 +6,7 @@
 # - Extracts session metadata from hook input
 # - Parses JSONL transcript for key information
 # - Optionally calls Claude headlessly for AI summary (requires claude CLI)
-# - Appends summary to session-notes.md
+# - Appends summary to the harness-neutral session notes file
 #
 # Usage: Configured via .claude/settings.json SessionEnd hook
 # Input: JSON via stdin with session_id, transcript_path, cwd, reason
@@ -14,7 +14,8 @@
 set -euo pipefail
 
 # Configuration
-SESSION_NOTES_FILE=".claude/session-notes.md"
+SESSION_NOTES_FILE=".ai-harness/session-notes.md"
+LEGACY_SESSION_NOTES_FILE=".claude/session-notes.md"
 USE_AI_SUMMARY="${CLAUDE_SESSION_AI_SUMMARY:-false}"  # Set to "true" to enable
 MAX_TRANSCRIPT_LINES=100  # Limit for AI context
 
@@ -27,10 +28,7 @@ cwd=$(echo "$input" | jq -r '.cwd // "."')
 reason=$(echo "$input" | jq -r '.reason // "unknown"')
 
 # Change to project directory
-if ! cd "$cwd"; then
-    echo "Error: Could not change to directory '$cwd'. Aborting session summary." >&2
-    exit 1
-fi
+cd "$cwd" || exit 0
 
 # Check if transcript exists
 if [[ -z "$transcript_path" ]] || [[ ! -f "$transcript_path" ]]; then
@@ -43,9 +41,12 @@ extract_stats() {
     local transcript="$1"
     local user_messages tool_calls assistant_messages
 
-    user_messages=$(grep -c '"type":"user"' "$transcript" 2>/dev/null || echo "0")
-    assistant_messages=$(grep -c '"type":"assistant"' "$transcript" 2>/dev/null || echo "0")
-    tool_calls=$(grep -c '"tool_use"' "$transcript" 2>/dev/null || echo "0")
+    # grep -c prints 0 AND exits 1 on no match, so '|| echo "0"' inside the
+    # substitution would yield two lines (#377). Assign the fallback outside it;
+    # it also covers an unreadable transcript, where grep prints nothing.
+    user_messages=$(grep -c '"type":"user"' "$transcript" 2>/dev/null) || user_messages=0
+    assistant_messages=$(grep -c '"type":"assistant"' "$transcript" 2>/dev/null) || assistant_messages=0
+    tool_calls=$(grep -c '"tool_use"' "$transcript" 2>/dev/null) || tool_calls=0
 
     echo "Messages: $user_messages user, $assistant_messages assistant | Tool calls: $tool_calls"
 }
@@ -57,7 +58,7 @@ extract_git_changes() {
     branch=$(git branch --show-current 2>/dev/null || echo "")
 
     if [[ -n "$branch" ]]; then
-        commits=$(git log --oneline --since="${GIT_SINCE:-1 day ago}" HEAD 2>/dev/null | head -5 || echo "")
+        commits=$(git log --oneline --since="1 hour ago" HEAD 2>/dev/null | head -5 || echo "")
         if [[ -n "$commits" ]]; then
             echo "Recent commits:"
             while IFS= read -r line; do echo "  $line"; done <<< "$commits"
@@ -125,6 +126,11 @@ main() {
         summary=$(generate_basic_summary "$transcript_path")
     fi
 
+    if [[ ! -f "$SESSION_NOTES_FILE" ]] && [[ -f "$LEGACY_SESSION_NOTES_FILE" ]]; then
+        mkdir -p "$(dirname "$SESSION_NOTES_FILE")"
+        cp "$LEGACY_SESSION_NOTES_FILE" "$SESSION_NOTES_FILE"
+    fi
+
     # Append to session notes if file exists
     if [[ -f "$SESSION_NOTES_FILE" ]]; then
         {
@@ -140,7 +146,7 @@ main() {
         echo "📝 Session Summary:"
         echo "$summary"
         echo ""
-        echo "Tip: Create $SESSION_NOTES_FILE to auto-save session summaries."
+        echo "Tip: Run 'just session-note \"summary\"' to create $SESSION_NOTES_FILE and auto-save future session summaries."
     fi
 }
 

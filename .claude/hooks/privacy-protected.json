@@ -1,0 +1,19 @@
+{
+  "_description": "Block direct read/edit/write of privacy-protected surfaces (globs from .privacy.yaml); access only via the scrub recipes",
+  "_event": "PreToolUse",
+  "_usage": "Merge into .claude/settings.json - exit code 2 blocks the tool",
+  "_requires": "python3 (falls back to allow with warning), .privacy.yaml with a 'protected:' list",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/scripts/privacy-protected.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

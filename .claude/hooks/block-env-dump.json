@@ -1,0 +1,18 @@
+{
+  "_description": "Block unfiltered env dumps (printenv, env, set, export, declare without a name) that could expose secrets, in the spellings a shell resolves to them: a path (/usr/bin/env), a wrapper (command, exec, sudo, env), sh -c or eval, a shell reading a here-document or here-string, or a substitution that names them ($(which env)). A here-document only fed to another program is data and not checked. A seatbelt against accidental dumps, not a boundary: keep tokens out of the agent environment",
+  "_usage": "Add to PreToolUse Bash matcher in .claude/settings.json",
+  "_requires": "python3 (for JSON parsing), bash",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/scripts/block-env-dump.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

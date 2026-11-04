@@ -40,7 +40,7 @@ After cleanup, here's what might need attention:
 - Pipeline status: !`just ci-status 2>/dev/null | tail -5`
 
 **Recent Session Notes:**
-!`tail -20 .claude/session-notes.md 2>/dev/null | head -15`
+!`tail -20 .ai-harness/session-notes.md .claude/session-notes.md 2>/dev/null | head -15`
 
 ---
 

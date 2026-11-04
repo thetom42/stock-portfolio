@@ -6,19 +6,14 @@ allowed-tools: Bash(just catchup:*)
 
 Let me gather the recent project activity to restore context.
 
+Follow the shared cross-harness catchup workflow in
+@.ai-harness/workflows/catchup.md when present. Treat repository artifacts,
+session notes, and deterministic commands as the source of truth; do not assume
+the previous handoff came from Claude Code.
+
 ### Project Activity
 
 !`just catchup 2>/dev/null || echo "just catchup not available - gathering info manually"`
-
-### Additional Context
-
-- Current branch: !`git branch --show-current`
-- Uncommitted changes: !`git status --short`
-- Last session's work: !`git log --oneline -3 --no-merges 2>/dev/null`
-
-### Project conventions
-
-@CLAUDE.md
 
 ### Session Restoration
 

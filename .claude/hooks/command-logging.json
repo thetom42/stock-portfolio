@@ -3,6 +3,7 @@
   "_event": "PreToolUse",
   "_usage": "Merge into .claude/settings.json or ~/.claude/settings.json",
   "_log_location": ".claude/command-log.txt",
+  "_gitignore_required": "Add .claude/command-log.txt to .gitignore to prevent committing sensitive commands",
   "_requires": "jq (optional, falls back to basic logging)",
   "hooks": {
     "PreToolUse": [

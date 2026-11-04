@@ -1,0 +1,18 @@
+{
+  "_description": "Block prompts containing roster clear names (PII) before they reach a cloud assistant",
+  "_event": "UserPromptSubmit",
+  "_usage": "Merge into .claude/settings.json - exit code 2 blocks the prompt",
+  "_requires": "python3 (falls back to allow with warning), .privacy.yaml + roster file",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/scripts/privacy-roster-guard.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

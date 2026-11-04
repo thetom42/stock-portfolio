@@ -1,20 +1,22 @@
 # Claude Code User-Invocable Skills
 
-This directory contains user-invocable skill templates for collaboration and session management in Claude Code projects.
+This directory contains the Claude Code adapter command templates for collaboration and session management in Juststart projects.
 
 > **Note:** Since Claude Code v2.1.3, "Slash Commands" and "Skills" are unified. Files in `.claude/commands/` are now called **user-invocable skills** - they are invoked explicitly by the user with `/name`.
 
 ## Purpose
 
-User-invocable skills complement the Just recipes workflow by providing **collaboration modes** and **session management**—the human-AI interaction layer that surrounds the technical workflow.
+User-invocable skills complement the Just recipes workflow and the shared `.ai-harness` layer by providing **collaboration modes** and **session management** - the human-AI interaction layer that surrounds the technical workflow.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  User-Invocable Skills: Collaboration & Session Management  │
 │  - Session types (/concept, /feature, /research)           │
 │  - Collaborative thinking (/brainstorm, /discuss, /decide) │
+│  - Planning & requirements (/prd, /plan-guide)             │
 │  - Scrum ceremonies (/planning, /refinement)               │
 │  - Debug sessions (/debug, /repro, /optimize)              │
+│  - Code comprehension (/walkthrough, /teach, /architecture)│
 │  - Context management (/catchup, /prime, /handoff)         │
 ├─────────────────────────────────────────────────────────────┤
 │  CLAUDE.md + Just Recipes: Workflow Operations              │
@@ -65,17 +67,41 @@ User-invocable skills complement the Just recipes workflow by providing **collab
 | `/prime` | Load project context and knowledge for new sessions |
 | `/handoff` | End-of-session handoff - summarize work and create session notes |
 
+### Code Comprehension
+
+| Command | Description |
+|---------|-------------|
+| `/walkthrough` | Structured narrative code walkthrough for supervisor comprehension |
+| `/teach` | Interactive teaching session about a module or concept |
+| `/codebase-research` | Deep async exploration of a codebase area with structured report |
+| `/explain-visual` | Create interactive HTML visualization to explain code behavior |
+| `/architecture` | Generate Mermaid architecture diagram for a feature or module |
+| `/concept-map` | Generate domain concept map showing entities and relationships |
+
+### Planning & Requirements
+
+| Command | Description |
+|---------|-------------|
+| `/prd` | Create a Product Requirements Document for complex features |
+| `/plan-guide` | Guide for creating implementation plans |
+
 ### Workflow Shortcuts
 
 | Command | Description |
 |---------|-------------|
+| `/workflow` | Development workflow guidance (issues, branches, MRs/PRs) |
 | `/do <task>` | Execute task strictly following the workflow |
+| `/check` | Monitor CI pipeline, fix failures, repeat until green |
+| `/pre-mr-checklist` | Pre-MR checklist to verify all workflow steps |
+| `/mr-cleanup` | Post-MR-merge cleanup and next steps |
+| `/simple` | Run code-simplifier on recent changes, then verify with CI |
 
-### Maintenance (juststart only)
+### Release & Sprint Management
 
 | Command | Description |
 |---------|-------------|
-| `/claude-md-update <path>` | Update target project's CLAUDE.md with latest templates (intelligent merge) |
+| `/release` | Release workflow - version bump to published release |
+| `/sprint` | Sprint management - milestones, epics, kanban (GitLab) |
 
 ## Installation
 
@@ -87,12 +113,13 @@ mkdir -p .claude/commands
 cp path/to/juststart/templates/claude-code/commands/*.md .claude/commands/
 ```
 
-Or if using `just init-project`:
+Or install the complete Claude adapter into an existing project:
 
 ```bash
-just init-project myapp python gitlab
-# Commands are automatically copied to .claude/commands/
+juststart claude-install . 1plus
 ```
+
+When using `project-init`, `project-init-remote`, or `here-init`, commands are automatically copied to `.claude/commands/` as part of the Claude adapter.
 
 ## Usage
 

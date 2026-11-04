@@ -15,10 +15,11 @@ Unlike LLM-driven decisions, hooks:
 |----------|-------|---------|
 | `session-start.json` | SessionStart | Run `just catchup` automatically (see [Context Warning](#context-warning)) |
 | `session-end.json` | SessionEnd | Generate session summary from transcript |
-| `protected-files.json` | PreToolUse | Block edits to sensitive files |
+| `protected-files.json` | PreToolUse | Block edits to sensitive files. Needs `scripts/protected-files.{sh,py}`: without them every write is **blocked** with a message, not let through; `just hooks-templates-update` brings them |
+| `block-env-dump.json` | PreToolUse | Block unfiltered env dumps that could expose secrets |
 | `auto-format.json` | PostToolUse | Run `just fmt` after edits |
 | `command-logging.json` | PreToolUse | Log Bash commands for audit |
-| `just-recipe-reminder.json` | PreToolUse | Warn when using direct CLI commands instead of Just recipes |
+| `just-recipe-reminder.json` | PreToolUse | Block a glab/gh command when a Just recipe covers that exact operation (`glab mr note` → `mr-note`); remind only when just the family has recipes |
 | `observability.json` | PostToolUse, SessionStart, SessionEnd | Log tool executions and session events |
 
 ### Scripts
@@ -27,7 +28,10 @@ The `scripts/` directory contains shell scripts referenced by hook templates:
 
 | Script | Used By | Purpose |
 |--------|---------|---------|
+| `block-env-dump.sh` | block-env-dump.json | Block unfiltered printenv/env/set/export/declare, also through a path, wrapper, `sh -c`, a shell reading a here-document or here-string, or a substitution. A seatbelt against accidental dumps, not a boundary: the shell's grammar is larger than any check of its text, so the real protection is keeping tokens out of the agent's environment |
 | `session-end.sh` | session-end.json | Parse transcript, generate summary |
+| `just-recipe-reminder.sh` | just-recipe-reminder.json | Block glab/gh when the exact Just recipe exists, remind for the family |
+| `protected-files.sh` + `.py` | protected-files.json | Block Edit/MultiEdit/Write/NotebookEdit on protected files: the target is resolved (symlinks, `..`) and matched case-insensitively, and a write that names no file is blocked |
 
 ## Installation
 
@@ -50,14 +54,21 @@ just hooks-list                 # List available hook templates
 1. Copy desired hook configurations to `.claude/settings.json`
 2. Merge multiple hooks into the `hooks` object
 3. For hooks using scripts:
-   - Create `.claude/hooks/` directory
-   - Copy scripts from `templates/claude-code/hooks/scripts/`
-   - Make scripts executable: `chmod +x .claude/hooks/*.sh`
+   - Create the `.claude/hooks/scripts/` directory
+   - Copy scripts from `templates/claude-code/hooks/scripts/` into it
+   - Make them executable: `chmod +x .claude/hooks/scripts/*.sh .claude/hooks/scripts/*.py`
 4. Restart Claude Code
 
 ### Option 3: Global Installation
 
 Copy to `~/.claude/settings.json` to apply hooks to all projects.
+
+This works only for the hooks whose command is self-contained: auto-format, command-logging,
+observability, session-start. The script-based hooks run scripts from the project's
+`.claude/hooks/scripts/`, so they belong in the project's `.claude/settings.json`:
+block-env-dump, just-recipe-reminder, privacy-protected, privacy-roster-guard, protected-files,
+session-end. Installed globally, protected-files blocks every write in a project that lacks
+its script.
 
 ## Hook Events Reference
 
@@ -121,6 +132,37 @@ if [[ -f "$transcript_path" ]]; then
 fi
 ```
 
+## Important: Combining Hooks with Same Matcher
+
+**Multiple hooks for the same matcher MUST be combined into a single entry.** Claude Code may only execute one of multiple entries with the same matcher.
+
+**Wrong - separate entries:**
+```json
+{
+  "PreToolUse": [
+    { "matcher": "Bash", "hooks": [{ "type": "command", "command": "script1.sh" }] },
+    { "matcher": "Bash", "hooks": [{ "type": "prompt", "prompt": "..." }] }
+  ]
+}
+```
+
+**Correct - combined entry:**
+```json
+{
+  "PreToolUse": [
+    {
+      "matcher": "Bash",
+      "hooks": [
+        { "type": "command", "command": "script1.sh" },
+        { "type": "prompt", "prompt": "..." }
+      ]
+    }
+  ]
+}
+```
+
+When merging templates manually, combine all hooks with the same matcher into one array.
+
 ## Customization
 
 Each template is a JSON snippet. To customize:
@@ -146,7 +188,7 @@ The `session-end.sh` script can optionally call Claude CLI headlessly to generat
 export CLAUDE_SESSION_AI_SUMMARY=true
 
 # Option 2: In the hook command
-"command": "CLAUDE_SESSION_AI_SUMMARY=true .claude/hooks/session-end.sh"
+"command": "CLAUDE_SESSION_AI_SUMMARY=true .claude/hooks/scripts/session-end.sh"
 ```
 
 **Requirements:**
@@ -157,7 +199,7 @@ export CLAUDE_SESSION_AI_SUMMARY=true
 1. Hook reads the transcript from `transcript_path`
 2. Extracts recent conversation context
 3. Calls `claude --print` with a summarization prompt
-4. Appends the summary to `.claude/session-notes.md`
+4. Appends the summary to `.ai-harness/session-notes.md`
 
 **Fallback:** If Claude CLI is unavailable or fails, the script generates a basic summary with message counts and recent git commits.
 
@@ -169,15 +211,16 @@ All hook templates use defensive patterns to handle missing dependencies gracefu
 |---------|---------|---------|
 | `cmd 2>/dev/null \|\| true` | Silent fallback, never fails | `just fmt 2>/dev/null \|\| true` |
 | `cmd \|\| echo 'warning'` | Warn but continue | `just catchup \|\| echo 'No recipe'` |
-| `cmd \|\| (warn; exit 0)` | Warn and allow (fail-open) | protected-files without python3 |
+| `command -v dep \|\| { warn; exit 0; }; cmd` | Warn and allow only when a dependency is missing | protected-files without python3 |
 
 ### Dependencies
 
 | Hook | Requires | Fallback Behavior |
 |------|----------|-------------------|
 | auto-format | `just fmt` recipe | Silently skips if unavailable |
+| block-env-dump | `python3`, `bash` | Allows command if python3 unavailable (fail-open) |
 | command-logging | `jq` | Logs timestamp without command details |
-| just-recipe-reminder | `jq` | Silently skips if unavailable |
+| just-recipe-reminder | `jq`, `just` | Allows command if jq unavailable (fail-open) |
 | protected-files | `python3` | Warns and allows edit (fail-open) |
 | session-end | `jq`, `git` | Graceful degradation in script |
 
@@ -212,6 +255,41 @@ The `session-start.json` hook runs `just catchup` automatically at session start
 3. **Manual catchup** - Use `/catchup` skill only when you need full context
 
 The default CLAUDE.md template does NOT enable automatic catchup. It suggests using `/catchup` manually when needed.
+
+## Why Prompt-Based Hooks Are Problematic
+
+Claude Code supports two hook types: **command-based** (shell commands) and **prompt-based** (LLM evaluation). We strongly recommend **command-based hooks only**.
+
+### Problems with Prompt-Based Hooks
+
+| Issue | Impact |
+|-------|--------|
+| **Non-deterministic** | Claude interprets the prompt differently each time |
+| **Noisy** | Shows "condition not met" messages repeatedly |
+| **Session-bound** | Config changes require session restart |
+| **Overhead** | LLM evaluation runs for every matching tool call |
+| **Unreliable blocking** | May not consistently block when intended |
+
+### Recommended Patterns
+
+| Instead of... | Use... |
+|---------------|--------|
+| Prompt hook for conditional logic | Command script with explicit checks |
+| Prompt hook for reminders | Skill/command that user invokes explicitly |
+| Prompt hook for validation | Command hook with deterministic exit codes |
+
+**Example:** The pre-MR code simplification was originally a prompt hook. It was replaced with the explicit `/simple` command because:
+- User controls when it runs (deterministic)
+- No false positives or missed triggers
+- Clear success/failure feedback
+
+### When Prompt Hooks Might Be Acceptable
+
+- Low-stakes suggestions (not blocking)
+- Situations where non-determinism is acceptable
+- Experimental/prototype workflows
+
+For production workflows, always prefer command-based hooks.
 
 ## Security Considerations
 

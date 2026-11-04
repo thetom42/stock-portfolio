@@ -19,6 +19,12 @@ Task: $ARGUMENTS
 - Well-defined bug fixes
 - Minor documentation updates
 
+### What a Plan Is — and Isn't
+
+A plan is a **contract and a set of guardrails** for a human-reviewed implementation — the interfaces, the modules to touch, the tests to write, the open questions. It is **not** a prose specification to be auto-expanded into finished code.
+
+The most detailed spec is the program itself. The more a prose plan strains to be exhaustive, the more blanks it inevitably leaves — and an agent fills blanks with training-data defaults (older, abstraction-heavy patterns). Keep the plan tight: pin the boundaries and the critical-path decisions, then review the implementation against them. Aiming for a hand-off so complete that no human review is needed is hyper-waterfall, and it fails the way waterfall did.
+
 ### Plan Structure
 
 A good implementation plan includes:
