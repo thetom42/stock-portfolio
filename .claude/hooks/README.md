@@ -37,7 +37,7 @@ The `scripts/` directory contains shell scripts referenced by hook templates:
 
 ### Option 1: Automatic (Default)
 
-Claude Code hooks are automatically installed when creating a new project with `just init-project`. The default is **Level 1** (session-end + protected-files) which has zero startup cost. See [Session Lifecycle](../../docs/concept/session-lifecycle.md) for cost analysis.
+Claude Code hooks are automatically installed when creating a new project with `just init-project`. The default is **Level 1** (session-end + protected-files) which has zero startup cost. See [Session Lifecycle](https://gitlab.thetom42.duckdns.org/snuffel/devtools/juststart/-/blob/main/docs/concept/session-lifecycle.md) for cost analysis.
 
 ### Option 2: Using Just Recipe
 

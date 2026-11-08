@@ -17,6 +17,11 @@
 # default-model is required for a command with --ignore-user-config (the hard
 # boundary against codex's approvals_reviewer auto-approval, #452): the flag
 # drops the user's model too, and bot-review.sh refuses to run without one.
+# A codex line without the exact flag --ignore-user-config is refused (#521):
+# keep it when you copy this file, and fix older copies the same way. Any
+# word named codex counts as running codex, so another CLI that takes codex
+# or env as a value writes it attached (--agent=codex, not --agent codex),
+# and a path given as a word of its own must not end in codex or env.
 #
 # The reviewer argument to bot-review accepts a comma-separated list (e.g.
 # `codex,opencode`) to run multiple reviewers, each posting its own attributed

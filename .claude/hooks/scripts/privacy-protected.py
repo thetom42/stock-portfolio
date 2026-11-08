@@ -4,6 +4,8 @@ privacy-protected surfaces. Protected globs are read from .privacy.yaml; access
 to those paths is allowed only via the scrub recipes. Exit 2 blocks the tool.
 No .privacy.yaml or no 'protected:' list => allow (exit 0)."""
 
+from __future__ import annotations
+
 import json
 import os
 import re
@@ -57,7 +59,7 @@ def glob_to_re(glob: str) -> re.Pattern[str]:
 def main() -> int:
     try:
         data = json.load(sys.stdin)
-    except Exception:
+    except (OSError, ValueError):  # unreadable or not JSON: allow
         return 0
     path = (data.get("tool_input") or {}).get("file_path", "")
     if not path or not isinstance(path, str):

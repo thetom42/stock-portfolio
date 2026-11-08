@@ -168,9 +168,9 @@ The `/handoff` command works complementarily with the [SessionEnd hook](../hooks
 
 **Recommended approach:** Configure the SessionEnd hook as a baseline safety net, and use `/handoff` explicitly for important work sessions where interactive summarization and git operations are valuable.
 
-See the [Session Handoff Strategies](../../docs/concept/execution-strategy.md#session-handoff-strategies) section in the concept paper for detailed comparison.
+See the [Session Handoff Strategies](https://gitlab.thetom42.duckdns.org/snuffel/devtools/juststart/-/blob/main/docs/concept/execution-strategy.md#session-handoff-strategies) section in the concept paper for detailed comparison.
 
 ## References
 
 - [Claude Code Skills Documentation](https://docs.anthropic.com/en/docs/claude-code/skills)
-- [AI-Assisted Development Concept Paper](../../docs/concept/README.md)
+- [AI-Assisted Development Concept Paper](https://gitlab.thetom42.duckdns.org/snuffel/devtools/juststart/-/blob/main/docs/concept/README.md)

@@ -61,6 +61,70 @@ if [[ -z "$BOT_CONFIG" ]]; then
     exit 1
 fi
 
+# True when a reviewer command runs codex without the exact argument
+# --ignore-user-config (#521). This is a guard for stale and ordinary conf
+# lines, not a shell parser; the boundary that holds when a line slips past it
+# is the reviewer's isolation (#472). Split as the reviewer is started
+# (read -ra), a word counts as codex when it is not an option and its last
+# path component, minus an @version, is exactly codex: a path (/opt/.../codex),
+# a package (npx -y @openai/codex@1.2) and wrappers (nice -5, timeout 900) are
+# caught. After any word env (last path component), behind whatever wrapper,
+# any option word naming codex counts, because env can carry the program in an
+# option (-S'codex', -vScodex, --split=codex); its value-taking options
+# followed are -u/--unset, -P, -C/--chdir, -a/--argv0, also at the end of a
+# cluster (-iu FOO). Option values cannot be told apart without each CLI's
+# options, so this fails closed: a non-codex reviewer passes codex and env as
+# values attached (--agent=codex, --profile=env), and a word of its own must
+# not end in codex or env. The flag counts only after the codex word, before
+# a --, and not as -c's value. A shell command string (sh -c '...') is not
+# parsed. Twin: _review-conf-audit in the justfile, kept identical by a test.
+codex_keeps_user_config() {
+    local -a argv
+    local a w prev="" runs_codex=0 flagged=0 ended=0 env_opts=0
+    read -ra argv <<< "$1"
+    # bash 3.2 (macOS) treats an empty array as unset under set -u.
+    (( ${#argv[@]} )) || return 1
+    for a in "${argv[@]}"; do
+        # The flag counts only after codex, before --, and not as -c's value.
+        if (( runs_codex )); then
+            [[ "$a" == -- ]] && ended=1
+            if (( ! ended )) && [[ "$a" == --ignore-user-config ]] \
+                && [[ "$prev" != -c && "$prev" != --config ]]; then
+                flagged=1
+            fi
+        fi
+        w=${a//[\"\']/}
+        if [[ "$a" == -* ]]; then
+            # env can carry the program inside an option (-S, -vS, --split=),
+            # so within env's options any word naming codex counts.
+            (( env_opts )) && [[ "$w" == *codex* ]] && runs_codex=1
+            prev=$a
+            continue
+        fi
+        w=${w##*/}
+        [[ "${w%%@*}" == codex ]] && runs_codex=1
+        if (( env_opts )); then
+            # A value of env's options (also clustered: -iu FOO), or VAR=x,
+            # keeps env's option list open.
+            case "$prev" in -u|--unset|-P|-C|--chdir|-a|--argv0|-[!-]*[uPCa]) prev=$a; continue ;; esac
+            [[ "$a" == *=* ]] && { prev=$a; continue; }
+            env_opts=0
+        fi
+        # Any word env opens env's option list, whatever wrapper precedes it;
+        # a non-codex reviewer passes env as a value attached (--profile=env).
+        [[ "$w" == env ]] && env_opts=1
+        prev=$a
+    done
+    (( runs_codex && ! flagged ))
+}
+
+# The hardened codex line this harness ships, for error messages.
+sample_codex_line() {
+    local sample="$SCRIPT_DIR/../review-bots.conf.sample" line=""
+    [[ -f "$sample" ]] && line=$(grep -m1 '^codex|' "$sample" || true)
+    echo "${line:-codex|codex exec --ignore-user-config --sandbox read-only ...|<glab-dir>|-m|<model> (see review-bots.conf.sample)}"
+}
+
 PROMPT_TEMPLATE=""
 for candidate in \
     "$PROJECT_ROOT/.ai-harness/prompts/mr-review.md" \
@@ -355,6 +419,23 @@ review_with_bot() {
     DEFAULT_MODEL=$(echo "$BOT_LINE" | cut -d'|' -f5)
     EXTRA_ENV=$(echo "$BOT_LINE" | cut -d'|' -f6)
     GLAB_CONFIG_DIR="${GLAB_CONFIG_DIR/#\~/$HOME}"
+
+    # A codex reviewer without --ignore-user-config loads ~/.codex/config.toml,
+    # and with it approvals_reviewer = "auto_review": the sandbox's escalation
+    # requests are approved, and the reviewer approves the MR, swaps the
+    # reviewer and posts notes itself (tessera!3/!4, #472). The conf belongs to
+    # the project or the user, so a release never fixes an old line; refuse it
+    # here instead (#521).
+    if codex_keeps_user_config "$CLI_COMMAND"; then
+        echo "Error: $BOT_NAME runs codex without --ignore-user-config, so the reviewer" >&2
+        echo "  would load your codex config, auto-approvals included, and could act on" >&2
+        echo "  the forge itself. Fix its line in $BOT_CONFIG; the shipped codex line is:" >&2
+        echo "  $(sample_codex_line)" >&2
+        echo "  A reviewer that is not codex and only names codex or env as an option's" >&2
+        echo "  value writes it attached (--agent=codex), and a path given as a word of its" >&2
+        echo "  own must not end in codex or env, so that no word reads as codex." >&2
+        return 1
+    fi
 
     # The caller's model wins; the conf's default-model field fills in
     # otherwise. A reviewer started with --ignore-user-config has no other

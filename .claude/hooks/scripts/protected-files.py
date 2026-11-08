@@ -18,6 +18,8 @@ the filesystem, so it ignores case exactly where the filesystem does.
 A target outside the project is matched on its absolute path.
 """
 
+from __future__ import annotations
+
 import json
 import os
 import re
@@ -36,7 +38,9 @@ PATTERNS = [
     r"(^|/)production\.",
     r"(^|/)prod\.",
     r"(^|/)migrations/",
-    r"(^|/)\.git/",
+    # Git internals, and in a linked worktree or submodule the .git FILE
+    # (gitdir: ...), whose edit detaches the checkout (#522).
+    r"(^|/)\.git($|/)",
 ]
 
 
@@ -60,7 +64,7 @@ def find_root(cwd: str) -> str:
         path = parent
 
 
-def inside(path: str, root: str) -> "str | None":
+def inside(path: str, root: str) -> str | None:
     """path relative to root when it lies within it, else None.
 
     The filesystem decides, not the spelling: the deepest existing ancestor of
@@ -98,7 +102,7 @@ def candidates(target: str, cwd: str, root: str) -> list[str]:
         (resolved, os.path.realpath(root)),
     ):
         rel = inside(path, base)
-        forms.append(rel if rel else path.replace(os.sep, "/"))
+        forms.append(rel or path.replace(os.sep, "/"))
     return forms
 
 
@@ -116,10 +120,9 @@ def main() -> None:
     for form in candidates(target, cwd, find_root(cwd)):
         for pattern in PATTERNS:
             if re.search(pattern, form, re.IGNORECASE):
-                block(
-                    f"{target} is a protected file ({form}); "
-                    "ask the user before changing it"
-                )
+                # One line that fits 88 columns: split, it is reflowed by a
+                # project formatting at a longer line length (#501).
+                block(f"{target} is protected ({form}); ask the user before editing it")
     sys.exit(0)
 
 

@@ -53,8 +53,11 @@ Reviewers are output-only; the script posts:
   prompt: codex's `approvals_reviewer` auto-approval grants a `--sandbox
   read-only` reviewer every escalation it requests, so the shipped command
   carries `--ignore-user-config` and a default model in the conf (the flag
-  drops the user's model along with the auto-approval). The prompt still says
-  it, so a reviewer does not spend a round trying.
+  drops the user's model along with the auto-approval). `bot-review.sh`
+  refuses any codex line without that exact flag (#521). An old line can sit
+  in a project's or user's own `review-bots.conf`: `update-all` and
+  `ai-harness-install` keep that file and name it if stale. The prompt
+  still says it, so a reviewer does not spend a round trying.
 
 Loop:
 
