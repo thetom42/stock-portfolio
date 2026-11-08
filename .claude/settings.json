@@ -76,7 +76,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/session-end.sh",
+            "command": ".claude/hooks/scripts/session-end.sh",
             "timeout": 60
           }
         ]
@@ -89,6 +89,24 @@
           {
             "type": "command",
             "command": "python3 -c \"import json,sys,re; d=json.load(sys.stdin); p=d.get('tool_input',{}).get('file_path',''); patterns=[r'\\.env$',r'\\.env\\.',r'\\.env/',r'credentials/',r'secrets/',r'api-keys\\.',r'/production\\.',r'/prod\\.',r'\\.git/']; match=any(re.search(pat,p) for pat in patterns); sys.exit(2) if match else sys.exit(0)\" || (echo 'CRITICAL: Protected-files check failed. Blocking operation.' >&2; exit 2)"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|MultiEdit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/scripts/protected-files.sh\"; [ -f \"$f\" ] || { echo \"BLOCKED: protected-files hook script missing: $f (run just hooks-templates-update)\" >&2; exit 2; }; bash \"$f\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/scripts/block-env-dump.sh"
           }
         ]
       }

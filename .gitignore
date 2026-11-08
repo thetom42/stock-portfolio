@@ -11,3 +11,6 @@ coverage/
 session-notes.md
 settings.local.json
 .backups/
+
+# Local-only harness files (juststart)
+.ai-harness/review-bots.conf

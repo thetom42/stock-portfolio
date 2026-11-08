@@ -20,12 +20,14 @@ Issue → Branch → Implement → Test → MR/PR → Merge → Cleanup
 
 ### Issue-First Development
 
-Every change needs an issue first - no exceptions.
+Every change needs an issue first. The one exception is a minor docs or typo fix:
+it goes directly on main as a `docs:` commit, which the commit-msg hook accepts
+without an issue reference. Every other type, `chore:` included, needs `refs #N`.
 
 1. **Check for existing issue** - Ask user if there's a related issue
 2. **Create issue if needed** - Use `just issue-create "Title" "Description" "@me" label`
 3. **Assign labels** - `feature`, `bug`, `documentation`, `refactor`
-4. **Create feature branch** - `just branch-create <issue> <name>`
+4. **Create work branch** - `just branch-create <issue> <name> [type]` (`type` defaults to `feature`)
 
 ### Branch Naming
 
@@ -86,8 +88,9 @@ just issue-close 42 "Done"
 
 # Branches
 just branch-create 42 "feature-name"
+just branch-create 43 "login-crash" fix
 just branch-list
-just branch-delete feature-name
+just branch-delete 42-feature-name
 
 # Merge Requests
 just mr-create              # Warns if pipeline fails
@@ -108,8 +111,9 @@ just issue-view 42
 
 # Branches
 just branch-create 42 "feature-name"
+just branch-create 43 "login-crash" fix
 just branch-list
-just branch-delete feature-name
+just branch-delete 42-feature-name
 
 # Pull Requests
 just pr-create

@@ -19,7 +19,7 @@ Feature: $ARGUMENTS
 Following the project conventions in @CLAUDE.md:
 
 1. **Issue First** - Do we have an issue for this? If not, I'll suggest creating one.
-2. **Feature Branch** - Create branch with `just branch-create <issue> <name>`
+2. **Work Branch** - Create branch with `just branch-create <issue> <name> [type]` (`type` defaults to `feature`)
 3. **Implementation** - Incremental changes with your feedback
 4. **Quality Checks** - Run `just lint` and `just test`
 5. **Completion** - Create MR with `just mr-create`

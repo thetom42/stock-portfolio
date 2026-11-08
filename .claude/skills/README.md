@@ -13,7 +13,7 @@ This directory contains auto-activated skill templates for Claude Code. These ar
 | Reference files | No | Yes (scripts/, references/) |
 | Invocation | `/name` (user types it) | `/name` or auto-activated |
 | Activation | Manual only | Claude can auto-activate |
-| Deterministic | ✅ Yes | ❌ No |
+| Deterministic | Yes | No |
 
 **Use User-Invocable Skills for:** Simple prompts, session modes, collaborative thinking (see `../commands/`)
 
@@ -21,30 +21,15 @@ This directory contains auto-activated skill templates for Claude Code. These ar
 
 ## Available Skills
 
-| Skill | Description |
-|-------|-------------|
-| `skill-creator` | Guide for creating effective skills with templates and scripts |
+No bundled skills. For skill creation guidance, install the `skill-creator` plugin from Anthropic.
 
 ## Installation
 
 Skills are automatically installed when creating a new project with `just init-project`.
 
-For existing projects:
-
-```bash
-# Install skills from juststart
-juststart skills-install
-```
-
 ## Creating New Skills
 
-Use the `/skill-creator` skill for guidance on creating new skills:
-
-```
-/skill-creator my-new-skill
-```
-
-Or manually:
+Install the `skill-creator` plugin for guided skill creation, or manually:
 
 1. Create directory: `.claude/skills/my-skill/`
 2. Create `SKILL.md` with frontmatter:
@@ -66,16 +51,14 @@ Or manually:
 
 ```
 .claude/skills/
-└── skill-creator/
+└── my-skill/
     ├── SKILL.md           # Main skill definition
     ├── scripts/
-    │   ├── init_skill.py
-    │   ├── package_skill.py
-    │   └── quick_validate.py
+    │   └── helper.py
     ├── references/
-    │   ├── workflows.md
-    │   └── output-patterns.md
-    └── LICENSE.txt
+    │   └── docs.md
+    └── templates/
+        └── example.md
 ```
 
 ## References

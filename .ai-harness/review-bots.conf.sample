@@ -1,0 +1,35 @@
+# Review bot configuration sample
+#
+# Copy to .ai-harness/review-bots.conf in generated projects and adjust the
+# enabled reviewers for the local team.
+#
+# Format:
+#   bot-name|cli-command|glab-config-dir|model-flag|default-model|reviewer-env
+#
+# reviewer-env (optional sixth field) names variables, comma-separated, that this
+# reviewer may receive from the caller. The reviewer otherwise starts from an
+# empty environment plus a fixed allowlist (PATH, HOME, USER, LOGNAME, TMPDIR,
+# TERM, locale), with glab and XDG locations in an empty scratch dir (#457).
+# Name an API key the CLI authenticates with, or XDG_DATA_HOME,XDG_CONFIG_HOME for a CLI that
+# keeps its login there (opencode). An unset name falls back to the CLI default.
+# GLAB_*, GITLAB_*, OAUTH_TOKEN and CI_JOB_TOKEN are refused.
+#
+# default-model is required for a command with --ignore-user-config (the hard
+# boundary against codex's approvals_reviewer auto-approval, #452): the flag
+# drops the user's model too, and bot-review.sh refuses to run without one.
+# A codex line without the exact flag --ignore-user-config is refused (#521):
+# keep it when you copy this file, and fix older copies the same way. Any
+# word named codex counts as running codex, so another CLI that takes codex
+# or env as a value writes it attached (--agent=codex, not --agent codex),
+# and a path given as a word of its own must not end in codex or env.
+#
+# The reviewer argument to bot-review accepts a comma-separated list (e.g.
+# `codex,opencode`) to run multiple reviewers, each posting its own attributed
+# note. A diverse pair (different model families) is recommended: models rarely
+# flag the same line, so two reviewers catch more real bugs than one.
+
+codex|codex exec --ignore-user-config --sandbox read-only -c model_reasoning_effort=high|~/.config/glab-codex|-m|gpt-5.6-sol
+claude|claude -p --output-format text --permission-mode plan --no-session-persistence|~/.config/glab-claude|--model
+# opencode|opencode run --agent juststart-review|~/.config/glab-opencode|-m||XDG_DATA_HOME,XDG_CONFIG_HOME
+# gemini|agy --mode plan|~/.config/glab-gemini|--model
+# pi|pi --tools read,grep,find,ls -p|~/.config/glab-pi|--model

@@ -1,10 +1,9 @@
 {
-  "_description": "Remind to check Just recipes before using direct CLI commands like glab",
+  "_description": "Block a glab/gh command when a Just recipe covers that exact operation (glab mr note -> mr-note); remind on stderr when only the family has recipes",
   "_event": "PreToolUse",
-  "_usage": "Merge into .claude/settings.json - warns but does NOT block",
-  "_requires": "jq (optional, skips silently if unavailable)",
-  "_monitored_commands": ["glab"],
-  "_script": "scripts/just-recipe-reminder.sh",
+  "_usage": "Merge into .claude/settings.json - BLOCKS when Just recipe is available",
+  "_note": "Command-based hook for deterministic behavior. Requires jq.",
+  "_scripts": ["scripts/just-recipe-reminder.sh"],
   "hooks": {
     "PreToolUse": [
       {
@@ -12,7 +11,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/just-recipe-reminder.sh"
+            "command": "bash .claude/hooks/scripts/just-recipe-reminder.sh"
           }
         ]
       }

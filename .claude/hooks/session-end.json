@@ -2,7 +2,7 @@
   "_description": "Generate session summary from conversation transcript",
   "_event": "SessionEnd",
   "_usage": "Merge into .claude/settings.json or ~/.claude/settings.json",
-  "_note": "Copy scripts/session-end.sh to .claude/hooks/ and make executable",
+  "_note": "Requires scripts/session-end.sh in .claude/hooks/scripts/ (installed by scaffolding)",
   "_environment": {
     "CLAUDE_SESSION_AI_SUMMARY": "Set to 'true' to enable AI-powered summaries (requires claude CLI)"
   },
@@ -13,7 +13,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/session-end.sh",
+            "command": ".claude/hooks/scripts/session-end.sh",
             "timeout": 60
           }
         ]
